@@ -106,12 +106,44 @@ export default function OtherInfoTab({
               }
               onChange={onCustomerChange}
               placeholder="Müşteri seçin"
+              menuPortalTarget={document.body} // Bu prop'u ekleyin
               styles={{
                 control: (base) => ({
                   ...base,
                   border: "1px solid #D1D5DB",
                   borderRadius: "0.5rem",
                   padding: "0.25rem",
+                  backgroundColor: "white",
+                }),
+                menu: (base) => ({
+                  ...base,
+                  backgroundColor: "white",
+                  zIndex: 9999, // Menu için z-index
+                }),
+                menuList: (base) => ({
+                  ...base,
+                  backgroundColor: "white",
+                  padding: "0.5rem",
+                }),
+                menuPortal: (base) => ({
+                  ...base,
+                  zIndex: 9999, // Menu portal için z-index
+                }),
+                option: (base, state) => ({
+                  ...base,
+                  backgroundColor: state.isFocused ? "#f3f4f6" : "white",
+                  color: "#374151",
+                  "&:hover": {
+                    backgroundColor: "#f3f4f6",
+                  },
+                }),
+                singleValue: (base) => ({
+                  ...base,
+                  color: "#374151",
+                }),
+                placeholder: (base) => ({
+                  ...base,
+                  color: "#6B7280",
                 }),
               }}
             />
