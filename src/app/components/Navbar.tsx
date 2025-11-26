@@ -101,8 +101,7 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Arka Plan Div'i - Koyu Gri */}
-      <div className="fixed top-0 left-0 right-0 h-20 bg-gray-900 z-[998]"></div>
+      <div className="fixed top-0 left-0 right-0 h-24 bg-gray-900 z-[998]"></div>
 
       {!isMobile && (
         <motion.nav

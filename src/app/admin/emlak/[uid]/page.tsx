@@ -669,7 +669,8 @@ export default function EditE() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value.replace(/\./g, "");
       if (!isNaN(Number(rawValue)) && rawValue.length <= 15) {
-        updateNestedFourthStep("price", "value", formatNumber(rawValue));
+        const formattedValue = formatNumber(rawValue);
+        updateNestedFourthStep("price", "value", formattedValue);
       }
     },
     [updateNestedFourthStep]
@@ -1031,7 +1032,10 @@ export default function EditE() {
       const feeType = fourthStep.price?.type || "TL";
 
       const formattedFee = `${feeValue} ${feeType}`;
-
+      console.log(
+        "💰 Price değeri backend'e şu şekilde gidiyor:",
+        formattedFee
+      );
       const requestData: any = {
         uid: Number(advertUid),
         steps: {

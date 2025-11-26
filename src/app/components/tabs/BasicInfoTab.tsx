@@ -19,6 +19,12 @@ interface BasicInfoTabProps {
   currencyOptions: any[];
 }
 
+const formatNumber = (number: any) => {
+  if (!number) return "";
+  const numStr = number.toString().replace(/\./g, "");
+  return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
 export default function BasicInfoTab({
   fourthStep,
   content,
@@ -29,6 +35,8 @@ export default function BasicInfoTab({
   onAdminNoteChange,
   currencyOptions,
 }: BasicInfoTabProps) {
+  const formattedPriceValue = formatNumber(fourthStep.price.value);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -64,7 +72,7 @@ export default function BasicInfoTab({
           <div className="grid grid-cols-2 gap-4">
             <SimpleInput
               label="Fiyat"
-              value={fourthStep.price.value}
+              value={formattedPriceValue}
               onChange={onPriceValueChange}
               placeholder="0"
               icon={DollarSign}

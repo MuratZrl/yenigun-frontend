@@ -411,7 +411,7 @@ export default function AdsPage({
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <main className="min-h-screen bg-white">
       <Navbar />
 
       <div className="pt-20 container mx-auto max-w-6xl px-4 py-8 -mt-8">
