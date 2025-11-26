@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import api from "@/app/lib/api";
 import { User as UserType } from "@/app/types/user";
+import { div } from "framer-motion/client";
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
@@ -101,142 +102,144 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 h-24 bg-gray-900 z-[998]"></div>
-
       {!isMobile && (
-        <motion.nav
-          className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-500 ${
-            scrolled
-              ? "bg-transparent backdrop-blur-xl py-3"
-              : "bg-transparent backdrop-blur-lg py-5"
-          }`}
-          initial={{ y: -100 }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex items-center justify-between">
-              <Link href="/" className="flex items-center">
-                <motion.img
-                  src="/logo.png"
-                  alt="Yenigün Emlak"
-                  className={`transition-all duration-300 ${
-                    scrolled ? "w-40" : "w-48"
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
-                />
-              </Link>
-
-              <div className="flex items-center space-x-1">
-                {navbar_items.map((item, index) => {
-                  const IconComponent = item.icon;
-                  return (
-                    <Link key={index} href={item.href}>
-                      <motion.div
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-                          activeHref === item.href
-                            ? "bg-white/20 text-white shadow-lg border border-white/20"
-                            : "text-white/80 hover:text-white hover:bg-white/10 border border-transparent"
-                        }`}
-                        whileHover={{ y: -2, scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <IconComponent className="w-4 h-4" />
-                        <span className="font-semibold">{item.name}</span>
-                      </motion.div>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              {user ? (
-                <motion.div
-                  className="relative"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                >
-                  <motion.button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all duration-300"
+        <div>
+          <div className="fixed top-0 left-0 right-0 h-24 bg-gray-900 z-[998]"></div>
+          <motion.nav
+            className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-500 ${
+              scrolled
+                ? "bg-transparent backdrop-blur-xl py-3"
+                : "bg-transparent backdrop-blur-lg py-5"
+            }`}
+            initial={{ y: -100 }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          >
+            <div className="max-w-7xl mx-auto px-6">
+              <div className="flex items-center justify-between">
+                <Link href="/" className="flex items-center">
+                  <motion.img
+                    src="/logo.png"
+                    alt="Yenigün Emlak"
+                    className={`transition-all duration-300 ${
+                      scrolled ? "w-40" : "w-48"
+                    }`}
                     whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                </Link>
+
+                <div className="flex items-center space-x-1">
+                  {navbar_items.map((item, index) => {
+                    const IconComponent = item.icon;
+                    return (
+                      <Link key={index} href={item.href}>
+                        <motion.div
+                          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                            activeHref === item.href
+                              ? "bg-white/20 text-white shadow-lg border border-white/20"
+                              : "text-white/80 hover:text-white hover:bg-white/10 border border-transparent"
+                          }`}
+                          whileHover={{ y: -2, scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <IconComponent className="w-4 h-4" />
+                          <span className="font-semibold">{item.name}</span>
+                        </motion.div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {user ? (
+                  <motion.div
+                    className="relative"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                  >
+                    <motion.button
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all duration-300"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {user.profilePicture ? (
+                        <img
+                          src={user.profilePicture}
+                          alt="profile"
+                          className="w-8 h-8 rounded-full border-2 border-white/30"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-900 to-gray-900 flex items-center justify-center text-white font-semibold shadow-lg">
+                          <span className="text-sm">
+                            {user.name.charAt(0)}
+                            {user.surname.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                      <span className="font-semibold">
+                        {user.name} {user.surname}
+                      </span>
+                      <motion.div
+                        animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </motion.div>
+                    </motion.button>
+
+                    <AnimatePresence>
+                      {isDropdownOpen && (
+                        <motion.div
+                          className="absolute top-full right-0 mt-2 w-64 bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden"
+                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="p-2">
+                            <Link
+                              href="/admin/emlak"
+                              className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+                              onClick={() => setIsDropdownOpen(false)}
+                            >
+                              <User className="w-4 h-4" />
+                              <span>Hesabım</span>
+                            </Link>
+                            <button
+                              onClick={handleLogout}
+                              className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-all duration-300"
+                            >
+                              <LogOut className="w-4 h-4" />
+                              <span>Çıkış Yap</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    onClick={() => {
+                      window.location.href = "/login";
+                    }}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 border border-white/20"
+                    whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    {user.profilePicture ? (
-                      <img
-                        src={user.profilePicture}
-                        alt="profile"
-                        className="w-8 h-8 rounded-full border-2 border-white/30"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-900 to-gray-900 flex items-center justify-center text-white font-semibold shadow-lg">
-                        <span className="text-sm">
-                          {user.name.charAt(0)}
-                          {user.surname.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                    <span className="font-semibold">
-                      {user.name} {user.surname}
-                    </span>
-                    <motion.div
-                      animate={{ rotate: isDropdownOpen ? 180 : 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <ChevronDown className="w-3 h-3" />
-                    </motion.div>
+                    <User className="w-4 h-4" />
+                    <span>Giriş Yap</span>
                   </motion.button>
-
-                  <AnimatePresence>
-                    {isDropdownOpen && (
-                      <motion.div
-                        className="absolute top-full right-0 mt-2 w-64 bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden"
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="p-2">
-                          <Link
-                            href="/admin/emlak"
-                            className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
-                            onClick={() => setIsDropdownOpen(false)}
-                          >
-                            <User className="w-4 h-4" />
-                            <span>Hesabım</span>
-                          </Link>
-                          <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-all duration-300"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            <span>Çıkış Yap</span>
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              ) : (
-                <motion.button
-                  onClick={() => {
-                    window.location.href = "/login";
-                  }}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 border border-white/20"
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <User className="w-4 h-4" />
-                  <span>Giriş Yap</span>
-                </motion.button>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        </motion.nav>
+          </motion.nav>
+        </div>
       )}
 
       {isMobile && (
         <>
+          <div className="fixed top-0 left-0 right-0 h-20 bg-gray-900 z-[998]"></div>
           <motion.nav
             className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-500 ${
               scrolled

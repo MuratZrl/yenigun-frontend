@@ -119,13 +119,6 @@ const CategorySelectionTab: React.FC<CategorySelectionTabProps> = ({
             <h3 className="text-lg font-semibold text-gray-900">
               Alt Kategori
             </h3>
-            <Link
-              href={`/admin/categories/${selectedCategory._id}?action=create-subcategory`}
-              className="flex items-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
-            >
-              <Plus size={16} />
-              Alt Kategori Ekle
-            </Link>
           </div>
 
           {selectedCategory.subcategories.length === 0 ? (
@@ -140,13 +133,6 @@ const CategorySelectionTab: React.FC<CategorySelectionTabProps> = ({
                 Bu kategoriye ait alt kategoriler oluşturarak ilanlarınızı daha
                 detaylı sınıflandırabilirsiniz.
               </p>
-              <Link
-                href={`/admin/categories/${selectedCategory._id}?action=create-subcategory`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
-              >
-                <Plus size={16} />
-                Alt Kategori Ekle
-              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -171,19 +157,6 @@ const CategorySelectionTab: React.FC<CategorySelectionTabProps> = ({
                   )}
                 </button>
               ))}
-
-              {/* Yeni Alt Kategori Ekle Butonu */}
-              <Link
-                href={`/admin/categories/${selectedCategory._id}?action=create-subcategory`}
-                className="p-4 border-2 border-dashed border-gray-300 rounded-lg text-center transition-all hover:border-green-400 hover:bg-green-50 group"
-              >
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Plus size={16} className="text-green-600" />
-                </div>
-                <span className="font-medium text-sm text-green-700">
-                  Yeni Alt Kategori
-                </span>
-              </Link>
             </div>
           )}
         </div>
@@ -194,13 +167,6 @@ const CategorySelectionTab: React.FC<CategorySelectionTabProps> = ({
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Özellikler</h3>
-            <Link
-              href={`/admin/categories/${selectedCategory?._id}/subcategories/${selectedSubcategory._id}?action=create-feature`}
-              className="flex items-center gap-2 px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm"
-            >
-              <Plus size={16} />
-              Özellik Ekle
-            </Link>
           </div>
 
           {selectedSubcategory.features.length === 0 ? (
@@ -215,13 +181,6 @@ const CategorySelectionTab: React.FC<CategorySelectionTabProps> = ({
                 Bu alt kategoriye özel özellikler ekleyerek ilanlarınızı daha
                 detaylı tanımlayabilirsiniz.
               </p>
-              <Link
-                href={`/admin/categories/${selectedCategory?._id}/subcategories/${selectedSubcategory._id}?action=create-feature`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm"
-              >
-                <Plus size={16} />
-                Özellik Ekle
-              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
