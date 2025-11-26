@@ -11,14 +11,6 @@ const PoppinsFont = Poppins({
   weight: ["400", "700"],
 });
 
-// Swiper instance için tip tanımı
-interface SwiperInstance {
-  swiper?: {
-    slidePrev: () => void;
-    slideNext: () => void;
-  };
-}
-
 const ImageSlider = () => {
   React.useEffect(() => {
     const customSwiper = document.getElementById("customArrows");

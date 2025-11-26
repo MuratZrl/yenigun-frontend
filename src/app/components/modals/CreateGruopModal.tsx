@@ -125,7 +125,6 @@ const App = ({ open, setOpen, users, groups, setGroups }: any) => {
 
   if (!open) return null;
 
-  // Sayfalama hesaplamaları
   const startIndex = page * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const paginatedUsers = filteredUsers.slice(startIndex, endIndex);

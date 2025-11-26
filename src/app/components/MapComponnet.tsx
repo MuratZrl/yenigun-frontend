@@ -22,11 +22,9 @@ const MapComponent = ({ lat, lng, address }: MapComponentProps) => {
     );
   }
 
-  // Dynamic import ile gerekli modülleri yükle
   const L = require("leaflet");
   const { MapContainer, TileLayer, Marker, Popup } = require("react-leaflet");
 
-  // Marker icon sorununu çöz
   delete (L.Icon.Default.prototype as any)._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl:
@@ -37,7 +35,6 @@ const MapComponent = ({ lat, lng, address }: MapComponentProps) => {
       "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
   });
 
-  // Koordinatları güvenli şekilde sayıya dönüştür
   const safeLat =
     typeof lat === "string"
       ? parseFloat(lat)
@@ -51,13 +48,12 @@ const MapComponent = ({ lat, lng, address }: MapComponentProps) => {
       ? lng
       : 0;
 
-  // Geçerli koordinatları kontrol et
   const isValidCoordinate =
     !isNaN(safeLat) && !isNaN(safeLng) && safeLat !== 0 && safeLng !== 0;
 
   const position: [number, number] = isValidCoordinate
     ? [safeLat, safeLng]
-    : [41.0082, 28.9784]; // Varsayılan İstanbul koordinatları
+    : [41.0082, 28.9784];
 
   return (
     <div className="h-96 w-full rounded-xl overflow-hidden border border-gray-200">

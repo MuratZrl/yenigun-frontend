@@ -1,4 +1,3 @@
-// app/login/page.tsx
 "use client";
 import React, { useState, useEffect } from "react";
 import { Poppins } from "next/font/google";
@@ -65,7 +64,6 @@ const Login = () => {
       if (result.success && result.data) {
         console.log("✅ Login successful, setting auth data...");
 
-        // DATA KONTROLÜ
         if (!result.data.access_token) {
           console.error("❌ No access_token in result data");
           setIsError({
@@ -77,7 +75,6 @@ const Login = () => {
 
         setAuthData(result.data);
 
-        // YÖNLENDİRME ÖNCESİ BEKLE
         console.log("🔄 Redirecting in 1 second...");
         setTimeout(() => {
           router.push("/admin/emlak");

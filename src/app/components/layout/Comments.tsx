@@ -14,7 +14,6 @@ const PoppinsFont = Poppins({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-// Framer Motion variants için doğru tip tanımı
 const cardVariants: Variants = {
   hidden: {
     opacity: 0,

@@ -11,7 +11,6 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const App = ({ open, setOpen, user, cookies }: any) => {
-  // Başlangıç değerlerini tanımla - undefined yerine boş string kullan
   const [newUser, setNewUser] = useState({
     uid: "",
     image: "",
@@ -121,7 +120,6 @@ const App = ({ open, setOpen, user, cookies }: any) => {
           : []
       );
     } else {
-      // Reset to empty values
       setNewUser({
         uid: "",
         image: "",

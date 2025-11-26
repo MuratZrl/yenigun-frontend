@@ -30,6 +30,38 @@ export default function LocationTab({
   onParselChange,
   turkeyCities,
 }: LocationTabProps) {
+  const getSafeAddress = (address: any): string => {
+    if (!address) return "";
+
+    if (typeof address === "string") {
+      return address;
+    }
+
+    if (typeof address === "object") {
+      console.warn(
+        "⚠️ Adres alanı obje içeriyor, string'e çevriliyor:",
+        address
+      );
+
+      if (address.lat && address.lng) {
+        return `Konum: ${address.lat}, ${address.lng}`;
+      }
+
+      return "";
+    }
+
+    return String(address);
+  };
+
+  React.useEffect(() => {
+    console.log("🔍 Adres değeri:", fourthStep.address);
+    console.log("🔍 Adres tipi:", typeof fourthStep.address);
+
+    if (fourthStep.address && typeof fourthStep.address === "object") {
+      console.log("🔍 Obje içeriği:", JSON.stringify(fourthStep.address));
+    }
+  }, [fourthStep.address]);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -135,16 +167,19 @@ export default function LocationTab({
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Adres Bilgisi
           </h3>
+
+          {/* Düzeltilmiş SimpleInput - [object Object] hatasını önler */}
           <SimpleInput
             label="Tam Adres"
-            value={fourthStep.address}
+            value={getSafeAddress(fourthStep.address)}
             onChange={onAddressChange}
             placeholder="Tam adres giriniz"
             icon={MapPin}
           />
+
           <SimpleInput
             label="Parsel No"
-            value={fourthStep.parsel}
+            value={fourthStep.parsel || ""}
             onChange={onParselChange}
             placeholder="Parsel numarası giriniz"
             icon={Hash}

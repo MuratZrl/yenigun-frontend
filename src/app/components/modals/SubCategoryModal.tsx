@@ -1,4 +1,3 @@
-// components/modals/SubcategoryModal.tsx
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Save } from "lucide-react";

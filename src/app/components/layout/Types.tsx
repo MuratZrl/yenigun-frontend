@@ -35,7 +35,6 @@ interface TypesProps {
   data: any[];
 }
 
-// Swiper instance için tip tanımı
 interface SwiperInstance {
   swiper?: {
     slidePrev: () => void;

@@ -1,16 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { Poppins } from "next/font/google";
-import {
-  ExternalLink,
-  Flame,
-  Heart,
-  Link as LinkIcon,
-  Home,
-  Bath,
-  Building,
-  MapPin,
-} from "lucide-react";
+import { ExternalLink, Flame, Link as LinkIcon, MapPin } from "lucide-react";
 import { motion, Variants } from "framer-motion";
 import Link from "next/link";
 

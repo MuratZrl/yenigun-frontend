@@ -1,4 +1,3 @@
-// components/tabs/CategorySelectionTab.tsx
 import React, { useState } from "react";
 import {
   Category,
@@ -79,7 +78,7 @@ const CategorySelectionTab: React.FC<CategorySelectionTabProps> = ({
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {categories.map((category) => (
               <button
-                key={category._id || category._id} // KEY EKLENDİ
+                key={category._id || category._id}
                 type="button"
                 onClick={() => onCategorySelect(category)}
                 className={`p-4 border-2 rounded-lg text-center transition-all group relative ${
@@ -153,7 +152,7 @@ const CategorySelectionTab: React.FC<CategorySelectionTabProps> = ({
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {selectedCategory.subcategories.map((subcategory) => (
                 <button
-                  key={subcategory._id || subcategory._id} // KEY EKLENDİ
+                  key={subcategory._id || subcategory._id}
                   type="button"
                   onClick={() => onSubcategorySelect(subcategory)}
                   className={`p-4 border-2 rounded-lg text-center transition-all group relative ${
@@ -228,7 +227,7 @@ const CategorySelectionTab: React.FC<CategorySelectionTabProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {selectedSubcategory.features.map((feature) => (
                 <FeatureInput
-                  key={feature._id || feature._id} // KEY EKLENDİ
+                  key={feature._id || feature._id}
                   feature={feature}
                   value={featureValues[feature._id]}
                   onChange={(value) => onFeatureChange(feature._id, value)}
@@ -271,7 +270,6 @@ const CategorySelectionTab: React.FC<CategorySelectionTabProps> = ({
   );
 };
 
-// Özellik Giriş Bileşeni
 interface FeatureInputProps {
   feature: Feature;
   value: any;
@@ -350,7 +348,7 @@ const FeatureInput: React.FC<FeatureInputProps> = ({
           <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
             {feature.options?.map((option, index) => (
               <label
-                key={`${option}-${index}`} // KEY EKLENDİ
+                key={`${option}-${index}`}
                 className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
               >
                 <input

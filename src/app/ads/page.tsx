@@ -154,7 +154,6 @@ export default function AdsPage({
 
         console.log(`Toplam çekilen ilan sayısı: ${allAdverts.length}`);
 
-        // Sadece aktif ilanları filtrele ve tarihe göre sırala
         const activeAdverts = allAdverts
           .filter((ad: Advert) => ad.active === true)
           .sort((a: Advert, b: Advert) => {
@@ -175,9 +174,8 @@ export default function AdsPage({
     };
 
     fetchAllAdverts();
-  }, []); // Sadece component mount olduğunda çalışsın
+  }, []);
 
-  // Query parametrelerini işle
   useEffect(() => {
     if (resolvedSearchParams && Object.keys(resolvedSearchParams).length > 0) {
       const newFilters: FilterState = {
@@ -216,7 +214,6 @@ export default function AdsPage({
     }
   }, [resolvedSearchParams]);
 
-  // Responsive kontrol
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 800);
@@ -226,7 +223,6 @@ export default function AdsPage({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Sayfa değişikliğinde scroll yukarı
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentPage]);
@@ -252,7 +248,6 @@ export default function AdsPage({
     console.log("Filtreleme başlıyor:", filterValues);
     console.log("Toplam ilan sayısı:", filteredData.length);
 
-    // Anahtar kelime filtresi
     if (filterValues.keyword && filterValues.keyword.trim() !== "") {
       const keyword = normalizeString(filterValues.keyword.trim());
       filteredData = filteredData.filter((ad: Advert) => {
@@ -262,7 +257,6 @@ export default function AdsPage({
       console.log("Anahtar kelime filtresi sonrası:", filteredData.length);
     }
 
-    // Konum filtresi
     if (filterValues.location && filterValues.location !== "Hepsi") {
       filteredData = filteredData.filter((ad: Advert) => {
         return ad.address?.province === filterValues.location;
@@ -270,7 +264,6 @@ export default function AdsPage({
       console.log("Konum filtresi sonrası:", filteredData.length);
     }
 
-    // İlçe filtresi
     if (filterValues.district && filterValues.district !== "Hepsi") {
       filteredData = filteredData.filter((ad: Advert) => {
         return ad.address?.district === filterValues.district;
@@ -278,7 +271,6 @@ export default function AdsPage({
       console.log("İlçe filtresi sonrası:", filteredData.length);
     }
 
-    // İşlem türü filtresi (Satılık/Kiralık)
     if (filterValues.action && filterValues.action !== "Tümü") {
       filteredData = filteredData.filter(
         (ad: Advert) => ad.steps?.second === filterValues.action
@@ -286,7 +278,6 @@ export default function AdsPage({
       console.log("İşlem türü filtresi sonrası:", filteredData.length);
     }
 
-    // Emlak tipi filtresi
     if (filterValues.type && filterValues.type !== "Hepsi") {
       filteredData = filteredData.filter(
         (ad: Advert) => ad.steps?.third === filterValues.type
@@ -294,7 +285,6 @@ export default function AdsPage({
       console.log("Emlak tipi filtresi sonrası:", filteredData.length);
     }
 
-    // Fiyat filtreleri
     if (filterValues.minPrice !== null && filterValues.minPrice > 0) {
       filteredData = filteredData.filter((ad: Advert) => {
         if (!ad.fee) return false;
@@ -342,12 +332,10 @@ export default function AdsPage({
     return !!validPhoto;
   };
 
-  // Pagination hesaplamaları
   const totalPages = Math.ceil(data.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentItems = data.slice(startIndex, startIndex + itemsPerPage);
 
-  // Özel pagination bileşeni
   const CustomPagination = () => {
     if (totalPages <= 1) return null;
 
@@ -413,13 +401,10 @@ export default function AdsPage({
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="w-full min-h-screen flex justify-center items-center bg-white">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-gray-600"></div>
           <p className="text-gray-600 font-medium">Tüm ilanlar yükleniyor...</p>
-          <p className="text-sm text-gray-500">
-            Bu işlem birkaç saniye sürebilir
-          </p>
         </div>
       </div>
     );
@@ -429,20 +414,20 @@ export default function AdsPage({
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Navbar />
 
-      <div className="container mx-auto max-w-6xl px-4 py-8 -mt-8">
+      <div className="pt-20 container mx-auto max-w-6xl px-4 py-8 -mt-8">
         {/* Search Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-200">
-          <div className="flex flex-col lg:flex-row items-center gap-4">
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100">
+          <div className="flex flex-col lg:flex-row items-center gap-3">
             <div className="relative flex-1 w-full">
               <Search
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={20}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={18}
               />
               <input
                 type="text"
                 placeholder="İl, ilçe, mahalle veya proje adı yazın..."
                 value={filters.keyword}
-                className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg shadow-sm"
+                className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-sm shadow-sm transition-colors"
                 onChange={(e) => {
                   setFilters({ ...filters, keyword: e.target.value });
                 }}
@@ -451,20 +436,22 @@ export default function AdsPage({
                 }}
               />
             </div>
-            <div className="flex gap-3 w-full lg:w-auto">
+
+            <div className="flex gap-2 w-full lg:w-auto">
               <button
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 duration-300 text-white px-8 py-4 rounded-xl flex items-center gap-2 flex-1 lg:flex-none justify-center font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 flex-1 lg:flex-none justify-center font-medium text-sm transition-colors shadow-sm hover:shadow-md"
                 onClick={() => handleFilter()}
               >
-                <Search size={20} />
-                İlan Ara
+                <Search size={16} />
+                Ara
               </button>
+
               <button
-                className="bg-white hover:bg-gray-50 shadow-lg hover:shadow-xl duration-200 px-6 py-4 flex items-center gap-2 rounded-xl border border-gray-200 flex-1 lg:flex-none justify-center font-semibold text-lg transition-all"
+                className="bg-white hover:bg-gray-50 border border-gray-200 px-3 py-2.5 flex items-center gap-2 rounded-lg flex-1 lg:flex-none justify-center font-medium text-sm transition-colors shadow-sm hover:shadow-md"
                 onClick={() => setModal(true)}
               >
-                <Filter size={20} />
-                Detaylı Filtre
+                <Filter size={16} />
+                Filtre
               </button>
             </div>
           </div>
@@ -651,7 +638,6 @@ export default function AdsPage({
                   {/* Price and Date */}
                   <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
                     <div className="text-xl font-bold text-gray-900 flex items-center gap-1">
-                      <DollarSign size={18} className="text-green-500" />
                       {ad.fee ? `${ad.fee}` : "Fiyat belirtilmemiş"}
                     </div>
                     {ad.created?.createdTimestamp && (

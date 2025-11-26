@@ -148,7 +148,6 @@ const AdminSidebar = ({
 
     if (linkUrl === pathname) return true;
 
-    // Dropdown item'ları için kontrol
     const link = adminLinks.find((item) => item.url === linkUrl);
     if (link?.dropdown) {
       return link.dropdown.some((item) => item.url === pathname);
@@ -167,7 +166,6 @@ const AdminSidebar = ({
     return pathname === linkUrl;
   };
 
-  // Avatar component'i
   const UserAvatar = ({
     name,
     className = "",
@@ -184,7 +182,6 @@ const AdminSidebar = ({
     );
   };
 
-  // Server-side render için basit görünüm
   if (!mounted) {
     return (
       <aside className="fixed lg:relative z-30 h-full bg-gray-900 shadow-lg w-64">

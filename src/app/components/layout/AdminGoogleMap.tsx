@@ -12,10 +12,9 @@ const options = {
   zoomControl: true,
 };
 
-// Harita boyutunu düzelt - 100vh yerine sabit yükseklik
 const mapContainerStyle = {
   width: "100%",
-  height: "500px", // Sabit yükseklik
+  height: "500px",
 };
 
 const center = {
@@ -23,7 +22,21 @@ const center = {
   lng: 35.2433,
 };
 
-export default function AdminGoogleMaps({ markers, setMarkers }: any) {
+interface MarkerType {
+  lat: number;
+  lng: number;
+  time?: Date;
+}
+
+interface AdminGoogleMapsProps {
+  markers: MarkerType[];
+  setMarkers: (markers: MarkerType[]) => void;
+}
+
+export default function AdminGoogleMaps({
+  markers,
+  setMarkers,
+}: AdminGoogleMapsProps) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: "AIzaSyDL9J82iDhcUWdQiuIvBYa0t5asrtz3Swk",
     libraries,
@@ -33,14 +46,15 @@ export default function AdminGoogleMaps({ markers, setMarkers }: any) {
   const mapRef = React.useRef<google.maps.Map | null>(null);
 
   const onMapClick = React.useCallback(
-    (e: any) => {
-      setMarkers([
-        {
+    (e: google.maps.MapMouseEvent) => {
+      if (e.latLng) {
+        const newMarker: MarkerType = {
           lat: e.latLng.lat(),
           lng: e.latLng.lng(),
           time: new Date(),
-        },
-      ]);
+        };
+        setMarkers([newMarker]);
+      }
     },
     [setMarkers]
   );
@@ -50,7 +64,7 @@ export default function AdminGoogleMaps({ markers, setMarkers }: any) {
   }, []);
 
   const panTo = React.useCallback(
-    ({ lat, lng }: any) => {
+    ({ lat, lng }: { lat: number; lng: number }) => {
       if (mapRef.current) {
         mapRef.current.panTo({ lat, lng });
         mapRef.current.setZoom(14);
@@ -66,6 +80,19 @@ export default function AdminGoogleMaps({ markers, setMarkers }: any) {
     [setMarkers]
   );
 
+  const validMarkers = markers.filter(
+    (marker) =>
+      marker &&
+      typeof marker.lat === "number" &&
+      typeof marker.lng === "number" &&
+      !isNaN(marker.lat) &&
+      !isNaN(marker.lng) &&
+      marker.lat >= -90 &&
+      marker.lat <= 90 &&
+      marker.lng >= -180 &&
+      marker.lng <= 180
+  );
+
   if (loadError) return <div>Error loading maps</div>;
   if (!isLoaded) return <div>Loading...</div>;
 
@@ -77,7 +104,7 @@ export default function AdminGoogleMaps({ markers, setMarkers }: any) {
         <Locate panTo={panTo} />
       </div>
 
-      {/* Harita Container - Taşmayı önleyen stiller */}
+      {/* Harita Container */}
       <div
         className="relative rounded-lg overflow-hidden border border-gray-300 shadow-sm"
         style={{ height: "324px" }}
@@ -86,14 +113,22 @@ export default function AdminGoogleMaps({ markers, setMarkers }: any) {
           id="map"
           mapContainerStyle={mapContainerStyle}
           zoom={8}
-          center={center}
+          center={
+            validMarkers.length > 0
+              ? { lat: validMarkers[0].lat, lng: validMarkers[0].lng }
+              : center
+          }
           options={options}
           onClick={onMapClick}
           onLoad={onMapLoad}
         >
-          {markers.map((marker: any) => (
+          {validMarkers.map((marker, index) => (
             <Marker
-              key={`${marker.lat}-${marker.lng}`}
+              key={
+                marker.time
+                  ? `${marker.lat}-${marker.lng}-${marker.time.getTime()}`
+                  : `marker-${index}`
+              }
               position={{ lat: marker.lat, lng: marker.lng }}
             />
           ))}
@@ -103,7 +138,11 @@ export default function AdminGoogleMaps({ markers, setMarkers }: any) {
   );
 }
 
-function Locate({ panTo }: any) {
+function Locate({
+  panTo,
+}: {
+  panTo: (coords: { lat: number; lng: number }) => void;
+}) {
   return (
     <button
       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium whitespace-nowrap flex items-center gap-2 justify-center"
@@ -115,7 +154,12 @@ function Locate({ panTo }: any) {
               lng: position.coords.longitude,
             });
           },
-          () => null
+          () => null,
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0,
+          }
         );
       }}
     >
@@ -125,7 +169,11 @@ function Locate({ panTo }: any) {
   );
 }
 
-function Search({ panTo }: any) {
+function Search({
+  panTo,
+}: {
+  panTo: (coords: { lat: number; lng: number }) => void;
+}) {
   const {
     ready,
     value,
@@ -134,7 +182,7 @@ function Search({ panTo }: any) {
     clearSuggestions,
   } = usePlacesAutocomplete({
     requestOptions: {
-      location: { lat: () => 43.6532, lng: () => -79.3832 } as any,
+      location: new google.maps.LatLng(38.9637, 35.2433),
       radius: 100 * 1000,
     },
     debounce: 300,
@@ -142,12 +190,12 @@ function Search({ panTo }: any) {
 
   const [showSuggestions, setShowSuggestions] = React.useState(false);
 
-  const handleInput = (e: any) => {
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
     setShowSuggestions(true);
   };
 
-  const handleSelect = async (address: any) => {
+  const handleSelect = async (address: string) => {
     setValue(address, false);
     clearSuggestions();
     setShowSuggestions(false);
@@ -185,7 +233,7 @@ function Search({ panTo }: any) {
 
       {showSuggestions && status === "OK" && (
         <div className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
-          {data.map(({ place_id, description }: any) => (
+          {data.map(({ place_id, description }) => (
             <div
               key={place_id}
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"

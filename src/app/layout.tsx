@@ -3,10 +3,9 @@ import { Inter } from "next/font/google";
 import ClientProviders from "./providers/ClientProviders";
 import "./globals.css";
 
-// Inter fontunu düzgün şekilde yapılandırın
 const inter = Inter({
   subsets: ["latin"],
-  display: "swap", // Bu satırı ekleyin
+  display: "swap",
 });
 
 export const metadata: Metadata = {

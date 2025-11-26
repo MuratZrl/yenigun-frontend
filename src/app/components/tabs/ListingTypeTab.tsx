@@ -9,7 +9,7 @@ interface ListingTypeTabProps {
   secondStep: StepState;
   setSecondStep: (step: StepState) => void;
   onBack: () => void;
-  onNext?: () => void; // Yeni prop eklendi
+  onNext?: () => void;
 }
 
 export default function ListingTypeTab({
@@ -20,13 +20,11 @@ export default function ListingTypeTab({
   onNext,
 }: ListingTypeTabProps) {
   const handleListingSelect = (item: string) => {
-    // Önce seçimi yap
     setSecondStep({
       ...secondStep,
       selected: { isSelect: true, value: item },
     });
 
-    // 300ms sonra otomatik olarak bir sonraki tab'e geç
     setTimeout(() => {
       if (onNext) {
         onNext();

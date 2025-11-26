@@ -10,7 +10,7 @@ interface CategoryTabProps {
   thirdStep: StepState;
   setThirdStep: (step: StepState) => void;
   onBack: () => void;
-  onNext?: () => void; // Yeni prop eklendi
+  onNext?: () => void;
 }
 
 export default function CategoryTab({
@@ -22,13 +22,11 @@ export default function CategoryTab({
   onNext,
 }: CategoryTabProps) {
   const handleCategorySelect = (item: string) => {
-    // Önce seçimi yap
     setThirdStep({
       ...thirdStep,
       selected: { isSelect: true, value: item },
     });
 
-    // 300ms sonra otomatik olarak bir sonraki tab'e geç
     setTimeout(() => {
       if (onNext) {
         onNext();

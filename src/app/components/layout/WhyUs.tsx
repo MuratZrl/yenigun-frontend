@@ -4,7 +4,6 @@ import { Poppins } from "next/font/google";
 import { motion, useInView, Variants } from "framer-motion";
 import dynamic from "next/dynamic";
 
-// Dynamic import for CountUp to avoid SSR issues
 const CountUp = dynamic(() => import("react-countup"), {
   ssr: false,
   loading: () => <span>0</span>,

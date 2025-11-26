@@ -106,7 +106,7 @@ export default function OtherInfoTab({
               }
               onChange={onCustomerChange}
               placeholder="Müşteri seçin"
-              menuPortalTarget={document.body} // Bu prop'u ekleyin
+              menuPortalTarget={document.body}
               styles={{
                 control: (base) => ({
                   ...base,
@@ -118,7 +118,7 @@ export default function OtherInfoTab({
                 menu: (base) => ({
                   ...base,
                   backgroundColor: "white",
-                  zIndex: 9999, // Menu için z-index
+                  zIndex: 9999,
                 }),
                 menuList: (base) => ({
                   ...base,
@@ -127,7 +127,7 @@ export default function OtherInfoTab({
                 }),
                 menuPortal: (base) => ({
                   ...base,
-                  zIndex: 9999, // Menu portal için z-index
+                  zIndex: 9999,
                 }),
                 option: (base, state) => ({
                   ...base,

@@ -15,7 +15,6 @@ const PoppinsFont = Poppins({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-// Swiper instance için tip tanımı
 interface SwiperInstance {
   swiper?: {
     slidePrev: () => void;

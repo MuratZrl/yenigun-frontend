@@ -6,7 +6,7 @@ import { StepState } from "@/app/types/property";
 interface PropertyTypeTabProps {
   firstStep: StepState;
   setFirstStep: (step: StepState) => void;
-  onNext?: () => void; // Yeni prop eklendi
+  onNext?: () => void;
 }
 
 export default function PropertyTypeTab({
@@ -15,13 +15,11 @@ export default function PropertyTypeTab({
   onNext,
 }: PropertyTypeTabProps) {
   const handlePropertySelect = (item: any) => {
-    // Önce seçimi yap
     setFirstStep({
       ...firstStep,
       selected: { isSelect: true, value: item.value },
     });
 
-    // 300ms sonra otomatik olarak bir sonraki tab'e geç
     setTimeout(() => {
       if (onNext) {
         onNext();

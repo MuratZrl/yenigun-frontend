@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Poppins } from "next/font/google";
-import { Timer, ArrowRight, Home } from "lucide-react";
+import { Timer, ArrowRight, Home, X } from "lucide-react";
 import api from "@/app/lib/api";
 import { Notification } from "@/app/types/notification";
 
@@ -91,7 +91,7 @@ const Popup = () => {
               whileTap={{ scale: 0.9 }}
               aria-label="Close popup"
             >
-              <Timer className="w-5 h-5" />
+              <X className="w-5 h-5" />
             </motion.button>
 
             <div className="h-full flex flex-col">

@@ -31,11 +31,9 @@ const SendMessage = ({ open, setOpen, users, type, allUsers }: any) => {
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    // Form gönderme işlemleri buraya eklenecek
     console.log("Form gönderildi:", formData);
   };
 
-  // Modal açık değilse render etme
   if (!open) return null;
 
   return (

@@ -172,7 +172,6 @@ const CreateUserModal = ({ open, setOpen, cookies }: any) => {
     setLoading(true);
 
     try {
-      // Telefon numaralarını temizle
       const cleanedPhones = newUser.phones.map((phone: any) => ({
         ...phone,
         phone: cleanPhoneNumber(phone.phone),
@@ -196,14 +195,13 @@ const CreateUserModal = ({ open, setOpen, cookies }: any) => {
             `${newUser.name || ""} ${newUser.lastname || ""}`.trim() || "",
         }));
 
-      // Backend'e gönderilecek veriyi hazırla - BOŞLUK KARAKTERİ KULLAN
       const backendData = {
         name: newUser.name || "",
         surname: newUser.lastname || "",
         gender: newUser.gender.selected === "Erkek" ? "male" : "female",
         status: newUser.status.selected || "",
         mail: {
-          mail: newUser.email || " ", // ⚠️ Boş string yerine boşluk
+          mail: newUser.email || " ",
           isAbleToSendMail: true,
         },
         phones:
@@ -216,14 +214,14 @@ const CreateUserModal = ({ open, setOpen, cookies }: any) => {
                   ownerFullName: "",
                 },
               ],
-        tcNumber: newUser.turkish_id || " ", // ⚠️ Boş string yerine boşluk
-        mernisNo: newUser.mernis_no || " ", // ⚠️ Boş string yerine boşluk
+        tcNumber: newUser.turkish_id || " ",
+        mernisNo: newUser.mernis_no || " ",
         country: "Türkiye",
         city: newUser.province || "",
         county: newUser.district || "",
         neighbourhood: newUser.quarter || "",
-        fulladdress: newUser.address || " ", // ⚠️ Boş string yerine boşluk
-        ideasAboutCustomer: newUser.note || " ", // ⚠️ Boş string yerine boşluk
+        fulladdress: newUser.address || " ",
+        ideasAboutCustomer: newUser.note || " ",
         ownerUrl: newUser.owner_url || "",
       };
 
@@ -242,7 +240,6 @@ const CreateUserModal = ({ open, setOpen, cookies }: any) => {
 
       toast.success("Kullanıcı başarıyla oluşturuldu.");
 
-      // Resim yükleme
       if (newUser.image) {
         const formData = new FormData();
         formData.append("uid", response.data.data.uid);
@@ -263,7 +260,6 @@ const CreateUserModal = ({ open, setOpen, cookies }: any) => {
 
       handleClose();
 
-      // Sayfayı yenile
       setTimeout(() => {
         window.location.reload();
       }, 1000);
