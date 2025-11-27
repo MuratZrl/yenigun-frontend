@@ -17,13 +17,14 @@ import { useEffect } from "react";
 import HeroSection from "@/app/components/layout/Hero";
 import Popup from "@/app/components/PopUp";
 import Header from "@/app/components/Header";
+import api from "./lib/api";
 
 export default function Home() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    axios
-      .get(process.env.NEXT_PUBLIC_BACKEND_API + "/advert/adverts")
+    api
+      .get("/advert/adverts")
       .then((response) => {
         console.log(response.data.data);
         setData(response.data.data);
