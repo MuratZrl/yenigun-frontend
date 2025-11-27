@@ -59,6 +59,8 @@ import { type FormData, StepState, ImageItem } from "@/app/types/property";
 import api from "@/app/lib/api";
 import AdminLayout from "@/app/components/layout/AdminLayout";
 import router from "next/router";
+import Customer from "@/app/types/customers";
+import { Advisor } from "@/app/types/advert";
 
 const SimpleInput = React.memo(
   ({
