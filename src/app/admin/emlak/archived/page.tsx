@@ -682,7 +682,10 @@ const Emlak = () => {
                       {/* Content Section */}
                       <div className="p-4">
                         {/* Title */}
-                        <Link href={`/ads/${ad.uid}`} className="block mb-2">
+                        <Link
+                          href={`/admin/emlak/archived/${ad.uid}`}
+                          className="block mb-2"
+                        >
                           <h3 className="font-semibold text-gray-900 line-clamp-2 hover:text-custom-orange transition-colors">
                             {ad.title}
                           </h3>
