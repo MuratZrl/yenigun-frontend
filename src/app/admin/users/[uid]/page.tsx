@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import AdminLayout from "@/app/components/layout/AdminLayout";
+import api from "@/app/lib/api";
 
 interface Customer {
   _id: string;
@@ -93,15 +94,7 @@ const DetailCustomer = () => {
           return;
         }
 
-        // Müşteri bilgilerini getir
-        const customerResponse = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/customers/${uid}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const customerResponse = await api.get(`/admin/customers/${uid}`);
 
         if (customerResponse.data.status !== 200) {
           setError("Müşteri bulunamadı");
@@ -110,14 +103,8 @@ const DetailCustomer = () => {
 
         const customerData = customerResponse.data.data;
 
-        // Müşteriye ait ilanları getir
-        const advertsResponse = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/customers/${uid}/adverts?sortBy=created&sortOrder=desc`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+        const advertsResponse = await api.get(
+          `/admin/customers/${uid}/adverts?sortBy=created&sortOrder=desc`
         );
 
         const customerAdverts = advertsResponse.data.data || [];

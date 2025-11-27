@@ -62,6 +62,9 @@ export interface AdvertData {
   created: Created;
   photos: string[];
   active: boolean;
+  categoryId:string;
+  subcategoryId:string;
+  featureValues:[];
 }
 
 export interface SimilarAd {

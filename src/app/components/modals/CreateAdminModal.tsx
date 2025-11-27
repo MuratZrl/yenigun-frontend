@@ -2,6 +2,7 @@ import { Poppins } from "next/font/google";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { X } from "lucide-react";
+import api from "@/app/lib/api";
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
@@ -64,50 +65,40 @@ const CreateAdmin = ({ open, setOpen, newUser, setNewUser, cookies }: any) => {
 
     const cleanedGsmNumber = cleanPhoneNumber(newUser.gsmNumber);
 
-    axios
-      .post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/create-admin",
-        {
-          name: newUser.name,
-          surname: newUser.surname,
-          mail: newUser.mail,
-          gender: newUser.gender === "Erkek" ? "male" : "female",
-          gsmNumber: cleanedGsmNumber,
-          password: newUser.password,
-          role: newUser.role,
-          link: newUser.link,
-          birth: {
-            day: new Date(newUser.birthDate).getDate(),
-            month: new Date(newUser.birthDate).getMonth() + 1,
-            year: new Date(newUser.birthDate).getFullYear(),
-          },
+    api
+      .post("/admin/create-admin", {
+        name: newUser.name,
+        surname: newUser.surname,
+        mail: newUser.mail,
+        gender: newUser.gender === "Erkek" ? "male" : "female",
+        gsmNumber: cleanedGsmNumber,
+        password: newUser.password,
+        role: newUser.role,
+        link: newUser.link,
+        birth: {
+          day: new Date(newUser.birthDate).getDate(),
+          month: new Date(newUser.birthDate).getMonth() + 1,
+          year: new Date(newUser.birthDate).getFullYear(),
         },
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      )
+      })
       .then((res) => {
         toast.success("Yetkili başarıyla oluşturuldu.");
         if (newUser.image === "") return;
+
         const formData = new FormData();
         formData.append("uid", res.data.data.uid);
         formData.append("image", newUser.image);
-        axios.post(
-          process.env.NEXT_PUBLIC_BACKEND_API + "/admin/upload-user-image",
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${cookies.token}`,
-            },
-          }
-        );
+
+        api.post("/admin/upload-user-image", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
       })
       .catch((err) => {
         toast.error(err.response.data.message);
       });
+
     handleClose();
   };
 

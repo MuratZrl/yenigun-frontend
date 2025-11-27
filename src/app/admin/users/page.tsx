@@ -39,6 +39,7 @@ import AreYouSure from "@/app/components/AreYouSure";
 import formatPhoneNumber from "@/app/utils/formatPhoneNumber";
 import { useRouter } from "next/navigation";
 import { Pagination, MobilePagination } from "@/app/components/Pagination";
+import api from "@/app/lib/api";
 
 const UserTableRow = ({
   user,
@@ -557,7 +558,6 @@ const Users = () => {
     user: null,
   }) as any;
 
-  // Auth kontrolü
   useEffect(() => {
     const checkAuth = () => {
       const token = cookies.token;
@@ -572,7 +572,6 @@ const Users = () => {
     checkAuth();
   }, [cookies.token, router]);
 
-  // Tüm veriyi çek
   const fetchAllCustomers = async () => {
     try {
       if (!cookies.token) {
@@ -587,20 +586,14 @@ const Users = () => {
       let hasMore = true;
 
       while (hasMore) {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/customers?page=${page}&limit=100&sortBy=created&sortOrder=desc`,
-          {
-            headers: {
-              Authorization: `Bearer ${cookies.token}`,
-            },
-          }
+        const response = await api.get(
+          `/admin/customers?page=${page}&limit=100&sortBy=created&sortOrder=desc`
         );
 
         if (response.data.success && response.data.data.length > 0) {
           allData = [...allData, ...response.data.data];
           page++;
 
-          // Eğer daha fazla sayfa varsa devam et
           if (response.data.data.length < 100) {
             hasMore = false;
           }
@@ -634,7 +627,6 @@ const Users = () => {
     }
   }, [authChecked, cookies.token]);
 
-  // Sayfalama işlemi
   useEffect(() => {
     const startIndex = pagination.page * pagination.rowsPerPage;
     const endIndex = startIndex + pagination.rowsPerPage;
@@ -690,7 +682,7 @@ const Users = () => {
     setPagination((prev) => ({
       ...prev,
       rowsPerPage: newRowsPerPage,
-      page: 0, // Sayfa başına kayıt değişince ilk sayfaya dön
+      page: 0,
     }));
   };
 
@@ -715,21 +707,12 @@ const Users = () => {
 
   const handleConfirmDelete = () => {
     const { uid } = deleteConfirm;
-    axios
-      .post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/delete-customer",
-        {
-          uid,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      )
+    api
+      .post("/admin/delete-customer", {
+        uid,
+      })
       .then((res) => {
         toast.success(res.data.message);
-        // Silme işleminden sonra veriyi yeniden çek
         fetchAllCustomers();
         setDeleteConfirm({ open: false, uid: null, user: null });
       })
@@ -792,7 +775,6 @@ const Users = () => {
     uid: "",
   } as any);
 
-  // Hesaplamalar
   const startIndex = pagination.page * pagination.rowsPerPage;
   const endIndex = Math.min(
     startIndex + pagination.rowsPerPage,

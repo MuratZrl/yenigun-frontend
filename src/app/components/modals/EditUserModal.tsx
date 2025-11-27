@@ -9,6 +9,7 @@ const PoppinsFont = Poppins({
 import Select from "react-select";
 import axios from "axios";
 import { toast } from "react-toastify";
+import api from "@/app/lib/api";
 
 const App = ({ open, setOpen, user, cookies }: any) => {
   const [newUser, setNewUser] = useState({
@@ -180,36 +181,28 @@ const App = ({ open, setOpen, user, cookies }: any) => {
       })),
     ];
 
-    axios
-      .post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/update-customer",
-        {
-          uid: newUser.uid,
-          name: newUser.name,
-          surname: newUser.lastname,
-          gender: newUser.gender === "Erkek" ? "male" : "female",
-          status: newUser.status,
-          mail: {
-            mail: newUser.email || "",
-            isAbledToSendMail: true,
-          },
-          phones: lastPhone,
-          tcNumber: newUser.turkish_id || "",
-          mernisNo: newUser.mernis_no || "",
-          country: "Türkiye",
-          city: newUser.district,
-          owner_url: newUser.owner_url,
-          county: newUser.province,
-          neighbourhood: newUser.quarters,
-          fulladdress: newUser.address || "",
-          ideasAboutCustomer: newUser.comment || "",
+    api
+      .post("/admin/update-customer", {
+        uid: newUser.uid,
+        name: newUser.name,
+        surname: newUser.lastname,
+        gender: newUser.gender === "Erkek" ? "male" : "female",
+        status: newUser.status,
+        mail: {
+          mail: newUser.email || "",
+          isAbledToSendMail: true,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      )
+        phones: lastPhone,
+        tcNumber: newUser.turkish_id || "",
+        mernisNo: newUser.mernis_no || "",
+        country: "Türkiye",
+        city: newUser.district,
+        owner_url: newUser.owner_url,
+        county: newUser.province,
+        neighbourhood: newUser.quarters,
+        fulladdress: newUser.address || "",
+        ideasAboutCustomer: newUser.comment || "",
+      })
       .then((res) => {
         toast.success("Kullanıcı başarıyla güncellendi.");
         handleClose();

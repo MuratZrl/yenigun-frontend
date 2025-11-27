@@ -11,6 +11,7 @@ import AdminLayout from "@/app/components/layout/AdminLayout";
 import { toast } from "react-toastify";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import api from "@/app/lib/api";
 
 interface Notification {
   id?: string;
@@ -31,7 +32,6 @@ const NotificationManagement = () => {
   const [hasActiveNotification, setHasActiveNotification] = useState(false);
 
   useEffect(() => {
-    // Authentication kontrolü
     if (!cookies.token) {
       router.push("/login");
       return;
@@ -42,14 +42,7 @@ const NotificationManagement = () => {
 
   const fetchActiveNotification = async () => {
     try {
-      const response = await axios.get(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/active-notification",
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      );
+      const response = await api.get("/admin/active-notification");
       if (response.data.data) {
         setNotification(response.data.data);
         setHasActiveNotification(true);
@@ -108,16 +101,11 @@ const NotificationManagement = () => {
         ? "/admin/update-notification-with-image"
         : "/admin/create-notification-with-image";
 
-      await axios.post(
-        process.env.NEXT_PUBLIC_BACKEND_API + endpoint,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      await api.post(endpoint, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       toast.success(
         hasActiveNotification
@@ -156,15 +144,7 @@ const NotificationManagement = () => {
 
     setLoading(true);
     try {
-      await axios.post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/delete-notification",
-        { id: notification.id },
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      );
+      await api.post("/admin/delete-notification", { id: notification.id });
 
       toast.success("Bildirim başarıyla silindi!", {
         position: "top-right",
@@ -198,7 +178,6 @@ const NotificationManagement = () => {
     setPreviewImage(null);
   };
 
-  // Eğer token yoksa veya yükleniyorsa loading göster
   if (!cookies.token || loading) {
     return (
       <AdminLayout>

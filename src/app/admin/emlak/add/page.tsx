@@ -963,15 +963,7 @@ export default function AddE() {
     );
 
     try {
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/create-advert`,
-        requestData,
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      );
+      const res = await api.post("/admin/create-advert", requestData);
 
       console.log("✅ İlan oluşturma yanıtı:", res.data);
 
@@ -1056,15 +1048,7 @@ export default function AddE() {
         return;
       }
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/upload-advert-images`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      );
+      const response = await api.post("/admin/upload-advert-images", formData);
 
       console.log("✅ Resim yükleme başarılı:", response.data);
       return response;
@@ -1098,15 +1082,7 @@ export default function AddE() {
         console.log(pair[0] + ": ", pair[1]);
       });
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/upload-advert-video`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      );
+      const response = await axios.post("/admin/upload-advert-video", formData);
 
       console.log("✅ Video yükleme başarılı:", response.data);
       return response;

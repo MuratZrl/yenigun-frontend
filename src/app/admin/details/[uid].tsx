@@ -5,6 +5,7 @@ import { GetServerSideProps } from "next";
 import { ArrowLeft, Mail, Phone, Calendar, User, Home } from "lucide-react";
 import { motion } from "framer-motion";
 import AdminLayout from "@/app/components/layout/AdminLayout";
+import api from "@/app/lib/api";
 
 interface Advisor {
   name: string;
@@ -307,14 +308,7 @@ export const getServerSideProps: GetServerSideProps<any> = async (context) => {
   const token = context.req.cookies.token;
 
   try {
-    const { data } = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_API}/user/advisor/${uid}/stats`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const { data } = await api.get(`/user/advisor/${uid}/stats`);
 
     if (data.status !== 200) {
       return {

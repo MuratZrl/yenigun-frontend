@@ -6,6 +6,7 @@ import { Poppins } from "next/font/google";
 import Select from "react-select";
 import { useCookies } from "react-cookie";
 import { X, Filter, Trash2 } from "lucide-react";
+import api from "@/app/lib/api";
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
@@ -25,12 +26,8 @@ const FilterAdminAds = ({
   const [advisors, setAdvisors] = useState([]);
 
   useEffect(() => {
-    axios
-      .get(process.env.NEXT_PUBLIC_BACKEND_API + "/admin/customers", {
-        headers: {
-          Authorization: `Bearer ${cookies.token}`,
-        },
-      })
+    api
+      .get("/admin/customers")
       .then((res) => {
         setCustomers(res.data.data);
       })
@@ -40,12 +37,9 @@ const FilterAdminAds = ({
           window.location.href = "/admin/emlak";
         }, 2000);
       });
-    axios
-      .get(process.env.NEXT_PUBLIC_BACKEND_API + "/admin/users", {
-        headers: {
-          Authorization: `Bearer ${cookies.token}`,
-        },
-      })
+
+    api
+      .get("/admin/users")
       .then((res) => {
         setAdvisors(res.data.data);
       })

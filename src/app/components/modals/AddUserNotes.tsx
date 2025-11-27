@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import Select from "react-select";
 import { X, Plus, ArrowLeft, Trash2 } from "lucide-react";
+import api from "@/app/lib/api";
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
@@ -25,13 +26,11 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
 
   useEffect(() => {
     if (!data.isOpen) return;
+
     setNoteList(data.ad.userNotes);
-    axios
-      .get(process.env.NEXT_PUBLIC_BACKEND_API + "/admin/customers", {
-        headers: {
-          Authorization: `Bearer ${cookies.token}`,
-        },
-      })
+
+    api
+      .get("/admin/customers")
       .then((res) => {
         console.log(res.data.data);
         setCustomers(res.data.data);
@@ -45,30 +44,23 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
     e.preventDefault();
     const user = customers.find((item: any) => item.uid === selectedCustomer);
     const adUid = data.ad.uid;
-    axios
-      .post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/update-user-notes",
-        {
-          uid: adUid.toString(),
-          userNotes: [
-            ...data.ad.userNotes,
-            {
-              user: {
-                name: user.name + " " + user.surname,
-                email: user.mail.mail,
-                address: user.fullAddress,
-                phone: user.phones[0].number,
-              },
-              note: note,
+
+    api
+      .post("/admin/update-user-notes", {
+        uid: adUid.toString(),
+        userNotes: [
+          ...data.ad.userNotes,
+          {
+            user: {
+              name: user.name + " " + user.surname,
+              email: user.mail.mail,
+              address: user.fullAddress,
+              phone: user.phones[0].number,
             },
-          ],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
+            note: note,
           },
-        }
-      )
+        ],
+      })
       .then((res) => {
         console.log(res.data);
         toast.success("Not Başarıyla eklendi.");
@@ -97,19 +89,12 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
   const handleDelete = (item: any, index: number) => () => {
     const adUid = data.ad.uid;
     const userNotes = noteList.filter((note: any, i: number) => i !== index);
-    axios
-      .post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/update-user-notes",
-        {
-          uid: adUid.toString(),
-          userNotes: userNotes,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      )
+
+    api
+      .post("/admin/update-user-notes", {
+        uid: adUid.toString(),
+        userNotes: userNotes,
+      })
       .then((res) => {
         console.log(res.data);
         toast.success("Not Başarıyla Silindi.");

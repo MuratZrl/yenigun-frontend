@@ -569,7 +569,7 @@ const Users = () => {
 
   const handlePageChange = (newPage: number) => {
     setPagination((prev) => ({ ...prev, page: newPage }));
-    fetchCustomers(newPage + 1, pagination.rowsPerPage); // UI 0-based, API 1-based
+    fetchCustomers(newPage + 1, pagination.rowsPerPage);
   };
 
   const handleRowsPerPageChange = (

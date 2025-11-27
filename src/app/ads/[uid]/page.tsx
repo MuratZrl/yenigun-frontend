@@ -4,9 +4,6 @@ import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import SimilarAds from "@/app/components/SimilarAds";
 import GoToTop from "@/app/components/GoToTop";
-import GoogleMap from "google-maps-react-markers";
-import Marker from "@/app/components/Marker";
-import mapOptions from "@/app/mapOptions.json";
 import formatPhoneNumber from "@/app/utils/formatPhoneNumber";
 import api from "@/app/lib/api";
 import { AdvertData, SimilarAd } from "@/app/types/advert";
@@ -26,6 +23,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import MapComponent from "@/app/components/MapComponnet";
+import CategorySection from "@/app/components/CategorySection";
 
 const DetailRow = ({
   label,
@@ -342,7 +340,6 @@ async function getAdvertData(
   } catch (error) {
     console.error("İlan detayı çekilirken hata:", error);
 
-    // Hata tipini kontrol et
     if (error instanceof Error) {
       console.error("Hata mesajı:", error.message);
     } else if (typeof error === "string") {
@@ -374,7 +371,6 @@ function AdvertDetail({
   const [videoLoading, setVideoLoading] = useState(true);
   const [copied2, setCopied2] = useState(false);
 
-  // Sayfa başlığını dinamik olarak değiştir
   useEffect(() => {
     if (data?.title) {
       document.title = `${data.title} - Yenigün Emlak`;
@@ -508,18 +504,6 @@ function AdvertDetail({
     const { province, district, quarter, full_address } = data.address;
     const parts = [quarter, full_address, district, province].filter(Boolean);
     return parts.join(", ");
-  };
-
-  // Breadcrumb için güvenli adres parçaları
-  const getBreadcrumbItems = () => {
-    if (!data.address) return [];
-
-    return [
-      data.steps.first,
-      data.steps.second,
-      data.address.province,
-      data.address.district,
-    ].filter(Boolean);
   };
 
   return (
@@ -887,6 +871,12 @@ function AdvertDetail({
               </div>
             </div>
 
+            <CategorySection
+              categoryId={data.categoryId}
+              subcategoryId={data.subcategoryId}
+              featureValues={data.featureValues}
+            />
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Açıklama</h2>
               <div
@@ -1048,12 +1038,12 @@ function AdvertDetail({
         >
           <div
             className="relative w-full h-full flex flex-col items-center justify-center p-4"
-            onClick={(e) => e.stopPropagation()} // Buraya stopPropagation ekleyin
+            onClick={(e) => e.stopPropagation()}
           >
             <button
               className="absolute top-4 right-4 z-50 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-3 backdrop-blur-sm"
               onClick={(e) => {
-                e.stopPropagation(); // Buraya stopPropagation ekleyin
+                e.stopPropagation();
                 setZoomPhoto({ show: false, photo: "", level: 1 });
               }}
             >
@@ -1125,7 +1115,6 @@ export default function AdvertPage({
 }: {
   params: Promise<{ uid: string }>;
 }) {
-  // params Promise'ini çöz
   const resolvedParams = use(params);
   const uid = resolvedParams.uid;
 
@@ -1140,7 +1129,7 @@ export default function AdvertPage({
     const fetchAdvertData = async () => {
       try {
         setLoading(true);
-        const data = await getAdvertData(uid); // uid'yi kullan
+        const data = await getAdvertData(uid);
         setAdvertData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Bir hata oluştu");

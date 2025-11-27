@@ -1114,16 +1114,7 @@ export default function EditE() {
         JSON.stringify(requestData, null, 2)
       );
 
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/update-advert`,
-        requestData,
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const res = await api.post("/admin/update-advert", requestData);
 
       console.log("✅ Güncelleme yanıtı:", res.data);
 
@@ -1162,15 +1153,7 @@ export default function EditE() {
           console.log(pair[0] + ": ", pair[1]);
         });
 
-        await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/update-advert-images`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${cookies.token}`,
-            },
-          }
-        );
+        await api.post("/admin/update-advert-images", formData);
 
         toast.dismiss(imageToast);
         toast.success("✅ Resimler başarıyla güncellendi!");
@@ -1195,15 +1178,7 @@ export default function EditE() {
           fileType: videoFile.type,
         });
 
-        await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/update-advert-video`,
-          videoForm,
-          {
-            headers: {
-              Authorization: `Bearer ${cookies.token}`,
-            },
-          }
-        );
+        await api.post("/admin/update-advert-video", videoForm);
 
         toast.dismiss(videoToast);
         toast.success("✅ Video başarıyla güncellendi!");

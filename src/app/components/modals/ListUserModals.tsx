@@ -9,6 +9,7 @@ const PoppinsFont = Poppins({
 });
 import axios from "axios";
 import { toast } from "react-toastify";
+import api from "@/app/lib/api";
 
 const App = ({ open, setOpen, user, cookies }: any) => {
   const [list, setList] = useState([]) as any;
@@ -19,13 +20,8 @@ const App = ({ open, setOpen, user, cookies }: any) => {
       const fetchUserAdverts = async () => {
         try {
           setLoading(true);
-          const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_API}/admin/customers/${user.uid}/adverts?sortBy=created&sortOrder=desc`,
-            {
-              headers: {
-                Authorization: `Bearer ${cookies.token}`,
-              },
-            }
+          const response = await api.get(
+            `/admin/customers/${user.uid}/adverts?sortBy=created&sortOrder=desc`
           );
 
           if (response.data.success) {
@@ -45,7 +41,7 @@ const App = ({ open, setOpen, user, cookies }: any) => {
 
       fetchUserAdverts();
     }
-  }, [user?.uid, open, cookies.token]);
+  }, [user?.uid, open]);
 
   const handleClose = () => {
     setOpen(false);

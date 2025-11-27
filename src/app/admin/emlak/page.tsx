@@ -30,6 +30,7 @@ import AdminLayout from "@/app/components/layout/AdminLayout";
 import AreYouSure from "@/app/components/AreYouSure";
 import { Pagination, MobilePagination } from "@/app/components/Pagination";
 import { checkAuth, getClientToken } from "@/app/lib/auth";
+import api from "@/app/lib/api";
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
@@ -151,13 +152,8 @@ const Emlak = () => {
 
         while (hasMorePages) {
           try {
-            const response = await axios.get(
-              `https://api.yenigunemlak.com/admin/adverts?sortBy=created&page=${currentPage}&limit=${limit}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${cookies.token}`,
-                },
-              }
+            const response = await api.get(
+              `/admin/adverts?sortBy=created&page=${currentPage}&limit=${limit}`
             );
 
             console.log("API Response:", response.data);
@@ -210,18 +206,10 @@ const Emlak = () => {
     fetchAllAdverts();
   }, [isAuthenticated, cookies.token]);
   const handleDelete = (uid: string) => {
-    axios
-      .post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/delete-advert",
-        {
-          uid: uid,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      )
+    api
+      .post("/admin/delete-advert", {
+        uid: uid,
+      })
       .then((response) => {
         toast.success("İlan başarıyla silindi.");
         setData(
@@ -248,18 +236,10 @@ const Emlak = () => {
   };
 
   const handleChangeActivity = (uid: string) => {
-    axios
-      .post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/change-advert-activity",
-        {
-          uid: uid,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      )
+    api
+      .post("/admin/change-advert-activity", {
+        uid: uid,
+      })
       .then((response) => {
         toast.success("İlan başarıyla güncellendi.");
         const lastV = data.map((ad: Advert) => {
@@ -695,7 +675,8 @@ const Emlak = () => {
                       <div className="flex items-center gap-2 text-gray-600">
                         <Users size={14} className="text-custom-orange" />
                         <span className={ad.advisor.name ? "" : "text-red-500"}>
-                          {ad.advisor.name || "Danışman Yok"}
+                          {ad.advisor.name || "Danışman Yok"}{" "}
+                          {ad.advisor.surname}
                         </span>
                       </div>
                     </div>

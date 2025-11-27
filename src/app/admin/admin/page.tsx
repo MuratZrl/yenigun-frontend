@@ -28,6 +28,7 @@ import AreYouSure from "@/app/components/AreYouSure";
 import formatPhoneNumber from "@/app/utils/formatPhoneNumber";
 import { useRouter } from "next/navigation";
 import { Pagination, MobilePagination } from "@/app/components/Pagination";
+import api from "@/app/lib/api";
 
 const Avatar = ({
   name,
@@ -332,18 +333,9 @@ const Admin = () => {
   const handleConfirmDelete = () => {
     const { uid } = deleteConfirm;
     const newUsers = users.filter((user: any) => user.uid !== uid);
-    axios
-      .post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/delete-admin",
-        {
-          uid,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      )
+
+    api
+      .post("/admin/delete-admin", { uid })
       .then((res) => {
         toast.success(res.data.message);
         setUsers(newUsers);
@@ -363,12 +355,8 @@ const Admin = () => {
     }
     setAuthChecked(true);
 
-    axios
-      .get(process.env.NEXT_PUBLIC_BACKEND_API + "/admin/users", {
-        headers: {
-          Authorization: `Bearer ${cookies.token}`,
-        },
-      })
+    api
+      .get("/admin/users")
       .then((res) => {
         setUsers(res.data.data);
         setListUsers(res.data.data);
@@ -379,7 +367,6 @@ const Admin = () => {
         console.error("Error fetching users:", err);
       });
   }, [cookies.token, router]);
-
   const handleFilterUsers = () => {
     const filteredUsers = users.filter((user: any) => {
       return (

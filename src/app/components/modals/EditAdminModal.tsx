@@ -7,6 +7,7 @@ const PoppinsFont = Poppins({
 import Select from "react-select";
 import axios from "axios";
 import { toast } from "react-toastify";
+import api from "@/app/lib/api";
 
 const EditAdminModal = ({ open, setOpen, user, cookies }: any) => {
   const [newUser, setNewUser] = useState(user) as any;
@@ -89,31 +90,23 @@ const EditAdminModal = ({ open, setOpen, user, cookies }: any) => {
 
     const cleanedGsmNumber = cleanPhoneNumber(newUser.gsmNumber);
 
-    axios
-      .post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/update-admin",
-        {
-          uid: newUser.uid,
-          name: newUser.name,
-          surname: newUser.surname,
-          mail: newUser.mail,
-          birth: {
-            day: newUser.birth.getDate(),
-            month: newUser.birth.getMonth(),
-            year: newUser.birth.getFullYear(),
-          },
-          role: newUser.role,
-          password: newUser.password,
-          gsmNumber: cleanedGsmNumber,
-          link: newUser.link,
-          gender: newUser.gender === "Erkek" ? "male" : "female",
+    api
+      .post("/admin/update-admin", {
+        uid: newUser.uid,
+        name: newUser.name,
+        surname: newUser.surname,
+        mail: newUser.mail,
+        birth: {
+          day: newUser.birth.getDate(),
+          month: newUser.birth.getMonth(),
+          year: newUser.birth.getFullYear(),
         },
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-          },
-        }
-      )
+        role: newUser.role,
+        password: newUser.password,
+        gsmNumber: cleanedGsmNumber,
+        link: newUser.link,
+        gender: newUser.gender === "Erkek" ? "male" : "female",
+      })
       .then((res) => {
         toast.success("Yetkili başarıyla güncellendi.");
         handleClose();
@@ -123,6 +116,7 @@ const EditAdminModal = ({ open, setOpen, user, cookies }: any) => {
         console.log(err);
         handleClose();
       });
+
     setNewUser({
       uid: "",
       profilePicture: "",

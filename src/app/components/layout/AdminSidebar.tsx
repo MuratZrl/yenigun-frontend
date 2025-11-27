@@ -22,6 +22,7 @@ import {
   Send,
   BookA,
 } from "lucide-react";
+import api from "@/app/lib/api";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400"] });
 
@@ -104,12 +105,8 @@ const AdminSidebar = ({
 
   useEffect(() => {
     if (cookie) {
-      axios
-        .get(process.env.NEXT_PUBLIC_BACKEND_API + "/user/auth", {
-          headers: {
-            Authorization: `Bearer ${cookie.token}`,
-          },
-        })
+      api
+        .get("/user/auth")
         .then((res) => {
           setUser(res.data.data.user);
         })

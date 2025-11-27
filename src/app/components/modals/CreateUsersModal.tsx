@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import Select from "react-select";
 import { X, Trash2 } from "lucide-react";
+import api from "@/app/lib/api";
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
@@ -227,16 +228,7 @@ const CreateUserModal = ({ open, setOpen, cookies }: any) => {
 
       console.log("Backend'e gönderilen veri:", backendData);
 
-      const response = await axios.post(
-        process.env.NEXT_PUBLIC_BACKEND_API + "/admin/add-customer",
-        backendData,
-        {
-          headers: {
-            Authorization: `Bearer ${cookies.token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await api.post("/admin/add-customer", backendData);
 
       toast.success("Kullanıcı başarıyla oluşturuldu.");
 
@@ -245,16 +237,11 @@ const CreateUserModal = ({ open, setOpen, cookies }: any) => {
         formData.append("uid", response.data.data.uid);
         formData.append("image", newUser.image);
 
-        await axios.post(
-          process.env.NEXT_PUBLIC_BACKEND_API + "/admin/upload-customer-image",
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${cookies.token}`,
-            },
-          }
-        );
+        await api.post("/admin/upload-customer-image", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
         toast.success("Kullanıcı resmi başarıyla yüklendi");
       }
 

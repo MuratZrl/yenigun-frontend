@@ -32,7 +32,6 @@ import { useRouter } from "next/navigation";
 import { checkAuth } from "@/app/lib/auth";
 import api from "@/app/lib/api";
 
-// Custom Table Components
 const Table = ({
   children,
   className = "",
@@ -219,7 +218,6 @@ const Message = () => {
     },
   ]);
 
-  // Authentication kontrolü
   useEffect(() => {
     const verifyAuth = async () => {
       const authValid = await checkAuth();
@@ -233,7 +231,6 @@ const Message = () => {
     verifyAuth();
   }, [router]);
 
-  // Data fetching
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -396,7 +393,6 @@ const Message = () => {
     setGroups(groups.filter((g) => g.name !== group.name));
   };
 
-  // Sayfalama hesaplamaları
   const startIndex = page * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const paginatedUsers = listUsers.slice(startIndex, endIndex);

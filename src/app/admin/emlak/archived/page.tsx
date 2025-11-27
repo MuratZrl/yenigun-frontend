@@ -144,13 +144,8 @@ const Emlak = () => {
 
         while (hasMorePages) {
           try {
-            const response = await axios.get(
-              `https://api.yenigunemlak.com/admin/adverts?page=${currentPage}&limit=${limit}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${cookies.token}`,
-                },
-              }
+            const response = await api.get(
+              `/admin/adverts?page=${currentPage}&limit=${limit}`
             );
 
             console.log("API Response:", response.data);
