@@ -64,6 +64,7 @@ import {
 import api from "@/app/lib/api";
 import AdminLayout from "@/app/components/layout/AdminLayout";
 import { useParams, useRouter } from "next/navigation";
+import EditOtherInfoTab from "@/app/components/tabs/EditOtherInfoTab";
 
 const SimpleInput = React.memo(
   ({
@@ -1028,6 +1029,8 @@ export default function EditE() {
         ? new Date(fourthStep.contract_date).getTime()
         : Date.now();
 
+      const customerValue = fourthStep.customer;
+
       const feeValue = fourthStep.price?.value || "0";
       const feeType = fourthStep.price?.type || "TL";
 
@@ -1036,6 +1039,7 @@ export default function EditE() {
         "💰 Price değeri backend'e şu şekilde gidiyor:",
         formattedFee
       );
+
       const requestData: any = {
         uid: Number(advertUid),
         steps: {
@@ -1044,7 +1048,7 @@ export default function EditE() {
           third: thirdStep.selected?.value || "",
         },
         title: fourthStep.title || "",
-        customer: Number(fourthStep.customer) || 0,
+        customer: Number(customerValue) || 0,
         contract: {
           no: fourthStep.contract_no || "",
           date: contractDateTimestamp,
@@ -1072,8 +1076,14 @@ export default function EditE() {
           province: fourthStep.province || "",
           district: fourthStep.district || "",
           quarter: fourthStep.quarter || "",
-          full_address: fourthStep.address || "",
-          mapCoordinates: marker && marker[0] ? marker[0].lat : 0,
+          full_address: fourthStep.address as string,
+          mapCoordinates:
+            marker && marker[0]
+              ? {
+                  lat: marker[0].lat || 0,
+                  lng: marker[0].lng || 0,
+                }
+              : { lat: 0, lng: 0 },
           parcel: fourthStep.parsel || "",
         },
         active: isActiveAd,
@@ -1114,6 +1124,12 @@ export default function EditE() {
         JSON.stringify(requestData, null, 2)
       );
 
+      console.log("🔍 Gönderilen customer değeri:", {
+        raw: fourthStep.customer,
+        number: Number(customerValue),
+        type: typeof fourthStep.customer,
+      });
+
       const res = await api.post("/admin/update-advert", requestData);
 
       console.log("✅ Güncelleme yanıtı:", res.data);
@@ -1127,6 +1143,16 @@ export default function EditE() {
       }, 2000);
     } catch (err: any) {
       console.error("❌ İlan güncelleme hatası:", err);
+
+      if (err.response) {
+        console.error("❌ Sunucu yanıtı:", err.response.data);
+        console.error("❌ Status code:", err.response.status);
+        toast.error(
+          `Hata: ${err.response.status} - ${
+            err.response.data?.message || "Bilinmeyen hata"
+          }`
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -1318,7 +1344,7 @@ export default function EditE() {
         );
       case 9:
         return (
-          <OtherInfoTab
+          <EditOtherInfoTab
             fourthStep={fourthStep}
             customers={customers}
             advisors={advisors}

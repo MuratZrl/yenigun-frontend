@@ -12,8 +12,8 @@ import Advisor from "@/app/types/advisor";
 
 interface OtherInfoTabProps {
   fourthStep: FormData;
-  customers: any[];
-  advisors: any[];
+  customers: Customer[];
+  advisors: Advisor[];
   isActiveAd: boolean;
   setIsActiveAd: (active: boolean) => void;
   onCustomerChange: (value: any) => void;
@@ -63,6 +63,23 @@ export default function OtherInfoTab({
   yesNoOptions,
   keyOptions,
 }: OtherInfoTabProps) {
+  const getSelectedCustomer = () => {
+    if (!fourthStep.customer) return null;
+
+    const selectedCustomer = customers.find(
+      (item: Customer) => item.uid?.toString() === fourthStep.customer
+    );
+
+    if (!selectedCustomer) return null;
+
+    return {
+      value: fourthStep.customer,
+      label: `${selectedCustomer.name} ${selectedCustomer.surname} - ${
+        selectedCustomer.phones[0]?.number || "Telefon yok"
+      }`,
+    };
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -84,31 +101,23 @@ export default function OtherInfoTab({
               options={[
                 { value: "", label: "Müşteri Seçin" },
                 ...customers.map((c: Customer) => ({
-                  value: c.uid,
+                  value: c.uid?.toString() || "",
                   label: `${c.name} ${c.surname} - ${
                     c.phones[0]?.number || "Telefon yok"
                   }`,
                 })),
               ]}
-              value={
-                fourthStep.customer
-                  ? {
-                      value: fourthStep.customer,
-                      label: `${
-                        customers.find(
-                          (item: Customer) => item.uid === fourthStep.customer
-                        )?.name
-                      } ${
-                        customers.find(
-                          (item: Customer) => item.uid === fourthStep.customer
-                        )?.surname
-                      }`,
-                    }
-                  : null
-              }
-              onChange={onCustomerChange}
+              value={getSelectedCustomer()}
+              onChange={(selectedOption) => {
+                console.log("🔍 Selected customer option:", selectedOption);
+                const customerValue = selectedOption?.value || "";
+                console.log("🔍 Setting customer to:", customerValue);
+                onCustomerChange(customerValue);
+              }}
               placeholder="Müşteri seçin"
-              menuPortalTarget={document.body}
+              menuPortalTarget={
+                typeof document !== "undefined" ? document.body : null
+              }
               styles={{
                 control: (base) => ({
                   ...base,
@@ -116,6 +125,7 @@ export default function OtherInfoTab({
                   borderRadius: "0.5rem",
                   padding: "0.25rem",
                   backgroundColor: "white",
+                  minHeight: "48px",
                 }),
                 menu: (base) => ({
                   ...base,
@@ -158,7 +168,7 @@ export default function OtherInfoTab({
             options={[
               { value: "", label: "Danışman Seçin" },
               ...advisors.map((a: Advisor) => ({
-                value: a.uid,
+                value: a.uid?.toString() || "",
                 label: `${a.name} ${a.surname}`,
               })),
             ]}
