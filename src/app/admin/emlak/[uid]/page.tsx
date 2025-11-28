@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Category, FeatureValues, Subcategory } from "@/app/types/category";
 import PropertyTypeTab from "@/app/components/tabs/ProppertyTypeTabs";
@@ -11,8 +10,6 @@ import MediaTab from "@/app/components/tabs/MediaTab";
 import LocationTab from "@/app/components/tabs/LocationTab";
 import DetailsTab from "@/app/components/tabs/DetailsTab";
 import FeaturesTab from "@/app/components/tabs/FeaturesTab";
-import OtherInfoTab from "@/app/components/tabs/OtherInfoTab";
-import CategorySelection from "@/app/components/tabs/CategorySelectionTab";
 import {
   MapPin,
   Home,
@@ -31,7 +28,6 @@ import {
   ChevronDown,
   Image as ImageIcon,
   Move,
-  Tag,
   ChevronLeft,
   ChevronRight,
   Edit,
@@ -40,7 +36,6 @@ import { useCookies } from "react-cookie";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import JSONDATA from "@/app/data.json";
-
 import {
   propertyTypes,
   listingTypes,
@@ -314,7 +309,6 @@ export default function EditE() {
     { id: 7, label: "Detaylar", icon: Ruler },
     { id: 8, label: "Özellikler", icon: Star },
     { id: 9, label: "Diğer", icon: Users },
-    { id: 10, label: "Kategori & Özellikler", icon: Tag },
   ];
   useEffect(() => {
     const fetchAdvertData = async () => {
@@ -362,17 +356,18 @@ export default function EditE() {
           selections: propertyCategories,
         });
 
-        const feeValue = advertData.fee
-          ? typeof advertData.fee === "string"
-            ? advertData.fee.split(" ")[0].replace(/\./g, "")
-            : advertData.fee.toString().replace(/\./g, "")
-          : "0";
+        let feeValue = "0";
+        let feeType = "₺";
 
-        const feeType = advertData.fee
-          ? typeof advertData.fee === "string"
-            ? advertData.fee.split(" ")[1] || "TL"
-            : "TL"
-          : "TL";
+        if (advertData.fee) {
+          if (typeof advertData.fee === "string") {
+            const parts = advertData.fee.split(" ");
+            feeValue = parts[0] || "0";
+            feeType = parts[1] || "₺";
+          } else {
+            feeValue = formatNumber(advertData.fee.toString());
+          }
+        }
 
         setFourthStep({
           title: advertData.title || "",
@@ -669,6 +664,7 @@ export default function EditE() {
   const handlePriceValueChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value.replace(/\./g, "");
+
       if (!isNaN(Number(rawValue)) && rawValue.length <= 15) {
         const formattedValue = formatNumber(rawValue);
         updateNestedFourthStep("price", "value", formattedValue);
@@ -1371,18 +1367,7 @@ export default function EditE() {
             keyOptions={keyOptions}
           />
         );
-      case 10:
-        return (
-          <CategorySelection
-            categories={categories}
-            selectedCategory={selectedCategory}
-            selectedSubcategory={selectedSubcategory}
-            featureValues={featureValues}
-            onCategorySelect={handleCategorySelect}
-            onSubcategorySelect={handleSubcategorySelect}
-            onFeatureChange={handleFeatureChange}
-          />
-        );
+
       default:
         return null;
     }

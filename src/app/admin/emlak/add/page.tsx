@@ -330,7 +330,6 @@ export default function AddE() {
     { id: 7, label: "Detaylar", icon: Ruler },
     { id: 8, label: "Özellikler", icon: Star },
     { id: 9, label: "Diğer", icon: Users },
-    { id: 10, label: "Kategori & Özellikler", icon: Tag },
   ];
 
   const scrollTabs = (direction: "left" | "right") => {
@@ -1246,20 +1245,6 @@ export default function AddE() {
             keyOptions={keyOptions}
           />
         );
-
-      case 10:
-        return (
-          <CategorySelection
-            categories={categories}
-            selectedCategory={selectedCategory}
-            selectedSubcategory={selectedSubcategory}
-            featureValues={featureValues}
-            onCategorySelect={handleCategorySelect}
-            onSubcategorySelect={handleSubcategorySelect}
-            onFeatureChange={handleFeatureChange}
-          />
-        );
-
       default:
         return null;
     }
