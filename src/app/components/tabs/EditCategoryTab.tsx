@@ -25,7 +25,11 @@ export default function CategoryTab({
     if (!secondStep.selected.subcategoryData) {
       return [];
     }
-    return secondStep.selected.subcategoryData.subcategories || [];
+
+    const nestedSubcategories =
+      secondStep.selected.subcategoryData.subcategories || [];
+
+    return nestedSubcategories;
   };
 
   const handleCategorySelect = (nestedSubcategory: SubCategory) => {
@@ -48,6 +52,51 @@ export default function CategoryTab({
 
   const nestedSubcategories = getNestedSubcategories();
 
+  const allNestedSubcategories = React.useMemo(() => {
+    const categories = [...nestedSubcategories];
+
+    if (thirdStep.selected.id && thirdStep.selected.value) {
+      const alreadyExists = categories.some(
+        (cat) => cat._id === thirdStep.selected.id
+      );
+      if (!alreadyExists && thirdStep.selected.subcategoryData) {
+        categories.push(thirdStep.selected.subcategoryData);
+      }
+    }
+
+    return categories;
+  }, [nestedSubcategories, thirdStep]);
+
+  const shouldSkipToFeatures =
+    allNestedSubcategories.length === 0 && secondStep.selected.subcategoryData;
+
+  React.useEffect(() => {
+    if (shouldSkipToFeatures && onNext) {
+      if (!thirdStep.selected.isSelect) {
+        setThirdStep({
+          ...thirdStep,
+          selected: {
+            isSelect: true,
+            value: secondStep.selected.value,
+            id: secondStep.selected.id,
+            subcategoryData: secondStep.selected.subcategoryData,
+          },
+        });
+      }
+      setTimeout(() => onNext(), 300);
+    }
+  }, [shouldSkipToFeatures, onNext, secondStep, thirdStep, setThirdStep]);
+
+  if (shouldSkipToFeatures) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <div className="text-lg text-gray-600">
+          Özelliklere yönlendiriliyor...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -69,9 +118,18 @@ export default function CategoryTab({
         <div className="w-20"></div>
       </div>
 
+      {secondStep.selected.isSelect && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h4 className="font-medium text-blue-800 mb-1">Üst Kategori:</h4>
+          <p className="text-blue-700 text-sm">
+            <strong>{secondStep.selected.value}</strong>
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-3">
-        {nestedSubcategories.length > 0 ? (
-          nestedSubcategories.map((nestedSubcategory) => (
+        {allNestedSubcategories.length > 0 ? (
+          allNestedSubcategories.map((nestedSubcategory) => (
             <motion.button
               key={nestedSubcategory._id}
               type="button"
@@ -87,14 +145,28 @@ export default function CategoryTab({
               <span className="font-medium text-sm">
                 {nestedSubcategory.name}
               </span>
+              {thirdStep.selected.id === nestedSubcategory._id && (
+                <div className="mt-2 text-blue-500 text-sm">✓ Seçili</div>
+              )}
             </motion.button>
           ))
         ) : (
           <div className="text-center text-gray-500 py-8">
-            Bu alt kategori için başka alt kategori bulunamadı.
+            {secondStep.selected.subcategoryData
+              ? "Bu alt kategori için başka alt kategori bulunamadı."
+              : "Lütfen önce bir ilan tipi seçin."}
           </div>
         )}
       </div>
+
+      {thirdStep.selected.isSelect && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <h4 className="font-medium text-green-800 mb-2">Şu Anda Seçili:</h4>
+          <p className="text-green-700">
+            <strong>{thirdStep.selected.value}</strong>
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }

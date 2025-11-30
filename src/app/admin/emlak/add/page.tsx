@@ -13,7 +13,6 @@ import LocationTab from "@/app/components/tabs/LocationTab";
 import DetailsTab from "@/app/components/tabs/DetailsTab";
 import FeaturesTab from "@/app/components/tabs/FeaturesTab";
 import OtherInfoTab from "@/app/components/tabs/OtherInfoTab";
-import CategorySelection from "@/app/components/tabs/CategorySelectionTab";
 import {
   MapPin,
   Home,
@@ -32,7 +31,6 @@ import {
   ChevronDown,
   ChevronRight,
   Move,
-  Tag,
   ChevronLeft,
 } from "lucide-react";
 import { useCookies } from "react-cookie";
@@ -42,9 +40,6 @@ import { useRouter } from "next/navigation";
 import JSONDATA from "@/app/data.json";
 
 import {
-  propertyTypes,
-  listingTypes,
-  propertyCategories,
   defaultFormData,
   contractTimes,
   yesNoOptions,
@@ -58,7 +53,6 @@ import {
 import { type FormData, StepState, ImageItem } from "@/app/types/property";
 import api from "@/app/lib/api";
 import AdminLayout from "@/app/components/layout/AdminLayout";
-import router from "next/router";
 import Customer from "@/app/types/customers";
 import { Advisor } from "@/app/types/advert";
 
@@ -219,12 +213,8 @@ const QuestionToggle = React.memo(
 
 QuestionToggle.displayName = "QuestionToggle";
 
-/* ---------------------------
-   Enhanced AddE Component with Original API Structure
-   --------------------------- */
 export default function AddE() {
   const router = useRouter();
-  const [cookies] = useCookies(["token"]);
   const [activeTab, setActiveTab] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reOrderImages, setReOrderImages] = useState(false);
@@ -234,45 +224,24 @@ export default function AddE() {
   const [advisors, setAdvisors] = useState<any[]>([]);
   const [isActiveAd, setIsActiveAd] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
-  );
-  const [selectedSubcategory, setSelectedSubcategory] =
-    useState<Subcategory | null>(null);
-  const [featureValues, setFeatureValues] = useState<FeatureValues>({});
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        console.log("📥 Kategoriler yükleniyor...");
         const response = await api.get("/admin/categories");
-        console.log("🔍 API Yanıtı:", response);
-        console.log("📊 API Data:", response.data);
-        console.log("📋 Data Type:", typeof response.data);
 
         let categoriesData = response.data;
 
         if (response.data && response.data.data) {
           categoriesData = response.data.data;
-          console.log(
-            "🔄 Data içinden data property'si alındı:",
-            categoriesData
-          );
         }
 
         if (!Array.isArray(categoriesData)) {
-          console.warn(
-            "⚠️ Kategoriler array değil, boş array olarak ayarlanıyor:",
-            categoriesData
-          );
           categoriesData = [];
         }
 
-        console.log("✅ Ayarlanacak kategoriler:", categoriesData);
         setCategories(categoriesData);
       } catch (error: any) {
-        console.error("❌ Kategoriler yüklenemedi:", error);
-        console.error("🔍 Hata detayı:", error.response?.data);
         toast.error("Kategoriler yüklenemedi");
         setCategories([]);
       }
@@ -281,37 +250,40 @@ export default function AddE() {
     fetchCategories();
   }, []);
 
-  const handleCategorySelect = (category: Category) => {
-    setSelectedCategory(category);
-    setSelectedSubcategory(null);
-    setFeatureValues({});
-  };
-
-  const handleSubcategorySelect = (subcategory: Subcategory) => {
-    setSelectedSubcategory(subcategory);
-    setFeatureValues({});
-  };
-
-  const handleFeatureChange = (featureId: string, value: any) => {
-    setFeatureValues((prev) => ({
-      ...prev,
-      [featureId]: value,
-    }));
-  };
-
   const [firstStep, setFirstStep] = useState<StepState>({
-    selected: { isSelect: false, value: "" },
-    selections: propertyTypes,
+    selected: {
+      isSelect: false,
+      value: "",
+      id: "",
+      name: "",
+      categoryData: undefined,
+    },
   });
 
   const [secondStep, setSecondStep] = useState<StepState>({
-    selected: { isSelect: false, value: "" },
-    selections: listingTypes,
+    selected: {
+      isSelect: false,
+      value: "",
+      id: "",
+      subcategoryData: undefined,
+    },
   });
 
   const [thirdStep, setThirdStep] = useState<StepState>({
-    selected: { isSelect: false, value: "" },
-    selections: propertyCategories,
+    selected: {
+      isSelect: false,
+      value: "",
+      id: "",
+      subcategoryData: undefined,
+    },
+  });
+  const [featuresStep, setFeaturesStep] = useState<StepState>({
+    selected: {
+      isSelect: false,
+      value: "",
+      featureData: null,
+    },
+    selections: {},
   });
 
   const [fourthStep, setFourthStep] = useState<FormData>(defaultFormData);
@@ -327,9 +299,8 @@ export default function AddE() {
     { id: 4, label: "Temel Bilgiler", icon: Settings },
     { id: 5, label: "Medya", icon: Camera },
     { id: 6, label: "Konum", icon: MapPin },
-    { id: 7, label: "Detaylar", icon: Ruler },
-    { id: 8, label: "Özellikler", icon: Star },
-    { id: 9, label: "Diğer", icon: Users },
+    { id: 7, label: "Özellikler", icon: Star },
+    { id: 8, label: "Diğer", icon: Users },
   ];
 
   const scrollTabs = (direction: "left" | "right") => {
@@ -368,8 +339,6 @@ export default function AddE() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("📥 Müşteriler ve danışmanlar yükleniyor...");
-
         const fetchAllCustomers = async (): Promise<Customer[]> => {
           let allCustomers: Customer[] = [];
           let currentPage = 1;
@@ -428,22 +397,9 @@ export default function AddE() {
           fetchAllAdvisors(),
         ]);
 
-        console.log(
-          "✅ Tüm müşteriler yüklendi:",
-          allCustomers.length,
-          "müşteri"
-        );
-        console.log(
-          "✅ Tüm danışmanlar yüklendi:",
-          allAdvisors.length,
-          "danışman"
-        );
-
         setCustomers(allCustomers);
         setAdvisors(allAdvisors);
       } catch (error: any) {
-        console.error("❌ Veriler yüklenemedi:", error);
-
         if (error.response?.status === 401) {
           toast.error("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
           setTimeout(() => {
@@ -859,6 +815,28 @@ export default function AddE() {
       ? `${fourthStep.price.value} ${fourthStep.price.type}`
       : "0 TL";
 
+    const categoryId = firstStep.selected.categoryData?._id || "";
+
+    const subcategoryId = thirdStep.selected.subcategoryData?._id
+      ? thirdStep.selected.subcategoryData._id
+      : secondStep.selected.subcategoryData?._id || "";
+
+    const formattedFeatures: {
+      [key: string]: string | number | boolean | string[];
+    } = {};
+
+    if (featuresStep.selections) {
+      Object.values(featuresStep.selections).forEach((selection: any) => {
+        if (
+          selection.featureId &&
+          selection.value !== undefined &&
+          selection.value !== null
+        ) {
+          formattedFeatures[selection.featureId] = selection.value;
+        }
+      });
+    }
+
     const requestData = {
       steps: {
         first: firstStep.selected?.value || "",
@@ -953,23 +931,15 @@ export default function AddE() {
             ? fourthStep.deedStatus?.value || ""
             : "",
       },
-      category: selectedCategory?._id,
-      subcategory: selectedSubcategory?._id,
-      features: featureValues,
+      category: categoryId,
+      subcategory: subcategoryId,
+      features: formattedFeatures,
     };
-
-    console.log(
-      "🚀 İlan oluşturma verisi:",
-      JSON.stringify(requestData, null, 2)
-    );
 
     try {
       const res = await api.post("/admin/create-advert", requestData);
 
-      console.log("✅ İlan oluşturma yanıtı:", res.data);
-
       const advertUid = res.data.data.uid;
-      console.log("📋 Oluşturulan ilan ID:", advertUid);
 
       let uploadSuccess = true;
 
@@ -979,7 +949,6 @@ export default function AddE() {
           await uploadImages(advertUid);
           toast.success("Resimler başarıyla yüklendi!");
         } catch (error: any) {
-          console.error("❌ Resim yükleme hatası:", error);
           uploadSuccess = false;
           toast.warning("İlan oluşturuldu ancak resimler yüklenemedi");
         } finally {
@@ -993,7 +962,6 @@ export default function AddE() {
           await uploadVideo(advertUid);
           toast.success("Video başarıyla yüklendi!");
         } catch (error: any) {
-          console.error("❌ Video yükleme hatası:", error);
           uploadSuccess = false;
           toast.warning("İlan oluşturuldu ancak video yüklenemedi");
         } finally {
@@ -1011,9 +979,6 @@ export default function AddE() {
         router.push("/admin/emlak");
       }, 2000);
     } catch (err: any) {
-      console.error("❌ İlan oluşturma hatası:", err.response?.data);
-      console.error("🔍 Hata detayı:", err);
-
       if (err.response?.status === 404) {
         toast.error("Müşteri bulunamadı. Lütfen geçerli bir müşteri seçin.");
       } else {
@@ -1038,31 +1003,17 @@ export default function AddE() {
         }
       });
 
-      console.log("📤 Upload Images - FormData içeriği:");
       const formDataArray = Array.from(formData.entries());
-      formDataArray.forEach((pair) => {
-        console.log(pair[0] + ": ", pair[1]);
-      });
+      formDataArray.forEach((pair) => {});
 
       if (images.length === 0) {
-        console.log("📭 Yüklenecek resim bulunamadı.");
         return;
       }
 
       const response = await api.post("/admin/upload-advert-images", formData);
 
-      console.log("✅ Resim yükleme başarılı:", response.data);
       return response;
     } catch (error: any) {
-      console.error("❌ Resim yükleme hatası:");
-      console.error("Status:", error.response?.status);
-      console.error("Data:", error.response?.data);
-      console.error("Message:", error.message);
-
-      if (error.response?.data) {
-        console.error("Backend Error Details:", error.response.data);
-      }
-
       throw error;
     }
   };
@@ -1074,29 +1025,15 @@ export default function AddE() {
 
       if (videoFile instanceof File) {
         formData.append("video", videoFile);
-        console.log("🎥 Video yükleniyor:", videoFile.name, videoFile.size);
       }
 
-      console.log("📤 Upload Video - FormData içeriği:");
       const formDataArray = Array.from(formData.entries());
-      formDataArray.forEach((pair) => {
-        console.log(pair[0] + ": ", pair[1]);
-      });
+      formDataArray.forEach((pair) => {});
 
       const response = await axios.post("/admin/upload-advert-video", formData);
 
-      console.log("✅ Video yükleme başarılı:", response.data);
       return response;
     } catch (error: any) {
-      console.error("❌ Video yükleme hatası:");
-      console.error("Status:", error.response?.status);
-      console.error("Data:", error.response?.data);
-      console.error("Message:", error.message);
-
-      if (error.response?.data) {
-        console.error("Backend Error Details:", error.response.data);
-      }
-
       throw error;
     }
   };
@@ -1181,26 +1118,13 @@ export default function AddE() {
 
       case 7:
         return (
-          <DetailsTab
-            fourthStep={fourthStep}
-            firstStep={firstStep}
-            onRoomCountChange={handleRoomCountChange}
-            onFloorChange={handleFloorChange}
-            onTotalFloorChange={handleTotalFloorChange}
-            onBuildingAgeChange={handleBuildingAgeChange}
-            onNetAreaChange={handleNetAreaChange}
-            onGrossAreaChange={handleGrossAreaChange}
-            onBalconyCountChange={handleBalconyCountChange}
-            onAcreChange={handleAcreChange}
-          />
-        );
-
-      case 8:
-        return (
           <FeaturesTab
             fourthStep={fourthStep}
             firstStep={firstStep}
             secondStep={secondStep}
+            thirdStep={thirdStep}
+            featuresStep={featuresStep}
+            setFeaturesStep={setFeaturesStep}
             onElevatorToggle={handleElevatorToggle}
             onInSiteToggle={handleInSiteToggle}
             onBalconyToggle={handleBalconyToggle}
@@ -1216,7 +1140,7 @@ export default function AddE() {
           />
         );
 
-      case 9:
+      case 8:
         return (
           <OtherInfoTab
             fourthStep={fourthStep}
@@ -1252,7 +1176,6 @@ export default function AddE() {
 
   const renderContent = () => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      {/* Progress Bar */}
       <div className="bg-gray-100 h-1.5 w-full">
         <motion.div
           className="h-full bg-blue-500"
@@ -1263,10 +1186,8 @@ export default function AddE() {
       </div>
 
       <div className="p-4 lg:p-6">
-        {/* Enhanced Tab Navigation */}
         <div className="border-b border-gray-200 pb-4 mb-6">
           <div className="relative">
-            {/* Scroll Buttons */}
             <button
               onClick={() => scrollTabs("left")}
               className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-full p-1.5 shadow-sm hover:shadow-md transition-all duration-200"
@@ -1339,12 +1260,10 @@ export default function AddE() {
           </div>
         </div>
 
-        {/* Tab Content - Optimized for sidebar */}
         <div className="min-h-[400px] lg:min-h-[500px] ">
           {renderTabContent()}
         </div>
 
-        {/* Compact Navigation Buttons */}
         <motion.div
           className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 pt-4 border-t border-gray-200"
           initial={{ opacity: 0 }}
@@ -1424,7 +1343,6 @@ export default function AddE() {
         style={{ fontFamily: "'Nunito Sans', sans-serif" }}
       >
         <div className="max-w-7xl mx-auto">
-          {/* Compact Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1454,7 +1372,6 @@ export default function AddE() {
             </div>
           </motion.div>
 
-          {/* FORM'U SADECE SON TAB'DE GÖSTER */}
           {activeTab === tabs.length ? (
             <form onSubmit={handleSubmit}>{renderContent()}</form>
           ) : (
@@ -1462,7 +1379,6 @@ export default function AddE() {
           )}
         </div>
 
-        {/* Reorder Images Modal - Optimized */}
         <AnimatePresence>
           {reOrderImages && (
             <>

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -10,53 +10,14 @@ import {
   ChevronDown,
   ChevronRight,
   List,
-  Loader2,
-  Search,
-  Filter,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import api from "@/app/lib/api";
-import AdminSidebar from "@/app/components/layout/AdminSidebar";
 import CategoryModal from "@/app/components/modals/CategoryModal";
 import SubcategoryModal from "@/app/components/modals/SubCategoryModal";
 import FeatureModal from "@/app/components/modals/FeatureModal";
 import DeleteModal from "@/app/components/modals/CategoryDeleteModal";
 import AdminLayout from "@/app/components/layout/AdminLayout";
-
-const LoadingSpinner = () => (
-  <div className="flex min-h-screen bg-gray-50">
-    <AdminSidebar />
-    <div className="flex-1 flex items-center justify-center">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="text-center"
-      >
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-6"
-        />
-        <motion.h2
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-2xl font-bold text-gray-900 mb-2"
-        >
-          Kategoriler Yükleniyor
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-gray-600"
-        >
-          Kategori verileri hazırlanıyor...
-        </motion.p>
-      </motion.div>
-    </div>
-  </div>
-);
 
 const EmptyState = ({ onAddCategory }: { onAddCategory: () => void }) => (
   <motion.div
@@ -86,251 +47,43 @@ const EmptyState = ({ onAddCategory }: { onAddCategory: () => void }) => (
   </motion.div>
 );
 
-const CategoryCard = ({
-  category,
-  isExpanded,
-  onToggle,
-  onEdit,
-  onDelete,
-  onAddSubcategory,
-  expandedSubcategories,
-  onToggleSubcategory,
-  onEditSubcategory,
-  onDeleteSubcategory,
-  onAddFeature,
-  onEditFeature,
-  onDeleteFeature,
-}: any) => (
-  <motion.div
-    layout
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-  >
-    {/* Category Header */}
-    <div className="p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => onToggle(category._id)}
-            className="p-2 hover:bg-gray-50 rounded-lg transition-colors text-gray-600"
-          >
-            {isExpanded ? (
-              <ChevronDown size={24} />
-            ) : (
-              <ChevronRight size={24} />
-            )}
-          </motion.button>
+const countAllSubcategories = (subcategories: any[]): number => {
+  if (!subcategories || subcategories.length === 0) return 0;
 
-          <div className="w-12 h-12 bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl flex items-center justify-center shadow-lg">
-            <Folder size={24} className="text-white" />
-          </div>
+  let count = subcategories.length;
+  subcategories.forEach((sub) => {
+    if (sub.subcategories) {
+      count += countAllSubcategories(sub.subcategories);
+    }
+  });
+  return count;
+};
 
-          <div className="flex-1">
-            <h3 className="text-xl font-bold text-gray-900 mb-1">
-              {category.name}
-            </h3>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span>{category.subcategories?.length || 0} alt kategori</span>
-              <span>•</span>
-              <span>
-                {category.subcategories?.reduce(
-                  (total: number, sub: any) =>
-                    total + (sub.features?.length || 0),
-                  0
-                ) || 0}{" "}
-                özellik
-              </span>
-            </div>
-          </div>
-        </div>
+const countAllFeatures = (subcategories: any[]): number => {
+  if (!subcategories || subcategories.length === 0) return 0;
 
-        <div className="flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onAddSubcategory(category._id)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium shadow-md"
-          >
-            <Plus size={18} />
-            Alt Kategori
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => onEdit(category)}
-            className="p-3 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-          >
-            <Edit2 size={18} />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => onDelete("category", category._id, category.name)}
-            className="p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-          >
-            <Trash2 size={18} />
-          </motion.button>
-        </div>
-      </div>
-    </div>
+  let count = 0;
+  subcategories.forEach((sub) => {
+    count += sub.features?.length || 0;
+    if (sub.subcategories) {
+      count += countAllFeatures(sub.subcategories);
+    }
+  });
+  return count;
+};
 
-    {/* Subcategories */}
-    <AnimatePresence>
-      {isExpanded &&
-        category.subcategories &&
-        category.subcategories.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="border-t border-gray-100"
-          >
-            <div className="p-6 space-y-4">
-              {category.subcategories.map((subcategory: any) => (
-                <SubcategoryCard
-                  key={subcategory._id}
-                  subcategory={subcategory}
-                  categoryId={category._id}
-                  isExpanded={expandedSubcategories.has(subcategory._id)}
-                  onToggle={() => onToggleSubcategory(subcategory._id)}
-                  onEdit={() => onEditSubcategory(category._id, subcategory)}
-                  onDelete={() =>
-                    onDeleteSubcategory(
-                      category._id,
-                      subcategory._id,
-                      subcategory.name
-                    )
-                  }
-                  onAddFeature={() =>
-                    onAddFeature(category._id, subcategory._id)
-                  }
-                  onEditFeature={onEditFeature}
-                  onDeleteFeature={onDeleteFeature}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-    </AnimatePresence>
-  </motion.div>
-);
+const getFeatureType = (type: string): string => {
+  const typeMap: { [key: string]: string } = {
+    text: "Metin",
+    number: "Sayı",
+    single_select: "Tek Seçim",
+    multi_select: "Çoklu Seçim",
+    boolean: "Evet/Hayır",
+    "true/false": "Evet/Hayır",
+  };
 
-const SubcategoryCard = ({
-  subcategory,
-  categoryId,
-  isExpanded,
-  onToggle,
-  onEdit,
-  onDelete,
-  onAddFeature,
-  onEditFeature,
-  onDeleteFeature,
-}: any) => (
-  <motion.div
-    layout
-    className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden"
-  >
-    {/* Subcategory Header */}
-    <div className="p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={onToggle}
-            className="p-1 hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
-          >
-            {isExpanded ? (
-              <ChevronDown size={20} />
-            ) : (
-              <ChevronRight size={20} />
-            )}
-          </motion.button>
-
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800 rounded-lg flex items-center justify-center shadow-md">
-            <FolderOpen size={18} className="text-white" />
-          </div>
-
-          <div className="flex-1">
-            <h4 className="font-semibold text-gray-900 mb-1">
-              {subcategory.name}
-            </h4>
-            <p className="text-sm text-gray-500">
-              {subcategory.features?.length || 0} özellik
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onAddFeature}
-            className="flex items-center gap-2 px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium shadow-sm"
-          >
-            <Plus size={16} />
-            Özellik
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={onEdit}
-            className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-          >
-            <Edit2 size={16} />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={onDelete}
-            className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-          >
-            <Trash2 size={16} />
-          </motion.button>
-        </div>
-      </div>
-    </div>
-
-    {/* Features */}
-    <AnimatePresence>
-      {isExpanded &&
-        subcategory.features &&
-        subcategory.features.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="border-t border-gray-200"
-          >
-            <div className="p-4 space-y-2">
-              {subcategory.features.map((feature: any) => (
-                <FeatureItem
-                  key={feature._id}
-                  feature={feature}
-                  categoryId={categoryId}
-                  subcategoryId={subcategory._id}
-                  onEdit={() =>
-                    onEditFeature(categoryId, subcategory._id, feature)
-                  }
-                  onDelete={() =>
-                    onDeleteFeature(
-                      categoryId,
-                      subcategory._id,
-                      feature._id,
-                      feature.name
-                    )
-                  }
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-    </AnimatePresence>
-  </motion.div>
-);
+  return typeMap[type] || type;
+};
 
 const FeatureItem = ({ feature, onEdit, onDelete }: any) => (
   <motion.div
@@ -347,7 +100,7 @@ const FeatureItem = ({ feature, onEdit, onDelete }: any) => (
           {feature.name}
         </span>
         <span className="ml-3 text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
-          {feature.type}
+          {getFeatureType(feature.type)}
         </span>
       </div>
     </div>
@@ -372,6 +125,413 @@ const FeatureItem = ({ feature, onEdit, onDelete }: any) => (
     </div>
   </motion.div>
 );
+
+const RecursiveSubcategoryCard = ({
+  subcategory,
+  categoryId,
+  isExpanded,
+  onToggle,
+  onEdit,
+  onDelete,
+  onAddSubcategory,
+  onAddFeature,
+  onEditFeature,
+  onDeleteFeature,
+  level = 0,
+  expandedSubcategories,
+  onToggleSubcategory,
+  onEditSubcategory,
+  onDeleteSubcategory,
+  setSubcategoryModal,
+  categories,
+}: any) => {
+  const hasChildren =
+    subcategory.subcategories && subcategory.subcategories.length > 0;
+  const hasFeatures = subcategory.features && subcategory.features.length > 0;
+
+  const handleAddFeature = () => {
+    if (!categoryId || !subcategory._id) {
+      console.error("❌ Recursive özellik ekleme hatası:", {
+        categoryId,
+        subcategoryId: subcategory._id,
+      });
+      return;
+    }
+
+    if (categoryId === subcategory._id) {
+      console.error("❌ HATA: categoryId ve subcategory._id aynı!", {
+        categoryId,
+        subcategoryId: subcategory._id,
+      });
+
+      const findCorrectCategoryId = (
+        cats: any[],
+        targetSubId: string
+      ): string | null => {
+        for (const cat of cats) {
+          const findInSubcategories = (subs: any[]): boolean => {
+            for (const sub of subs) {
+              if (sub._id === targetSubId) return true;
+              if (sub.subcategories && sub.subcategories.length > 0) {
+                if (findInSubcategories(sub.subcategories)) return true;
+              }
+            }
+            return false;
+          };
+
+          if (findInSubcategories(cat.subcategories || [])) {
+            return cat._id;
+          }
+        }
+        return null;
+      };
+
+      const correctCategoryId = findCorrectCategoryId(
+        categories || [],
+        subcategory._id
+      );
+      if (correctCategoryId && correctCategoryId !== subcategory._id) {
+        onAddFeature(correctCategoryId, subcategory._id);
+      } else {
+        console.error("❌ Doğru categoryId bulunamadı");
+        toast.error("Kategori ID'si bulunamadı");
+      }
+      return;
+    }
+
+    onAddFeature(categoryId, subcategory._id);
+  };
+
+  const handleAddSubcategory = () => {
+    if (!categoryId || !subcategory._id) {
+      console.error("❌ Recursive alt kategori ekleme hatası:", {
+        categoryId,
+        subcategoryId: subcategory._id,
+      });
+      return;
+    }
+
+    setSubcategoryModal({
+      isOpen: true,
+      mode: "create",
+      categoryId,
+      subcategory: subcategory,
+    });
+  };
+
+  return (
+    <motion.div
+      layout
+      className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden"
+      style={{ marginLeft: level * 24 }}
+    >
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1">
+            {(hasChildren || hasFeatures) && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={onToggle}
+                className="p-1 hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
+              >
+                {isExpanded ? (
+                  <ChevronDown size={20} />
+                ) : (
+                  <ChevronRight size={20} />
+                )}
+              </motion.button>
+            )}
+            {!(hasChildren || hasFeatures) && <div className="w-6" />}
+
+            <div
+              className={`flex items-center justify-center rounded-lg shadow-md ${
+                level === 0
+                  ? "w-10 h-10 bg-gradient-to-br from-blue-700 to-blue-800"
+                  : level === 1
+                  ? "w-9 h-9 bg-gradient-to-br from-green-600 to-green-700"
+                  : "w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600"
+              }`}
+            >
+              <FolderOpen
+                size={level === 0 ? 18 : level === 1 ? 16 : 14}
+                className="text-white"
+              />
+            </div>
+
+            <div className="flex-1">
+              <h4
+                className={`font-semibold text-gray-900 mb-1 ${
+                  level === 0
+                    ? "text-lg"
+                    : level === 1
+                    ? "text-base"
+                    : "text-sm"
+                }`}
+              >
+                {subcategory.name}
+                {level > 0 && (
+                  <span className="ml-2 text-xs font-normal text-gray-500">
+                    (seviye {level + 1})
+                  </span>
+                )}
+              </h4>
+              <div className="flex items-center gap-3 text-sm text-gray-500">
+                <span>
+                  {subcategory.subcategories?.length || 0} alt kategori
+                </span>
+                <span>•</span>
+                <span>{subcategory.features?.length || 0} özellik</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleAddSubcategory}
+              className="flex items-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium shadow-sm"
+            >
+              <Plus size={16} />
+              Alt Kategori
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleAddFeature}
+              className="flex items-center gap-2 px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium shadow-sm"
+            >
+              <Plus size={16} />
+              Özellik
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onEdit}
+              className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+            >
+              <Edit2 size={16} />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onDelete}
+              className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+            >
+              <Trash2 size={16} />
+            </motion.button>
+          </div>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="border-t border-gray-200"
+          >
+            <div className="p-4 space-y-3">
+              {hasChildren &&
+                subcategory.subcategories.map((childSub: any) => (
+                  <RecursiveSubcategoryCard
+                    key={childSub._id}
+                    subcategory={childSub}
+                    categoryId={categoryId}
+                    isExpanded={expandedSubcategories.has(childSub._id)}
+                    onToggle={() => onToggleSubcategory(childSub._id)}
+                    onEdit={() => onEditSubcategory(categoryId, childSub)}
+                    onDelete={() =>
+                      onDeleteSubcategory(
+                        categoryId,
+                        childSub._id,
+                        childSub.name
+                      )
+                    }
+                    onAddSubcategory={onAddSubcategory}
+                    onAddFeature={onAddFeature}
+                    onEditFeature={onEditFeature}
+                    onDeleteFeature={onDeleteFeature}
+                    level={level + 1}
+                    expandedSubcategories={expandedSubcategories}
+                    onToggleSubcategory={onToggleSubcategory}
+                    onEditSubcategory={onEditSubcategory}
+                    onDeleteSubcategory={onDeleteSubcategory}
+                    setSubcategoryModal={setSubcategoryModal}
+                    categories={categories}
+                  />
+                ))}
+
+              {hasFeatures &&
+                subcategory.features.map((feature: any) => (
+                  <FeatureItem
+                    key={feature._id}
+                    feature={feature}
+                    categoryId={categoryId}
+                    subcategoryId={subcategory._id}
+                    onEdit={() =>
+                      onEditFeature(categoryId, subcategory._id, feature)
+                    }
+                    onDelete={() =>
+                      onDeleteFeature(
+                        categoryId,
+                        subcategory._id,
+                        feature._id,
+                        feature.name
+                      )
+                    }
+                  />
+                ))}
+
+              {!hasChildren && !hasFeatures && (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  Henüz alt kategori veya özellik eklenmemiş
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
+const CategoryCard = ({
+  category,
+  isExpanded,
+  onToggle,
+  onEdit,
+  onDelete,
+  onAddSubcategory,
+  expandedSubcategories,
+  onToggleSubcategory,
+  onEditSubcategory,
+  onDeleteSubcategory,
+  onAddFeature,
+  onEditFeature,
+  onDeleteFeature,
+  setSubcategoryModal,
+  categories,
+}: any) => {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+    >
+      <div className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 flex-1">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => onToggle(category._id)}
+              className="p-2 hover:bg-gray-50 rounded-lg transition-colors text-gray-600"
+            >
+              {isExpanded ? (
+                <ChevronDown size={24} />
+              ) : (
+                <ChevronRight size={24} />
+              )}
+            </motion.button>
+
+            <div className="w-12 h-12 bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Folder size={24} className="text-white" />
+            </div>
+
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-900 mb-1">
+                {category.name}
+              </h3>
+              <div className="flex items-center gap-4 text-sm text-gray-500">
+                <span>
+                  {countAllSubcategories(category.subcategories)} alt kategori
+                </span>
+                <span>•</span>
+                <span>{countAllFeatures(category.subcategories)} özellik</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onAddSubcategory(category._id)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium shadow-md"
+            >
+              <Plus size={18} />
+              Alt Kategori
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => onEdit(category)}
+              className="p-3 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+            >
+              <Edit2 size={18} />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => onDelete("category", category._id, category.name)}
+              className="p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+            >
+              <Trash2 size={18} />
+            </motion.button>
+          </div>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isExpanded &&
+          category.subcategories &&
+          category.subcategories.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="border-t border-gray-100"
+            >
+              <div className="p-6 space-y-4">
+                {category.subcategories.map((subcategory: any) => (
+                  <RecursiveSubcategoryCard
+                    key={subcategory._id}
+                    subcategory={subcategory}
+                    categoryId={category._id}
+                    isExpanded={expandedSubcategories.has(subcategory._id)}
+                    onToggle={() => onToggleSubcategory(subcategory._id)}
+                    onEdit={() => onEditSubcategory(category._id, subcategory)}
+                    onDelete={() =>
+                      onDeleteSubcategory(
+                        category._id,
+                        subcategory._id,
+                        subcategory.name
+                      )
+                    }
+                    onAddSubcategory={onAddSubcategory}
+                    onAddFeature={onAddFeature}
+                    onEditFeature={onEditFeature}
+                    onDeleteFeature={onDeleteFeature}
+                    level={0}
+                    expandedSubcategories={expandedSubcategories}
+                    onToggleSubcategory={onToggleSubcategory}
+                    onEditSubcategory={onEditSubcategory}
+                    onDeleteSubcategory={onDeleteSubcategory}
+                    setSubcategoryModal={setSubcategoryModal}
+                    categories={categories}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -418,7 +578,6 @@ export default function CategoriesPage() {
     try {
       setLoading(true);
       const response = await api.get("/admin/categories");
-      console.log("📊 Kategori API Yanıtı:", response.data);
 
       let categoriesData = response.data.data || response.data || [];
 
@@ -440,7 +599,6 @@ export default function CategoriesPage() {
         })),
       }));
 
-      console.log("✅ Normalize edilmiş kategoriler:", normalizedCategories);
       setCategories(normalizedCategories);
 
       const newExpanded = new Set<string>();
@@ -476,7 +634,6 @@ export default function CategoriesPage() {
 
   const handleDelete = async () => {
     const { type, id, categoryId, subcategoryId } = deleteModal;
-    console.log("🗑️ Silme işlemi:", { type, id, categoryId, subcategoryId });
 
     try {
       if (type === "category") {
@@ -514,54 +671,123 @@ export default function CategoriesPage() {
     categoryId: string = "",
     subcategoryId: string = ""
   ) => {
-    console.log("🗑️ Silme modalı açılıyor:", {
-      type,
-      id,
-      name,
-      categoryId,
-      subcategoryId,
-    });
     setDeleteModal({ isOpen: true, type, id, name, categoryId, subcategoryId });
   };
 
-  const LoadingSpinner = () => (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="text-center"
-      >
+  const onEditSubcategory = (categoryId: string, subcategory: any) => {
+    setSubcategoryModal({
+      isOpen: true,
+      mode: "edit",
+      categoryId,
+      subcategory,
+    });
+  };
+
+  const onDeleteSubcategory = (
+    categoryId: string,
+    subcategoryId: string,
+    name: string
+  ) => {
+    openDeleteModal("subcategory", subcategoryId, name, categoryId);
+  };
+
+  const onAddFeature = (categoryId: string, subcategoryId: string) => {
+    if (!categoryId || !subcategoryId) {
+      console.error(
+        "❌ Özellik ekleme hatası: categoryId veya subcategoryId boş"
+      );
+      toast.error("Özellik eklenemedi: Kategori bilgileri eksik");
+      return;
+    }
+
+    if (categoryId === subcategoryId) {
+      console.error(
+        "❌ Özellik ekleme hatası: categoryId ve subcategoryId aynı!"
+      );
+      toast.error("Özellik eklenemedi: Kategori ID'leri hatalı");
+      return;
+    }
+
+    setFeatureModal({
+      isOpen: true,
+      mode: "create",
+      categoryId,
+      subcategoryId,
+      feature: null,
+    });
+  };
+
+  const onEditFeature = (
+    categoryId: string,
+    subcategoryId: string,
+    feature: any
+  ) => {
+    setFeatureModal({
+      isOpen: true,
+      mode: "edit",
+      categoryId,
+      subcategoryId,
+      feature,
+    });
+  };
+
+  const onDeleteFeature = (
+    categoryId: string,
+    subcategoryId: string,
+    featureId: string,
+    name: string
+  ) => {
+    openDeleteModal("feature", featureId, name, categoryId, subcategoryId);
+  };
+
+  const onAddSubcategory = (categoryId: string) => {
+    setSubcategoryModal({
+      isOpen: true,
+      mode: "create",
+      categoryId,
+      subcategory: null,
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-6"
-        />
-        <motion.h2
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-2xl font-bold text-gray-900 mb-2"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
         >
-          Kategoriler Yükleniyor
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-gray-600"
-        >
-          Kategori verileri hazırlanıyor...
-        </motion.p>
-      </motion.div>
-    </div>
-  );
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-6"
+          />
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-2xl font-bold text-gray-900 mb-2"
+          >
+            Kategoriler Yükleniyor
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-gray-600"
+          >
+            Kategori verileri hazırlanıyor...
+          </motion.p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div>
       <AdminLayout>
         <div className="flex-1 p-6 lg:p-8 bg-gray-50 min-h-screen">
           <div className="max-w-7xl mx-auto">
-            {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -596,7 +822,6 @@ export default function CategoriesPage() {
               </div>
             </motion.div>
 
-            {/* Categories List */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -630,72 +855,16 @@ export default function CategoriesPage() {
                     onDelete={(type: string, id: string, name: string) =>
                       openDeleteModal(type, id, name)
                     }
-                    onAddSubcategory={(categoryId: string) =>
-                      setSubcategoryModal({
-                        isOpen: true,
-                        mode: "create",
-                        categoryId,
-                        subcategory: null,
-                      })
-                    }
+                    onAddSubcategory={onAddSubcategory}
                     expandedSubcategories={expandedSubcategories}
                     onToggleSubcategory={toggleSubcategory}
-                    onEditSubcategory={(categoryId: string, subcategory: any) =>
-                      setSubcategoryModal({
-                        isOpen: true,
-                        mode: "edit",
-                        categoryId,
-                        subcategory,
-                      })
-                    }
-                    onDeleteSubcategory={(
-                      categoryId: string,
-                      subcategoryId: string,
-                      name: string
-                    ) =>
-                      openDeleteModal(
-                        "subcategory",
-                        subcategoryId,
-                        name,
-                        categoryId
-                      )
-                    }
-                    onAddFeature={(categoryId: string, subcategoryId: string) =>
-                      setFeatureModal({
-                        isOpen: true,
-                        mode: "create",
-                        categoryId,
-                        subcategoryId,
-                        feature: null,
-                      })
-                    }
-                    onEditFeature={(
-                      categoryId: string,
-                      subcategoryId: string,
-                      feature: any
-                    ) =>
-                      setFeatureModal({
-                        isOpen: true,
-                        mode: "edit",
-                        categoryId,
-                        subcategoryId,
-                        feature,
-                      })
-                    }
-                    onDeleteFeature={(
-                      categoryId: string,
-                      subcategoryId: string,
-                      featureId: string,
-                      name: string
-                    ) =>
-                      openDeleteModal(
-                        "feature",
-                        featureId,
-                        name,
-                        categoryId,
-                        subcategoryId
-                      )
-                    }
+                    onEditSubcategory={onEditSubcategory}
+                    onDeleteSubcategory={onDeleteSubcategory}
+                    onAddFeature={onAddFeature}
+                    onEditFeature={onEditFeature}
+                    onDeleteFeature={onDeleteFeature}
+                    setSubcategoryModal={setSubcategoryModal}
+                    categories={categories}
                   />
                 ))
               )}
@@ -703,7 +872,6 @@ export default function CategoriesPage() {
           </div>
         </div>
 
-        {/* Modals */}
         <CategoryModal
           isOpen={categoryModal.isOpen}
           onClose={() =>
@@ -728,6 +896,7 @@ export default function CategoriesPage() {
           categoryId={subcategoryModal.categoryId}
           subcategory={subcategoryModal.subcategory}
           mode={subcategoryModal.mode}
+          categories={categories}
         />
 
         <FeatureModal

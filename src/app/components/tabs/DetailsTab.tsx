@@ -1,13 +1,25 @@
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
-import { Home, Building, Calendar, Ruler } from "lucide-react";
+import {
+  Home,
+  Building,
+  Calendar,
+  Ruler,
+  Flame,
+  FileText,
+  Compass,
+  Building as BuildingIcon,
+} from "lucide-react";
 import { FormData, StepState } from "@/app/types/property";
 import SimpleInput from "@/app/components/ui/SimpleInput";
+import FeatureToggle from "@/app/components/ui/FeatureToggle";
+import SimpleSelect from "@/app/components/ui/SimpleSelect";
 
 interface DetailsTabProps {
   fourthStep: FormData;
   firstStep: StepState;
+  secondStep: StepState;
   onRoomCountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onFloorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onTotalFloorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -16,11 +28,24 @@ interface DetailsTabProps {
   onGrossAreaChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBalconyCountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAcreChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onElevatorToggle: (value: string) => void;
+  onInSiteToggle: (value: string) => void;
+  onBalconyToggle: (value: string) => void;
+  onIsFurnishedToggle: (value: string) => void;
+  onHeatingChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onDeedStatusChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onWhichSideChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onZoningStatusChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  heatingOptions: any[];
+  deedStatusOptions: any[];
+  directionOptions: any[];
+  zoningStatusOptions: any[];
 }
 
 export default function DetailsTab({
   fourthStep,
   firstStep,
+  secondStep,
   onRoomCountChange,
   onFloorChange,
   onTotalFloorChange,
@@ -29,6 +54,18 @@ export default function DetailsTab({
   onGrossAreaChange,
   onBalconyCountChange,
   onAcreChange,
+  onElevatorToggle,
+  onInSiteToggle,
+  onBalconyToggle,
+  onIsFurnishedToggle,
+  onHeatingChange,
+  onDeedStatusChange,
+  onWhichSideChange,
+  onZoningStatusChange,
+  heatingOptions,
+  deedStatusOptions,
+  directionOptions,
+  zoningStatusOptions,
 }: DetailsTabProps) {
   return (
     <motion.div
@@ -124,6 +161,74 @@ export default function DetailsTab({
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold text-gray-900">
+          Temel Özellikler
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <FeatureToggle
+            label="Asansör"
+            value={fourthStep.elevator.value}
+            onChange={onElevatorToggle}
+          />
+          <FeatureToggle
+            label="Site İçerisinde"
+            value={fourthStep.inSite.value}
+            onChange={onInSiteToggle}
+          />
+          <FeatureToggle
+            label="Balkon"
+            value={fourthStep.balcony.value}
+            onChange={onBalconyToggle}
+          />
+          <FeatureToggle
+            label="Eşyalı"
+            value={fourthStep.isFurnished.value}
+            onChange={onIsFurnishedToggle}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold text-gray-900">Ek Özellikler</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SimpleSelect
+            label="Isıtma Sistemi"
+            value={fourthStep.heating.value}
+            onChange={onHeatingChange}
+            options={heatingOptions}
+            icon={Flame}
+          />
+          {(secondStep.selected.value === "Satılık" ||
+            secondStep.selected.value === "Devren Satılık") && (
+            <SimpleSelect
+              label="Tapu Durumu"
+              value={fourthStep.deedStatus.value}
+              onChange={onDeedStatusChange}
+              options={deedStatusOptions}
+              icon={FileText}
+            />
+          )}
+          <SimpleSelect
+            label="Cephe"
+            value={fourthStep.whichSide.value}
+            onChange={onWhichSideChange}
+            options={directionOptions}
+            icon={Compass}
+          />
+          {(firstStep.selected.value === "Arsa" ||
+            firstStep.selected.value === "Arazi") && (
+            <SimpleSelect
+              label="İmar Durumu"
+              value={fourthStep.zoningStatus.value}
+              onChange={onZoningStatusChange}
+              options={zoningStatusOptions}
+              icon={BuildingIcon}
+            />
+          )}
         </div>
       </div>
     </motion.div>

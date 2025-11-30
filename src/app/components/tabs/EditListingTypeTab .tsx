@@ -1,4 +1,5 @@
 "use client";
+import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { StepState, SubCategory } from "@/app/types/property";
@@ -22,7 +23,9 @@ export default function ListingTypeTab({
     if (!firstStep.selected.categoryData) {
       return [];
     }
-    return firstStep.selected.categoryData.subcategories || [];
+
+    const subcategories = firstStep.selected.categoryData.subcategories || [];
+    return subcategories;
   };
 
   const handleListingSelect = (subcategory: SubCategory) => {
@@ -44,6 +47,21 @@ export default function ListingTypeTab({
   };
 
   const subcategories = getSubcategories();
+
+  const allSubcategories = React.useMemo(() => {
+    const categories = [...subcategories];
+
+    if (secondStep.selected.id && secondStep.selected.value) {
+      const alreadyExists = categories.some(
+        (cat) => cat._id === secondStep.selected.id
+      );
+      if (!alreadyExists && secondStep.selected.subcategoryData) {
+        categories.push(secondStep.selected.subcategoryData);
+      }
+    }
+
+    return categories;
+  }, [subcategories, secondStep]);
 
   return (
     <motion.div
@@ -67,8 +85,8 @@ export default function ListingTypeTab({
       </div>
 
       <div className="grid grid-cols-1 gap-3">
-        {subcategories.length > 0 ? (
-          subcategories.map((subcategory) => (
+        {allSubcategories.length > 0 ? (
+          allSubcategories.map((subcategory) => (
             <motion.button
               key={subcategory._id}
               type="button"
@@ -82,14 +100,28 @@ export default function ListingTypeTab({
               }`}
             >
               <span className="font-medium text-sm">{subcategory.name}</span>
+              {secondStep.selected.id === subcategory._id && (
+                <div className="mt-2 text-blue-500 text-sm">✓ Seçili</div>
+              )}
             </motion.button>
           ))
         ) : (
           <div className="text-center text-gray-500 py-8">
-            Bu kategori için alt kategori bulunamadı.
+            {firstStep.selected.categoryData
+              ? "Bu kategori için alt kategori bulunamadı."
+              : "Lütfen önce bir emlak türü seçin."}
           </div>
         )}
       </div>
+
+      {secondStep.selected.isSelect && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <h4 className="font-medium text-green-800 mb-2">Şu Anda Seçili:</h4>
+          <p className="text-green-700">
+            <strong>{secondStep.selected.value}</strong>
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }

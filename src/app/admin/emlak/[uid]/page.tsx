@@ -60,6 +60,10 @@ import api from "@/app/lib/api";
 import AdminLayout from "@/app/components/layout/AdminLayout";
 import { useParams, useRouter } from "next/navigation";
 import EditOtherInfoTab from "@/app/components/tabs/EditOtherInfoTab";
+import EditPropertyTab from "@/app/components/tabs/EditPropertyTab";
+import EditListingTypeTab from "@/app/components/tabs/EditListingTypeTab ";
+import EditCategoryTab from "@/app/components/tabs/EditCategoryTab";
+import EditFeaturesTab from "@/app/components/tabs/EditFeaturesTab";
 
 const SimpleInput = React.memo(
   ({
@@ -243,6 +247,15 @@ const createSelectionItem = (
   selections,
 });
 
+const baseTabs = [
+  { id: 1, label: "Temel Bilgiler", icon: Settings },
+  { id: 2, label: "Medya", icon: Camera },
+  { id: 3, label: "Konum", icon: MapPin },
+  { id: 4, label: "Detaylar", icon: Ruler },
+  { id: 5, label: "Özellikler", icon: Star },
+  { id: 6, label: "Diğer", icon: Users },
+];
+
 export default function EditE() {
   const [cookies] = useCookies(["token"]);
   const params = useParams();
@@ -271,18 +284,13 @@ export default function EditE() {
   const tabContainerRef = useRef<HTMLDivElement>(null);
 
   const [firstStep, setFirstStep] = useState<StepState>({
-    selected: { isSelect: false, value: "" },
-    selections: propertyTypes,
+    selected: { isSelect: false, value: "", id: "" },
   });
-
   const [secondStep, setSecondStep] = useState<StepState>({
-    selected: { isSelect: false, value: "" },
-    selections: listingTypes,
+    selected: { isSelect: false, value: "", id: "" },
   });
-
   const [thirdStep, setThirdStep] = useState<StepState>({
-    selected: { isSelect: false, value: "" },
-    selections: propertyCategories,
+    selected: { isSelect: false, value: "", id: "" },
   });
 
   const [fourthStep, setFourthStep] = useState<FormData>({
@@ -294,241 +302,259 @@ export default function EditE() {
     },
   });
 
+  const [featuresStep, setFeaturesStep] = useState<StepState>({
+    selected: {
+      isSelect: false,
+      value: "",
+      featureData: null,
+    },
+    selections: {},
+  });
+
   const [images, setImages] = useState<ImageItem[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [existingImages, setExistingImages] = useState<any[]>([]);
   const [existingVideo, setExistingVideo] = useState<string | null>(null);
 
-  const tabs = [
-    { id: 1, label: "Emlak Türü", icon: Home },
-    { id: 2, label: "İlan Tipi", icon: FileText },
-    { id: 3, label: "Kategori", icon: Building },
-    { id: 4, label: "Temel Bilgiler", icon: Settings },
-    { id: 5, label: "Medya", icon: Camera },
-    { id: 6, label: "Konum", icon: MapPin },
-    { id: 7, label: "Detaylar", icon: Ruler },
-    { id: 8, label: "Özellikler", icon: Star },
-    { id: 9, label: "Diğer", icon: Users },
-  ];
-  useEffect(() => {
-    const fetchAdvertData = async () => {
-      try {
-        setIsLoading(true);
-        console.log("📥 İlan verileri yükleniyor...", advertUid);
+  const [advertData, setAdvertData] = useState<any>(null);
 
-        const response = await api.get(`admin/adverts/${advertUid}`);
-        let advertData;
-        if (response.data && response.data.data) {
-          advertData = response.data.data;
-        } else if (response.data) {
-          advertData = response.data;
-        } else {
-          throw new Error("Geçersiz response formatı");
-        }
+  const fetchAdvertData = async () => {
+    try {
+      setIsLoading(true);
 
-        if (!advertData) {
-          toast.error("İlan bulunamadı");
-          router.push("/admin/emlak");
-          return;
-        }
-
-        setFirstStep({
-          selected: {
-            isSelect: true,
-            value: advertData.steps?.first || advertData.propertyType || "",
-          },
-          selections: propertyTypes,
-        });
-
-        setSecondStep({
-          selected: {
-            isSelect: true,
-            value: advertData.steps?.second || advertData.listingType || "",
-          },
-          selections: listingTypes,
-        });
-
-        setThirdStep({
-          selected: {
-            isSelect: true,
-            value: advertData.steps?.third || advertData.category || "",
-          },
-          selections: propertyCategories,
-        });
-
-        let feeValue = "0";
-        let feeType = "₺";
-
-        if (advertData.fee) {
-          if (typeof advertData.fee === "string") {
-            const parts = advertData.fee.split(" ");
-            feeValue = parts[0] || "0";
-            feeType = parts[1] || "₺";
-          } else {
-            feeValue = formatNumber(advertData.fee.toString());
-          }
-        }
-
-        setFourthStep({
-          title: advertData.title || "",
-          description: advertData.description || "",
-          customer:
-            advertData.customer?.uid?.toString() ||
-            advertData.customer?.toString() ||
-            "",
-          contract_no: advertData.contract?.no || advertData.contractNo || "",
-          contract_date:
-            advertData.contract?.date || advertData.contractDate || "",
-          contract_time: createSelectionItem(
-            advertData.contract?.time || advertData.contractTime || "",
-            contractTimes
-          ),
-          advisor:
-            advertData.advisor?.uid?.toString() ||
-            advertData.advisor?.toString() ||
-            "",
-          advisor_profile: createSelectionItem(
-            advertData.advisor?.peopleCanSeeProfile ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-          eids: {
-            no: advertData.eidsNo || advertData.eids?.no || "",
-            date: advertData.eidsDate || advertData.eids?.date || "",
-            value: advertData.eidsNo ? "Evet" : "Hayır",
-          },
-          key: createSelectionItem(
-            advertData.whoseKey || "Yenigün Emlak",
-            keyOptions
-          ),
-          adminNote: advertData.adminNote || "",
-          price: {
-            value: feeValue,
-            type: feeType,
-            selections: currencyOptions,
-          },
-          province: advertData.address?.province || advertData.province || "",
-          district: advertData.address?.district || advertData.district || "",
-          quarter: advertData.address?.quarter || advertData.quarter || "",
-          address: advertData.address?.full_address || advertData.address || "",
-          parsel: advertData.address?.parcel || advertData.parcel || "",
-          roomCount:
-            advertData.details?.roomCount || advertData.roomCount || "",
-          netArea: advertData.details?.netArea || advertData.netArea || 0,
-          grossArea: advertData.details?.grossArea || advertData.grossArea || 0,
-          buildingAge:
-            advertData.details?.buildingAge || advertData.buildingAge || 0,
-          elevator: createSelectionItem(
-            advertData.details?.elevator ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-          inSite: createSelectionItem(
-            advertData.details?.inSite ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-          whichSide: createSelectionItem(
-            advertData.details?.whichSide || advertData.whichSide || "",
-            directionOptions
-          ),
-          acre: advertData.details?.acre
-            ? parseInt(advertData.details.acre)
-            : advertData.acre || 0,
-          acreText: advertData.details?.acre || advertData.acreText || "",
-          floor: advertData.details?.floor || advertData.floor || 0,
-          totalFloor:
-            advertData.details?.totalFloor || advertData.totalFloor || 0,
-          balcony: createSelectionItem(
-            advertData.details?.balcony ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-          balconyCount:
-            advertData.details?.balconyCount || advertData.balconyCount || 0,
-          isFurnished: createSelectionItem(
-            advertData.details?.furniture ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-          heating: createSelectionItem(
-            advertData.details?.heating || advertData.heating || "",
-            heatingOptions
-          ),
-          deedStatus: createSelectionItem(
-            advertData.details?.deed || advertData.deedStatus || "",
-            deedStatusOptions
-          ),
-          zoningStatus: createSelectionItem(
-            advertData.details?.zoningStatus || advertData.zoningStatus || "",
-            zoningStatusOptions
-          ),
-          agenda_emlak: createSelectionItem(
-            advertData.questions?.agendaEmlak ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-          homepage_emlak: createSelectionItem(
-            advertData.questions?.homepageEmlak ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-          new_emlak: createSelectionItem(
-            advertData.questions?.new_emlak ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-          chance_emlak: createSelectionItem(
-            advertData.questions?.chance_emlak ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-          special_emlak: createSelectionItem(
-            advertData.questions?.special_emlak ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-          onweb_emlak: createSelectionItem(
-            advertData.questions?.onweb_emlak ? "Evet" : "Hayır",
-            yesNoOptions
-          ),
-        });
-
-        setContent(advertData.thoughts || "");
-        setIsActiveAd(advertData.active !== false);
-
-        if (advertData.images) {
-          console.log(`🖼️ ${advertData.images.length} adet resim bulundu`);
-          setExistingImages(
-            Array.isArray(advertData.images) ? advertData.images : []
-          );
-        }
-
-        if (advertData.video) {
-          console.log("🎥 Video bulundu:", advertData.video);
-          setExistingVideo(advertData.video);
-        }
-
-        if (advertData.address?.mapCoordinates) {
-          console.log(
-            "📍 Harita koordinatları:",
-            advertData.address.mapCoordinates
-          );
-          setMarker([{ lat: advertData.address.mapCoordinates, lng: 0 }]);
-        } else if (advertData.mapCoordinates) {
-          console.log("📍 Harita koordinatları:", advertData.mapCoordinates);
-          setMarker([{ lat: advertData.mapCoordinates, lng: 0 }]);
-        }
-
-        console.log("✅ State'ler başarıyla güncellendi");
-      } catch (error: any) {
-        console.error("❌ İlan verileri yüklenemedi:", error);
-
-        if (error.response?.status === 404) {
-          toast.error("İlan bulunamadı");
-          router.push("/admin/emlak");
-        } else {
-          toast.error("İlan verileri yüklenemedi");
-        }
-      } finally {
-        setIsLoading(false);
+      const response = await api.get(`admin/adverts/${advertUid}`);
+      let advertData;
+      if (response.data && response.data.data) {
+        advertData = response.data.data;
+      } else if (response.data) {
+        advertData = response.data;
+      } else {
+        throw new Error("Geçersiz response formatı");
       }
-    };
 
-    if (advertUid) {
-      fetchAdvertData();
+      if (!advertData) {
+        toast.error("İlan bulunamadı");
+        router.push("/admin/emlak");
+        return;
+      }
+
+      setAdvertData(advertData);
+
+      const firstStepValue = advertData.steps?.first || "";
+      const secondStepValue = advertData.steps?.second || "";
+      const thirdStepValue = advertData.steps?.third || "";
+
+      setFirstStep({
+        selected: {
+          isSelect: true,
+          value: firstStepValue,
+        },
+        selections: propertyTypes,
+      });
+
+      setSecondStep({
+        selected: {
+          isSelect: true,
+          value: secondStepValue,
+        },
+        selections: listingTypes,
+      });
+
+      setThirdStep({
+        selected: {
+          isSelect: true,
+          value: thirdStepValue,
+        },
+        selections: propertyCategories,
+      });
+
+      if (advertData.featureValues && Array.isArray(advertData.featureValues)) {
+        const featuresObject: FeatureValues = {};
+        advertData.featureValues.forEach((feature: any) => {
+          if (feature.featureId && feature.value !== undefined) {
+            featuresObject[feature.featureId] = feature.value;
+          }
+        });
+
+        setFeatureValues(featuresObject);
+
+        const initialFeatureState: StepState = {
+          selected: {
+            isSelect: false,
+            value: "",
+            featureData: null,
+          },
+          selections: {},
+        };
+
+        Object.entries(featuresObject).forEach(([featureId, value]) => {
+          initialFeatureState.selections[featureId] = {
+            featureId,
+            value: value,
+            featureType: "text",
+          };
+        });
+
+        setFeaturesStep(initialFeatureState);
+      } else {
+      }
+
+      let feeValue = "0";
+      let feeType = "₺";
+
+      if (advertData.fee) {
+        if (typeof advertData.fee === "string") {
+          const parts = advertData.fee.split(" ");
+          feeValue = parts[0] || "0";
+          feeType = parts[1] || "₺";
+        } else {
+          feeValue = formatNumber(advertData.fee.toString());
+        }
+      }
+
+      setFourthStep({
+        title: advertData.title || "",
+        description: advertData.description || "",
+        customer:
+          advertData.customer?.uid?.toString() ||
+          advertData.customer?.toString() ||
+          "",
+        contract_no: advertData.contract?.no || advertData.contractNo || "",
+        contract_date:
+          advertData.contract?.date || advertData.contractDate || "",
+        contract_time: createSelectionItem(
+          advertData.contract?.time || advertData.contractTime || "",
+          contractTimes
+        ),
+        advisor:
+          advertData.advisor?.uid?.toString() ||
+          advertData.advisor?.toString() ||
+          "",
+        advisor_profile: createSelectionItem(
+          advertData.advisor?.peopleCanSeeProfile ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+        eids: {
+          no: advertData.eidsNo || advertData.eids?.no || "",
+          date: advertData.eidsDate || advertData.eids?.date || "",
+          value: advertData.eidsNo ? "Evet" : "Hayır",
+        },
+        key: createSelectionItem(
+          advertData.whoseKey || "Yenigün Emlak",
+          keyOptions
+        ),
+        adminNote: advertData.adminNote || "",
+        price: {
+          value: feeValue,
+          type: feeType,
+          selections: currencyOptions,
+        },
+        province: advertData.address?.province || advertData.province || "",
+        district: advertData.address?.district || advertData.district || "",
+        quarter: advertData.address?.quarter || advertData.quarter || "",
+        address: advertData.address?.full_address || advertData.address || "",
+        parsel: advertData.address?.parcel || advertData.parcel || "",
+        roomCount: advertData.details?.roomCount || advertData.roomCount || "",
+        netArea: advertData.details?.netArea || advertData.netArea || 0,
+        grossArea: advertData.details?.grossArea || advertData.grossArea || 0,
+        buildingAge:
+          advertData.details?.buildingAge || advertData.buildingAge || 0,
+        elevator: createSelectionItem(
+          advertData.details?.elevator ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+        inSite: createSelectionItem(
+          advertData.details?.inSite ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+        whichSide: createSelectionItem(
+          advertData.details?.whichSide || advertData.whichSide || "",
+          directionOptions
+        ),
+        acre: advertData.details?.acre
+          ? parseInt(advertData.details.acre)
+          : advertData.acre || 0,
+        acreText: advertData.details?.acre || advertData.acreText || "",
+        floor: advertData.details?.floor || advertData.floor || 0,
+        totalFloor:
+          advertData.details?.totalFloor || advertData.totalFloor || 0,
+        balcony: createSelectionItem(
+          advertData.details?.balcony ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+        balconyCount:
+          advertData.details?.balconyCount || advertData.balconyCount || 0,
+        isFurnished: createSelectionItem(
+          advertData.details?.furniture ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+        heating: createSelectionItem(
+          advertData.details?.heating || advertData.heating || "",
+          heatingOptions
+        ),
+        deedStatus: createSelectionItem(
+          advertData.details?.deed || advertData.deedStatus || "",
+          deedStatusOptions
+        ),
+        zoningStatus: createSelectionItem(
+          advertData.details?.zoningStatus || advertData.zoningStatus || "",
+          zoningStatusOptions
+        ),
+        agenda_emlak: createSelectionItem(
+          advertData.questions?.agendaEmlak ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+        homepage_emlak: createSelectionItem(
+          advertData.questions?.homepageEmlak ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+        new_emlak: createSelectionItem(
+          advertData.questions?.new_emlak ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+        chance_emlak: createSelectionItem(
+          advertData.questions?.chance_emlak ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+        special_emlak: createSelectionItem(
+          advertData.questions?.special_emlak ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+        onweb_emlak: createSelectionItem(
+          advertData.questions?.onweb_emlak ? "Evet" : "Hayır",
+          yesNoOptions
+        ),
+      });
+
+      setContent(advertData.thoughts || "");
+      setIsActiveAd(advertData.active !== false);
+
+      if (advertData.images) {
+        setExistingImages(
+          Array.isArray(advertData.images) ? advertData.images : []
+        );
+      }
+
+      if (advertData.video) {
+        setExistingVideo(advertData.video);
+      }
+
+      if (advertData.address?.mapCoordinates) {
+        setMarker([{ lat: advertData.address.mapCoordinates, lng: 0 }]);
+      } else if (advertData.mapCoordinates) {
+        setMarker([{ lat: advertData.mapCoordinates, lng: 0 }]);
+      }
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        toast.error("İlan bulunamadı");
+        router.push("/admin/emlak");
+      } else {
+        toast.error("İlan verileri yüklenemedi");
+      }
+    } finally {
+      setIsLoading(false);
     }
-  }, [advertUid, router]);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -539,7 +565,6 @@ export default function EditE() {
         const advisorsResponse = await api.get("/admin/users");
         setAdvisors(advisorsResponse.data.data || advisorsResponse.data);
       } catch (error: any) {
-        console.error("❌ Veriler yüklenemedi:", error);
         toast.error("Bir hata oluştu. Lütfen sayfayı yenileyin.");
       }
     };
@@ -562,15 +587,35 @@ export default function EditE() {
         }
 
         setCategories(categoriesData);
+
+        if (advertUid) {
+          fetchAdvertData();
+        }
       } catch (error: any) {
-        console.error("❌ Kategoriler yüklenemedi:", error);
         toast.error("Kategoriler yüklenemedi");
         setCategories([]);
       }
     };
 
     fetchCategories();
-  }, []);
+  }, [advertUid]);
+
+  const getTabs = () => {
+    if (!advertData) {
+      return baseTabs;
+    }
+
+    if (advertData.isFeatures) {
+      return baseTabs.filter((tab) => tab.label !== "Detaylar");
+    }
+    if (!advertData.isFeatures) {
+      return baseTabs.filter((tab) => tab.label !== "Özellikler");
+    }
+
+    return baseTabs;
+  };
+
+  const tabs = getTabs();
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedImages = Array.from(event.target.files || []);
@@ -598,14 +643,6 @@ export default function EditE() {
     if (selectedVideo) {
       setVideoFile(selectedVideo);
     }
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const triggerVideoInput = () => {
-    videoInputRef.current?.click();
   };
 
   const formatNumber = (number: any) => {
@@ -982,24 +1019,6 @@ export default function EditE() {
     [updateFourthStep, fourthStep.onweb_emlak]
   );
 
-  const handleCategorySelect = (category: Category) => {
-    setSelectedCategory(category);
-    setSelectedSubcategory(null);
-    setFeatureValues({});
-  };
-
-  const handleSubcategorySelect = (subcategory: Subcategory) => {
-    setSelectedSubcategory(subcategory);
-    setFeatureValues({});
-  };
-
-  const handleFeatureChange = (featureId: string, value: any) => {
-    setFeatureValues((prev) => ({
-      ...prev,
-      [featureId]: value,
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -1031,10 +1050,18 @@ export default function EditE() {
       const feeType = fourthStep.price?.type || "TL";
 
       const formattedFee = `${feeValue} ${feeType}`;
-      console.log(
-        "💰 Price değeri backend'e şu şekilde gidiyor:",
-        formattedFee
-      );
+
+      const featureValuesArray = Object.entries(featureValues)
+        .filter(
+          ([featureId, value]) =>
+            value !== undefined && value !== null && value !== ""
+        )
+        .map(([featureId, value]) => ({
+          featureId: featureId,
+          value: value,
+        }));
+
+      console.log("Feature Values Array:", featureValuesArray);
 
       const requestData: any = {
         uid: Number(advertUid),
@@ -1101,34 +1128,11 @@ export default function EditE() {
           heating: fourthStep.heating?.value || "",
           deed: fourthStep.deedStatus?.value || "",
         },
+        featureValues: featureValuesArray,
       };
 
-      if (selectedCategory?._id) {
-        requestData.category = selectedCategory._id;
-      }
-
-      if (selectedSubcategory?._id) {
-        requestData.subcategory = selectedSubcategory._id;
-      }
-
-      if (Object.keys(featureValues).length > 0) {
-        requestData.features = featureValues;
-      }
-
-      console.log(
-        "🚀 Güncelleme verisi:",
-        JSON.stringify(requestData, null, 2)
-      );
-
-      console.log("🔍 Gönderilen customer değeri:", {
-        raw: fourthStep.customer,
-        number: Number(customerValue),
-        type: typeof fourthStep.customer,
-      });
-
+      console.log("giden", requestData);
       const res = await api.post("/admin/update-advert", requestData);
-
-      console.log("✅ Güncelleme yanıtı:", res.data);
 
       await handleFileUpdates();
 
@@ -1138,11 +1142,7 @@ export default function EditE() {
         router.push("/admin/emlak");
       }, 2000);
     } catch (err: any) {
-      console.error("❌ İlan güncelleme hatası:", err);
-
       if (err.response) {
-        console.error("❌ Sunucu yanıtı:", err.response.data);
-        console.error("❌ Status code:", err.response.status);
         toast.error(
           `Hata: ${err.response.status} - ${
             err.response.data?.message || "Bilinmeyen hata"
@@ -1169,19 +1169,11 @@ export default function EditE() {
           }
         });
 
-        console.log("📤 Güncelleme FormData içeriği:");
-        const formDataArray = Array.from(formData.entries());
-        formDataArray.forEach((pair) => {
-          console.log(pair[0] + ": ", pair[1]);
-        });
-
         await api.post("/admin/update-advert-images", formData);
 
         toast.dismiss(imageToast);
         toast.success("✅ Resimler başarıyla güncellendi!");
       } catch (error: any) {
-        console.error("❌ Resim güncelleme hatası:", error);
-        console.error("❌ Hata detayı:", error.response?.data);
         uploadSuccess = false;
         toast.warning("İlan güncellendi ancak resimler yüklenemedi");
       }
@@ -1194,19 +1186,11 @@ export default function EditE() {
         videoForm.append("uid", advertUid);
         videoForm.append("video", videoFile);
 
-        console.log("📤 Video güncelleme bilgisi:", {
-          fileName: videoFile.name,
-          fileSize: videoFile.size,
-          fileType: videoFile.type,
-        });
-
         await api.post("/admin/update-advert-video", videoForm);
 
         toast.dismiss(videoToast);
         toast.success("✅ Video başarıyla güncellendi!");
       } catch (error: any) {
-        console.error("❌ Video güncelleme hatası:", error);
-        console.error("❌ Video hata detayı:", error.response?.data);
         uploadSuccess = false;
         toast.warning("İlan güncellendi ancak video yüklenemedi");
       }
@@ -1215,54 +1199,13 @@ export default function EditE() {
     return uploadSuccess;
   };
 
-  const scrollTabs = (direction: "left" | "right") => {
-    if (tabContainerRef.current) {
-      const scrollAmount = 200;
-      const newPosition =
-        direction === "left"
-          ? Math.max(0, scrollPosition - scrollAmount)
-          : scrollPosition + scrollAmount;
-
-      tabContainerRef.current.scrollTo({
-        left: newPosition,
-        behavior: "smooth",
-      });
-      setScrollPosition(newPosition);
-    }
-  };
-
   const renderTabContent = () => {
-    switch (activeTab) {
-      case 1:
-        return (
-          <PropertyTypeTab
-            firstStep={firstStep}
-            setFirstStep={setFirstStep}
-            onNext={() => setActiveTab(2)}
-          />
-        );
-      case 2:
-        return (
-          <ListingTypeTab
-            firstStep={firstStep}
-            secondStep={secondStep}
-            setSecondStep={setSecondStep}
-            onBack={() => setActiveTab(1)}
-            onNext={() => setActiveTab(3)}
-          />
-        );
-      case 3:
-        return (
-          <CategoryTab
-            firstStep={firstStep}
-            secondStep={secondStep}
-            thirdStep={thirdStep}
-            setThirdStep={setThirdStep}
-            onBack={() => setActiveTab(2)}
-            onNext={() => setActiveTab(4)}
-          />
-        );
-      case 4:
+    const currentTab = tabs.find((tab) => tab.id === activeTab);
+
+    if (!currentTab) return null;
+
+    switch (currentTab.label) {
+      case "Temel Bilgiler":
         return (
           <BasicInfoTab
             fourthStep={fourthStep}
@@ -1275,7 +1218,7 @@ export default function EditE() {
             currencyOptions={currencyOptions}
           />
         );
-      case 5:
+      case "Medya":
         return (
           <MediaTab
             images={images}
@@ -1289,7 +1232,7 @@ export default function EditE() {
             onRemoveImage={handleRemoveImage}
           />
         );
-      case 6:
+      case "Konum":
         return (
           <LocationTab
             fourthStep={fourthStep}
@@ -1303,27 +1246,46 @@ export default function EditE() {
             turkeyCities={turkeyCities}
           />
         );
-      case 7:
+      case "Detaylar":
+        if (!advertData?.isFeatures) {
+          return (
+            <DetailsTab
+              fourthStep={fourthStep}
+              firstStep={firstStep}
+              secondStep={secondStep}
+              onRoomCountChange={handleRoomCountChange}
+              onFloorChange={handleFloorChange}
+              onTotalFloorChange={handleTotalFloorChange}
+              onBuildingAgeChange={handleBuildingAgeChange}
+              onNetAreaChange={handleNetAreaChange}
+              onGrossAreaChange={handleGrossAreaChange}
+              onBalconyCountChange={handleBalconyCountChange}
+              onAcreChange={handleAcreChange}
+              onElevatorToggle={handleElevatorToggle}
+              onInSiteToggle={handleInSiteToggle}
+              onBalconyToggle={handleBalconyToggle}
+              onIsFurnishedToggle={handleIsFurnishedToggle}
+              onHeatingChange={handleHeatingChange}
+              onDeedStatusChange={handleDeedStatusChange}
+              onWhichSideChange={handleWhichSideChange}
+              onZoningStatusChange={handleZoningStatusChange}
+              heatingOptions={heatingOptions}
+              deedStatusOptions={deedStatusOptions}
+              directionOptions={directionOptions}
+              zoningStatusOptions={zoningStatusOptions}
+            />
+          );
+        }
+        return null;
+      case "Özellikler":
         return (
-          <DetailsTab
-            fourthStep={fourthStep}
-            firstStep={firstStep}
-            onRoomCountChange={handleRoomCountChange}
-            onFloorChange={handleFloorChange}
-            onTotalFloorChange={handleTotalFloorChange}
-            onBuildingAgeChange={handleBuildingAgeChange}
-            onNetAreaChange={handleNetAreaChange}
-            onGrossAreaChange={handleGrossAreaChange}
-            onBalconyCountChange={handleBalconyCountChange}
-            onAcreChange={handleAcreChange}
-          />
-        );
-      case 8:
-        return (
-          <FeaturesTab
+          <EditFeaturesTab
             fourthStep={fourthStep}
             firstStep={firstStep}
             secondStep={secondStep}
+            thirdStep={thirdStep}
+            featuresStep={featuresStep}
+            setFeaturesStep={setFeaturesStep}
             onElevatorToggle={handleElevatorToggle}
             onInSiteToggle={handleInSiteToggle}
             onBalconyToggle={handleBalconyToggle}
@@ -1336,9 +1298,14 @@ export default function EditE() {
             deedStatusOptions={deedStatusOptions}
             directionOptions={directionOptions}
             zoningStatusOptions={zoningStatusOptions}
+            featureValues={featureValues}
+            setFeatureValues={setFeatureValues}
+            categories={categories}
+            categoryId={advertData?.categoryId}
+            subcategoryId={advertData?.subcategoryId}
           />
         );
-      case 9:
+      case "Diğer":
         return (
           <EditOtherInfoTab
             fourthStep={fourthStep}
@@ -1367,7 +1334,6 @@ export default function EditE() {
             keyOptions={keyOptions}
           />
         );
-
       default:
         return null;
     }
@@ -1442,22 +1408,6 @@ export default function EditE() {
                 {/* Enhanced Tab Navigation */}
                 <div className="border-b border-gray-200 pb-4 mb-6">
                   <div className="relative">
-                    {/* Scroll Buttons */}
-                    <button
-                      onClick={() => scrollTabs("left")}
-                      className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-full p-1.5 shadow-sm hover:shadow-md transition-all duration-200"
-                      disabled={scrollPosition === 0}
-                    >
-                      <ChevronLeft size={16} className="text-gray-600" />
-                    </button>
-
-                    <button
-                      onClick={() => scrollTabs("right")}
-                      className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-full p-1.5 shadow-sm hover:shadow-md transition-all duration-200"
-                    >
-                      <ChevronRight size={16} className="text-gray-600" />
-                    </button>
-
                     <div
                       ref={tabContainerRef}
                       className="flex overflow-x-auto pb-2 -mb-2 scrollbar-hide mx-8"
@@ -1599,7 +1549,6 @@ export default function EditE() {
           </form>
         </div>
 
-        {/* Reorder Images Modal */}
         <AnimatePresence>
           {reOrderImages && (
             <>

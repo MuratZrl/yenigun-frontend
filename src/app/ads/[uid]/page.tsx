@@ -23,7 +23,6 @@ import {
   MessageCircle,
 } from "lucide-react";
 import MapComponent from "@/app/components/MapComponnet";
-import CategorySection from "@/app/components/CategorySection";
 
 const DetailRow = ({
   label,
@@ -281,7 +280,6 @@ const PhotoThumbnailsHorizontal = ({
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
 
-            {/* Seçili thumbnail'de gösterge */}
             {selectedPhoto === index && (
               <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-blue-500 rounded-full"></div>
             )}
@@ -307,8 +305,8 @@ async function getAdvertData(
 ): Promise<{ data: AdvertData; similarAds: SimilarAd[] }> {
   try {
     const response = await api.get(`/advert/adverts/${uid}`);
-    console.log(response.data);
     const data = response.data.data;
+    console.log(data);
     if (!data || data.active === false) {
       throw new Error("İlan bulunamadı");
     }
@@ -320,7 +318,6 @@ async function getAdvertData(
       );
       similarAds = similarResponse.data.data || [];
     } catch (error) {
-      console.log("Benzer ilanlar endpoint'inden veri çekilemedi:", error);
       similarAds = [];
     }
 
@@ -338,8 +335,6 @@ async function getAdvertData(
       similarAds,
     };
   } catch (error) {
-    console.error("İlan detayı çekilirken hata:", error);
-
     if (error instanceof Error) {
       console.error("Hata mesajı:", error.message);
     } else if (typeof error === "string") {
@@ -410,7 +405,6 @@ function AdvertDetail({
       }
     }
   };
-  const mapRef = useRef<any>(null);
 
   useEffect(() => {
     document.body.style.overflow =
@@ -434,12 +428,6 @@ function AdvertDetail({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const stripHtml = (html: string) => {
-    if (typeof html !== "string") return "";
-    return html.replace(/<[^>]*>/g, "").trim();
-  };
-
-  const strippedDescription = stripHtml(data.thoughts);
   const placeholderPhoneNumber = data.advisor.gsmNumber || "5322328405";
   const handleImageError = (
     e: React.SyntheticEvent<HTMLImageElement, Event>
@@ -468,10 +456,6 @@ function AdvertDetail({
   const isLowQualityImage = (url: string | undefined) => {
     if (!url || typeof url !== "string") return false;
     return url.includes("low-quality") || url.includes("thumbnail");
-  };
-
-  const onGoogleApiLoaded = ({ map, maps }: any) => {
-    mapRef.current = map;
   };
 
   const goToPreviousPhoto = () => {
@@ -504,6 +488,164 @@ function AdvertDetail({
     const { province, district, quarter, full_address } = data.address;
     const parts = [quarter, full_address, district, province].filter(Boolean);
     return parts.join(", ");
+  };
+
+  const renderFeatureValues = () => {
+    if (!data.featureValues || data.featureValues.length === 0) {
+      return null;
+    }
+
+    const valueTranslations: { [key: string]: string } = {
+      yes: "Evet",
+      no: "Hayır",
+      Yes: "Evet",
+      No: "Hayır",
+      true: "Evet",
+      false: "Hayır",
+      True: "Evet",
+      False: "Hayır",
+    };
+
+    const translateValue = (value: string | number): string => {
+      if (value === undefined || value === null || value === "") {
+        return "Bilinmiyor";
+      }
+
+      const stringValue = String(value).trim();
+      if (stringValue === "" || stringValue === "0") {
+        return "Bilinmiyor";
+      }
+
+      return valueTranslations[stringValue] || stringValue;
+    };
+
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          İlan Özellikleri
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {data.featureValues.map((feature, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            >
+              <span className="text-sm font-medium text-gray-600">
+                {feature.name}
+              </span>
+              <span className="text-sm font-semibold text-gray-900">
+                {translateValue(feature.value)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderTraditionalFeatures = () => {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Özellikler</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <FeatureCard
+            icon={featureIcons.area}
+            label="Net m²"
+            value={data.details.netArea}
+          />
+          <FeatureCard
+            icon={featureIcons.rooms}
+            label="Oda Sayısı"
+            value={data.details.roomCount}
+          />
+          <FeatureCard
+            icon={featureIcons.age}
+            label="Bina Yaşı"
+            value={data.details.buildingAge}
+          />
+          <FeatureCard
+            icon={featureIcons.floor}
+            label="Bulunduğu Kat"
+            value={data.details.floor}
+          />
+          <FeatureCard
+            icon={featureIcons.heating}
+            label="Isıtma"
+            value={data.details.heating}
+          />
+          <FeatureCard
+            icon={featureIcons.bathroom}
+            label="Banyo Sayısı"
+            value={data.details.bathCount || "1"}
+          />
+          <FeatureCard
+            icon={featureIcons.elevator}
+            label="Asansör"
+            value={data.details.elevator ? "Var" : "Yok"}
+          />
+          <FeatureCard
+            icon={featureIcons.balcony}
+            label="Balkon"
+            value={data.details.balcony ? "Var" : "Yok"}
+          />
+          <FeatureCard
+            icon={featureIcons.furniture}
+            label="Eşyalı"
+            value={data.details.furniture ? "Evet" : "Hayır"}
+          />
+          <FeatureCard
+            icon={featureIcons.site}
+            label="Site İçinde"
+            value={data.details.inSite ? "Evet" : "Hayır"}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderTraditionalDetails = () => {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">
+          Detaylı Bilgiler
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+          <DetailRow label="İlan No" value={data.uid} />
+          <DetailRow label="Emlak Tipi" value={data.steps.first} />
+          <DetailRow label="İlan Türü" value={data.steps.second} />
+          <DetailRow
+            label="Kontrat Süresi"
+            value={data.contract.time || "1 Yıl"}
+          />
+          <DetailRow label="EIDS No" value={data.eidsNo} />
+          <DetailRow
+            label="EIDS Tarihi"
+            value={
+              data.eidsDate
+                ? new Date(data.eidsDate).toLocaleDateString("tr-TR")
+                : undefined
+            }
+          />
+          <DetailRow label="Net m²" value={data.details.netArea} />
+          <DetailRow label="Brüt m²" value={data.details.grossArea} />
+          <DetailRow label="Oda Sayısı" value={data.details.roomCount} />
+          <DetailRow label="Bina Yaşı" value={data.details.buildingAge} />
+          <DetailRow label="Bulunduğu Kat" value={data.details.floor} />
+          <DetailRow label="Kat Sayısı" value={data.details.totalFloor} />
+          <DetailRow label="Isıtma" value={data.details.heating} />
+          <DetailRow label="Banyo Sayısı" value={data.details.bathCount} />
+          <DetailRow label="Balkon" value={data.details.balcony} />
+          <DetailRow label="Eşyalı" value={data.details.furniture} />
+          <DetailRow label="Asansör" value={data.details.elevator} />
+          <DetailRow label="Site İçinde" value={data.details.inSite} />
+          <DetailRow label="Balkon Sayısı" value={data.details.balconyCount} />
+          <DetailRow label="Cephe" value={data.details.whichSide} />
+          {data.steps.second?.includes("Satılık") && (
+            <DetailRow label="Tapu Durumu" value={data.details.deed} />
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -766,116 +908,11 @@ function AdvertDetail({
               )}
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Özellikler
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <FeatureCard
-                  icon={featureIcons.area}
-                  label="Net m²"
-                  value={data.details.netArea}
-                />
-                <FeatureCard
-                  icon={featureIcons.rooms}
-                  label="Oda Sayısı"
-                  value={data.details.roomCount}
-                />
-                <FeatureCard
-                  icon={featureIcons.age}
-                  label="Bina Yaşı"
-                  value={data.details.buildingAge}
-                />
-                <FeatureCard
-                  icon={featureIcons.floor}
-                  label="Bulunduğu Kat"
-                  value={data.details.floor}
-                />
-                <FeatureCard
-                  icon={featureIcons.heating}
-                  label="Isıtma"
-                  value={data.details.heating}
-                />
-                <FeatureCard
-                  icon={featureIcons.bathroom}
-                  label="Banyo Sayısı"
-                  value={data.details.bathCount || "1"}
-                />
-                <FeatureCard
-                  icon={featureIcons.elevator}
-                  label="Asansör"
-                  value={data.details.elevator ? "Var" : "Yok"}
-                />
-                <FeatureCard
-                  icon={featureIcons.balcony}
-                  label="Balkon"
-                  value={data.details.balcony ? "Var" : "Yok"}
-                />
-                <FeatureCard
-                  icon={featureIcons.furniture}
-                  label="Eşyalı"
-                  value={data.details.furniture ? "Evet" : "Hayır"}
-                />
-                <FeatureCard
-                  icon={featureIcons.site}
-                  label="Site İçinde"
-                  value={data.details.inSite ? "Evet" : "Hayır"}
-                />
-              </div>
-            </div>
+            {data.isFeatures
+              ? renderFeatureValues()
+              : renderTraditionalFeatures()}
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">
-                Detaylı Bilgiler
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                <DetailRow label="İlan No" value={data.uid} />
-                <DetailRow label="Emlak Tipi" value={data.steps.first} />
-                <DetailRow label="İlan Türü" value={data.steps.second} />
-                <DetailRow
-                  label="Kontrat Süresi"
-                  value={data.contract.time || "1 Yıl"}
-                />
-                <DetailRow label="EIDS No" value={data.eidsNo} />
-                <DetailRow
-                  label="EIDS Tarihi"
-                  value={
-                    data.eidsDate
-                      ? new Date(data.eidsDate).toLocaleDateString("tr-TR")
-                      : undefined
-                  }
-                />
-                <DetailRow label="Net m²" value={data.details.netArea} />
-                <DetailRow label="Brüt m²" value={data.details.grossArea} />
-                <DetailRow label="Oda Sayısı" value={data.details.roomCount} />
-                <DetailRow label="Bina Yaşı" value={data.details.buildingAge} />
-                <DetailRow label="Bulunduğu Kat" value={data.details.floor} />
-                <DetailRow label="Kat Sayısı" value={data.details.totalFloor} />
-                <DetailRow label="Isıtma" value={data.details.heating} />
-                <DetailRow
-                  label="Banyo Sayısı"
-                  value={data.details.bathCount}
-                />
-                <DetailRow label="Balkon" value={data.details.balcony} />
-                <DetailRow label="Eşyalı" value={data.details.furniture} />
-                <DetailRow label="Asansör" value={data.details.elevator} />
-                <DetailRow label="Site İçinde" value={data.details.inSite} />
-                <DetailRow
-                  label="Balkon Sayısı"
-                  value={data.details.balconyCount}
-                />
-                <DetailRow label="Cephe" value={data.details.whichSide} />
-                {data.steps.second?.includes("Satılık") && (
-                  <DetailRow label="Tapu Durumu" value={data.details.deed} />
-                )}
-              </div>
-            </div>
-
-            <CategorySection
-              categoryId={data.categoryId}
-              subcategoryId={data.subcategoryId}
-              featureValues={data.featureValues}
-            />
+            {!data.isFeatures && renderTraditionalDetails()}
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Açıklama</h2>
@@ -1073,7 +1110,6 @@ function AdvertDetail({
               </>
             )}
 
-            {/* Fotoğraf Container */}
             <div className="relative max-w-7xl max-h-[80vh] flex items-center justify-center mb-4">
               <img
                 src={zoomPhoto.photo}
@@ -1088,7 +1124,6 @@ function AdvertDetail({
               />
             </div>
 
-            {/* Thumbnail Bar - Mobil için düzenleme */}
             {hasPhotos && safePhotos.length > 1 && (
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 z-20">
                 <div className="bg-black/50 backdrop-blur-sm rounded-xl p-3">

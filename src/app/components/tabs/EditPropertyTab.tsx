@@ -24,7 +24,6 @@ export default function PropertyTypeTab({
       try {
         setLoading(true);
         const response = await api.get("/admin/categories");
-        console.log("API Response:", response.data);
 
         let categoriesData: Category[] = [];
 
@@ -37,7 +36,6 @@ export default function PropertyTypeTab({
         } else if (response.data && Array.isArray(response.data.items)) {
           categoriesData = response.data.items;
         } else {
-          console.warn("Unexpected API response structure:", response.data);
           setError("Kategoriler beklenen formatta değil");
         }
 
@@ -52,7 +50,6 @@ export default function PropertyTypeTab({
           setError("Hiç kategori bulunamadı");
         }
       } catch (err) {
-        console.error("Kategoriler yüklenirken hata:", err);
         setError("Kategoriler yüklenemedi");
         setCategories([]);
       } finally {
@@ -64,15 +61,12 @@ export default function PropertyTypeTab({
   }, []);
 
   const handlePropertySelect = (category: Category) => {
-    console.log("Selected category:", category);
-
     setFirstStep({
       ...firstStep,
       selected: {
         isSelect: true,
         value: category.name,
         id: category._id,
-        name: category.name,
         categoryData: category,
       },
     });
@@ -110,6 +104,7 @@ export default function PropertyTypeTab({
       <h3 className="text-xl font-semibold text-gray-900 mb-4">
         Emlak Türü Seçin
       </h3>
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {categories.map((category) => (
           <motion.button
@@ -119,13 +114,18 @@ export default function PropertyTypeTab({
             whileTap={{ scale: 0.95 }}
             onClick={() => handlePropertySelect(category)}
             className={`p-4 border-2 rounded-xl text-center transition-all duration-200 cursor-pointer ${
-              firstStep.selected.id === category._id
+              firstStep.selected.value === category.name
                 ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md"
                 : "border-gray-300 hover:border-blue-300 bg-white text-gray-700 hover:shadow-sm"
             }`}
           >
-            <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-center"></div>
+            <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-center">
+              <span className="text-2xl">🏠</span>
+            </div>
             <span className="font-medium text-sm">{category.name}</span>
+            {firstStep.selected.value === category.name && (
+              <div className="mt-2 text-blue-500">✓ Seçili</div>
+            )}
           </motion.button>
         ))}
       </div>

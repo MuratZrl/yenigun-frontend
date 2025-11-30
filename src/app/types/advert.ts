@@ -64,9 +64,16 @@ export interface AdvertData {
   active: boolean;
   categoryId:string;
   subcategoryId:string;
-  featureValues:[];
+    isFeatures: boolean;
+  featureValues: FeatureValue[];
 }
-
+export interface FeatureValue {
+  featureId: string;
+  value: string | number;
+  name?: string;
+  title?: string;
+  description?: string;
+}
 export interface SimilarAd {
   uid: string;
   title: string;

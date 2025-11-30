@@ -1,7 +1,9 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Save, Plus, Trash2 } from "lucide-react";
 import api from "@/app/lib/api";
+import { toast } from "react-toastify";
 
 interface FeatureModalProps {
   isOpen: boolean;
@@ -55,7 +57,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     }
     setNewOption("");
     setError("");
-  }, [isOpen, mode, feature]);
+  }, [isOpen, mode, feature, categoryId, subcategoryId]);
 
   const addOption = () => {
     if (newOption.trim() && !formData.options.includes(newOption.trim())) {
@@ -80,32 +82,59 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
     setError("");
 
     try {
-      const payload = {
+      const payload: any = {
         name: formData.name,
         type: formData.type,
-        example: formData.example,
-        ...(formData.type === "single_select" ||
-        formData.type === "multi_select"
-          ? { options: formData.options }
-          : {}),
       };
 
+      if (formData.example.trim()) {
+        payload.example = formData.example;
+      }
+
+      if (
+        formData.type === "single_select" ||
+        formData.type === "multi_select"
+      ) {
+        payload.options = formData.options;
+      }
+
+      if (!categoryId || !subcategoryId) {
+        throw new Error("Kategori veya alt kategori ID'si eksik");
+      }
+
+      if (categoryId === subcategoryId) {
+        console.warn("⚠️ UYARI: categoryId ve subcategoryId aynı!", {
+          categoryId,
+          subcategoryId,
+        });
+      }
+
       if (mode === "create") {
-        await api.post(
+        const response = await api.post(
           `/admin/categories/${categoryId}/subcategories/${subcategoryId}/features`,
           payload
         );
+
+        toast.success("Özellik başarıyla oluşturuldu");
       } else {
-        await api.patch(
+        if (!feature?._id) {
+          throw new Error("Düzenlenecek özellik ID'si eksik");
+        }
+
+        const response = await api.patch(
           `/admin/categories/${categoryId}/subcategories/${subcategoryId}/features/${feature._id}`,
           payload
         );
+        toast.success("Özellik başarıyla güncellendi");
       }
 
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || "Bir hata oluştu");
+      const errorMessage =
+        err.response?.data?.message || err.message || "Bir hata oluştu";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -182,7 +211,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Örnek Değer
+                    Örnek Değer (Opsiyonel)
                   </label>
                   <input
                     type="text"
@@ -258,7 +287,12 @@ const FeatureModal: React.FC<FeatureModalProps> = ({
 
                 {error && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-600">{error}</p>
+                    <p className="text-sm text-red-600 font-semibold">
+                      {error}
+                    </p>
+                    <p className="text-xs text-red-500 mt-1">
+                      Lütfen konsoldaki detaylı hata bilgilerini kontrol edin.
+                    </p>
                   </div>
                 )}
               </div>
