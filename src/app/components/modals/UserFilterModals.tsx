@@ -20,6 +20,19 @@ const App = ({
     setOpen(false);
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleFilterUsers();
+  };
+
+  const handleCheckboxChange = (genderValue: string) => {
+    const newGender = filteredValues.gender === genderValue ? "" : genderValue;
+    setFilteredValues({
+      ...filteredValues,
+      gender: newGender,
+    });
+  };
+
   const turkeyCities = JSONDATA.map((city: any) => {
     return {
       province: city.name,
@@ -52,7 +65,7 @@ const App = ({
           </button>
         </div>
 
-        <form onSubmit={handleFilterUsers} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div className="relative flex flex-col gap-2">
             <label htmlFor="email" className="font-medium">
               E-Posta
@@ -61,6 +74,7 @@ const App = ({
               type="email"
               name="email"
               placeholder="örn: yenigünemlak@gmail.com"
+              value={filteredValues.email || ""}
               onChange={(e) => {
                 setFilteredValues({
                   ...filteredValues,
@@ -72,35 +86,30 @@ const App = ({
             />
           </div>
 
-          <div className="flex flex-row justify-start gap-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={filteredValues.gender === "Erkek"}
-                onChange={() => {
-                  setFilteredValues({
-                    ...filteredValues,
-                    gender: "Erkek",
-                  });
-                }}
-                className="w-4 h-4"
-              />
-              Erkek
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={filteredValues.gender === "Kadın"}
-                onChange={() => {
-                  setFilteredValues({
-                    ...filteredValues,
-                    gender: "Kadın",
-                  });
-                }}
-                className="w-4 h-4"
-              />
-              Kadın
-            </label>
+          <div className="flex flex-col gap-2">
+            <label className="font-medium">Cinsiyet</label>
+            <div className="flex flex-row justify-start gap-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="gender"
+                  checked={filteredValues.gender === "Erkek"}
+                  onChange={() => handleCheckboxChange("Erkek")}
+                  className="w-4 h-4"
+                />
+                Erkek
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="gender"
+                  checked={filteredValues.gender === "Kadın"}
+                  onChange={() => handleCheckboxChange("Kadın")}
+                  className="w-4 h-4"
+                />
+                Kadın
+              </label>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -108,10 +117,11 @@ const App = ({
               Telefon
             </label>
             <input
-              type="number"
+              type="tel"
               name="phone"
               placeholder="örn: (+90) 5XX XXX XX XX"
-              onChange={(e: any) => {
+              value={filteredValues.phone || ""}
+              onChange={(e) => {
                 setFilteredValues({
                   ...filteredValues,
                   phone: e.target.value,
@@ -129,11 +139,18 @@ const App = ({
             <Select
               className="basic-single"
               classNamePrefix="select"
+              value={
+                filteredValues.status.selected
+                  ? {
+                      value: filteredValues.status.selected,
+                      label: filteredValues.status.selected,
+                    }
+                  : null
+              }
               options={filteredValues.status.options.map((type: string) => ({
                 value: type,
                 label: type,
               }))}
-              defaultInputValue={filteredValues.status.selected}
               styles={{
                 control: (baseStyles, state) => ({
                   ...baseStyles,
@@ -147,15 +164,17 @@ const App = ({
                   },
                 }),
               }}
-              onChange={(e: any) => {
+              onChange={(selectedOption: any) => {
                 setFilteredValues({
                   ...filteredValues,
                   status: {
                     ...filteredValues.status,
-                    selected: e.value,
+                    selected: selectedOption ? selectedOption.value : "",
                   },
                 });
               }}
+              isClearable={true}
+              placeholder="Müşteri türü seçin..."
             />
           </div>
 
@@ -165,23 +184,24 @@ const App = ({
             </label>
             <div className="flex flex-row justify-between">
               <input
-                type="number"
+                type="text"
                 name="turkish_id"
-                onChange={(e: any) =>
+                value={filteredValues.turkish_id || ""}
+                onChange={(e) =>
                   setFilteredValues({
                     ...filteredValues,
                     turkish_id: e.target.value,
                   })
                 }
                 autoComplete="off"
-                pattern="[0-9]{11}"
                 placeholder="TC Kimlik No"
                 className="px-2 py-1 focus:outline-none border w-[49%] border-gray-300 rounded-md bg-gray-100"
               />
               <input
                 type="text"
                 name="mernis_no"
-                onChange={(e: any) =>
+                value={filteredValues.mernis_no || ""}
+                onChange={(e) =>
                   setFilteredValues({
                     ...filteredValues,
                     mernis_no: e.target.value,
@@ -202,6 +222,14 @@ const App = ({
               <Select
                 className="basic-single"
                 classNamePrefix="select"
+                value={
+                  filteredValues.province
+                    ? {
+                        value: filteredValues.province,
+                        label: filteredValues.province,
+                      }
+                    : null
+                }
                 options={turkeyCities.map((city: any) => ({
                   value: city.province,
                   label: city.province,
@@ -220,24 +248,37 @@ const App = ({
                     },
                   }),
                 }}
-                onChange={(e: any) => {
+                onChange={(selectedOption: any) => {
                   setFilteredValues({
                     ...filteredValues,
-                    province: e.value,
-                  } as any);
+                    province: selectedOption ? selectedOption.value : "",
+                    district: "",
+                    quarter: "",
+                  });
                 }}
+                isClearable={true}
               />
               <Select
                 className="basic-single"
                 classNamePrefix="select"
-                options={turkeyCities
-                  .find(
-                    (city: any) => city.province === filteredValues.province
-                  )
-                  ?.districts.map((district: any) => ({
-                    value: district.district,
-                    label: district.district,
-                  }))}
+                value={
+                  filteredValues.district
+                    ? {
+                        value: filteredValues.district,
+                        label: filteredValues.district,
+                      }
+                    : null
+                }
+                options={
+                  turkeyCities
+                    .find(
+                      (city: any) => city.province === filteredValues.province
+                    )
+                    ?.districts.map((district: any) => ({
+                      value: district.district,
+                      label: district.district,
+                    })) || []
+                }
                 placeholder="İlçe"
                 styles={{
                   control: (baseStyles, state) => ({
@@ -253,28 +294,41 @@ const App = ({
                   }),
                 }}
                 noOptionsMessage={() => "İl seçiniz"}
-                onChange={(e: any) => {
+                isDisabled={!filteredValues.province}
+                onChange={(selectedOption: any) => {
                   setFilteredValues({
                     ...filteredValues,
-                    district: e.value,
-                  } as any);
+                    district: selectedOption ? selectedOption.value : "",
+                    quarter: "",
+                  });
                 }}
+                isClearable={true}
               />
               <Select
                 className="basic-single col-span-2 md:col-span-1"
                 classNamePrefix="select"
-                options={turkeyCities
-                  .find(
-                    (city: any) => city.province === filteredValues.province
-                  )
-                  ?.districts.find(
-                    (district: any) =>
-                      district.district === filteredValues.district
-                  )
-                  ?.quarters.map((quarter: any) => ({
-                    value: quarter,
-                    label: quarter,
-                  }))}
+                value={
+                  filteredValues.quarter
+                    ? {
+                        value: filteredValues.quarter,
+                        label: filteredValues.quarter,
+                      }
+                    : null
+                }
+                options={
+                  turkeyCities
+                    .find(
+                      (city: any) => city.province === filteredValues.province
+                    )
+                    ?.districts.find(
+                      (district: any) =>
+                        district.district === filteredValues.district
+                    )
+                    ?.quarters.map((quarter: any) => ({
+                      value: quarter,
+                      label: quarter,
+                    })) || []
+                }
                 placeholder="Mahalle"
                 styles={{
                   control: (baseStyles, state) => ({
@@ -289,12 +343,14 @@ const App = ({
                     },
                   }),
                 }}
-                onChange={(e: any) => {
+                isDisabled={!filteredValues.district}
+                onChange={(selectedOption: any) => {
                   setFilteredValues({
                     ...filteredValues,
-                    quarter: e.value,
-                  } as any);
+                    quarter: selectedOption ? selectedOption.value : "",
+                  });
                 }}
+                isClearable={true}
               />
             </div>
           </div>
@@ -302,14 +358,16 @@ const App = ({
           <div className="flex flex-row gap-5 items-center">
             <button
               type="submit"
-              onClick={handleFilterUsers}
               className="bg-gray-700 hover:bg-gray-900 w-1/2 duration-300 py-2 text-white rounded-md mt-3 text-lg focus:outline-none flex items-center justify-center gap-2"
             >
               Filtrele <Filter size={18} />
             </button>
             <button
               type="button"
-              onClick={handleCleanFilters}
+              onClick={() => {
+                handleCleanFilters();
+                setOpen(false);
+              }}
               className="bg-custom-orange hover:bg-custom-orange-dark w-1/2 duration-300 py-2 text-white rounded-md mt-3 text-lg focus:outline-none flex items-center justify-center gap-2"
             >
               Temizle <Trash2 size={18} />

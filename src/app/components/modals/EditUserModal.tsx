@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import JSONDATA from "../../data.json";
 import { Poppins } from "next/font/google";
 import { X, Trash2 } from "lucide-react";
@@ -7,11 +7,10 @@ const PoppinsFont = Poppins({
   weight: ["400", "600"],
 });
 import Select from "react-select";
-import axios from "axios";
 import { toast } from "react-toastify";
 import api from "@/app/lib/api";
 
-const App = ({ open, setOpen, user, cookies }: any) => {
+const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
   const [newUser, setNewUser] = useState({
     uid: "",
     image: "",
@@ -35,6 +34,8 @@ const App = ({ open, setOpen, user, cookies }: any) => {
 
   const [newPhone, setNewPhone] = useState([]) as any;
   const [firstPhone, setFirstPhone] = useState("") as any;
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [quarters, setQuarters] = useState<any[]>([]);
 
   const formatPhoneNumber = (value: string) => {
     const numbers = value.replace(/\D/g, "");
@@ -79,7 +80,30 @@ const App = ({ open, setOpen, user, cookies }: any) => {
     return formattedPhone.replace(/\D/g, "");
   };
 
-  React.useEffect(() => {
+  const updateDistricts = (province: string) => {
+    const selectedCity = turkeyCities.find(
+      (city: any) => city.province === province
+    );
+    if (selectedCity) {
+      setDistricts(selectedCity.districts || []);
+    } else {
+      setDistricts([]);
+    }
+    setQuarters([]);
+  };
+
+  const updateQuarters = (district: string) => {
+    const selectedDistrict = districts.find(
+      (dist: any) => dist.district === district
+    );
+    if (selectedDistrict) {
+      setQuarters(selectedDistrict.quarters || []);
+    } else {
+      setQuarters([]);
+    }
+  };
+
+  useEffect(() => {
     if (user) {
       const formattedPhones = user.phones
         ? user.phones.map((phone: any) => ({
@@ -120,6 +144,24 @@ const App = ({ open, setOpen, user, cookies }: any) => {
             }))
           : []
       );
+      if (user.city) {
+        updateDistricts(user.city);
+
+        if (user.county) {
+          const selectedCity = turkeyCities.find(
+            (city: any) => city.province === user.city
+          );
+          if (selectedCity) {
+            setDistricts(selectedCity.districts || []);
+            const selectedDistrict = selectedCity.districts.find(
+              (dist: any) => dist.district === user.county
+            );
+            if (selectedDistrict) {
+              setQuarters(selectedDistrict.quarters || []);
+            }
+          }
+        }
+      }
     } else {
       setNewUser({
         uid: "",
@@ -143,6 +185,8 @@ const App = ({ open, setOpen, user, cookies }: any) => {
       });
       setNewPhone([]);
       setFirstPhone("");
+      setDistricts([]);
+      setQuarters([]);
     }
   }, [user]);
 
@@ -154,7 +198,7 @@ const App = ({ open, setOpen, user, cookies }: any) => {
   };
 
   const handleClose = () => {
-    setOpen(false);
+    setOpen({ open: false, user: null });
     setNewPhone([]);
     setTimeout(() => {
       window.location.reload();
@@ -181,35 +225,39 @@ const App = ({ open, setOpen, user, cookies }: any) => {
       })),
     ];
 
+    const payload = {
+      uid: newUser.uid,
+      name: newUser.name,
+      surname: newUser.lastname,
+      gender: newUser.gender === "Erkek" ? "male" : "female",
+      status: newUser.status,
+      mail: {
+        mail: newUser.email || "",
+        isAbledToSendMail: true,
+      },
+      phones: lastPhone,
+      tcNumber: newUser.turkish_id || "",
+      mernisNo: newUser.mernis_no || "",
+      country: "Türkiye",
+      city: newUser.province,
+      owner_url: newUser.owner_url,
+      county: newUser.district,
+      neighbourhood: newUser.quarters,
+      fulladdress: newUser.address || "",
+      ideasAboutCustomer: newUser.comment || "",
+    };
+
+    console.log("Güncellenecek veri:", payload);
+
     api
-      .post("/admin/update-customer", {
-        uid: newUser.uid,
-        name: newUser.name,
-        surname: newUser.lastname,
-        gender: newUser.gender === "Erkek" ? "male" : "female",
-        status: newUser.status,
-        mail: {
-          mail: newUser.email || "",
-          isAbledToSendMail: true,
-        },
-        phones: lastPhone,
-        tcNumber: newUser.turkish_id || "",
-        mernisNo: newUser.mernis_no || "",
-        country: "Türkiye",
-        city: newUser.district,
-        owner_url: newUser.owner_url,
-        county: newUser.province,
-        neighbourhood: newUser.quarters,
-        fulladdress: newUser.address || "",
-        ideasAboutCustomer: newUser.comment || "",
-      })
+      .post("/admin/update-customer", payload)
       .then((res) => {
         toast.success("Kullanıcı başarıyla güncellendi.");
         handleClose();
       })
       .catch((err) => {
         toast.error("Kullanıcı güncellenirken bir hata oluştu.");
-        console.log(err);
+        console.error("Hata detayı:", err);
         handleClose();
       });
   };
@@ -231,6 +279,45 @@ const App = ({ open, setOpen, user, cookies }: any) => {
     };
   });
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setNewUser((prev: any) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleProvinceChange = (selectedOption: any) => {
+    const province = selectedOption?.value || "";
+    setNewUser((prev: any) => ({
+      ...prev,
+      province: province,
+      district: "",
+      quarters: "",
+    }));
+    updateDistricts(province);
+  };
+
+  const handleDistrictChange = (selectedOption: any) => {
+    const district = selectedOption?.value || "";
+    setNewUser((prev: any) => ({
+      ...prev,
+      district: district,
+      quarters: "",
+    }));
+    updateQuarters(district);
+  };
+
+  const handleQuarterChange = (selectedOption: any) => {
+    const quarter = selectedOption?.value || "";
+    setNewUser((prev: any) => ({
+      ...prev,
+      quarters: quarter,
+    }));
+  };
+
   if (!open) return null;
 
   return (
@@ -247,6 +334,7 @@ const App = ({ open, setOpen, user, cookies }: any) => {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          {/* Ad Soyad */}
           <div className="flex flex-col gap-2">
             <label htmlFor="fullname" className="font-medium">
               Ad Soyad
@@ -257,13 +345,7 @@ const App = ({ open, setOpen, user, cookies }: any) => {
                 type="text"
                 name="name"
                 value={newUser.name}
-                onChange={(e: any) => {
-                  e.preventDefault();
-                  setNewUser((prev: any) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }));
-                }}
+                onChange={handleInputChange}
                 autoComplete="off"
                 placeholder="Ad"
                 className="px-2 py-1 focus:outline-none border w-[49%] border-gray-300 rounded-md bg-gray-100"
@@ -272,13 +354,7 @@ const App = ({ open, setOpen, user, cookies }: any) => {
                 type="text"
                 name="lastname"
                 value={newUser.lastname}
-                onChange={(e: any) => {
-                  e.preventDefault();
-                  setNewUser((prev: any) => ({
-                    ...prev,
-                    lastname: e.target.value,
-                  }));
-                }}
+                onChange={handleInputChange}
                 autoComplete="off"
                 placeholder="Soyad"
                 className="px-2 py-1 focus:outline-none border w-[49%] border-gray-300 rounded-md bg-gray-100"
@@ -286,59 +362,61 @@ const App = ({ open, setOpen, user, cookies }: any) => {
             </div>
           </div>
 
-          <div className="flex flex-row justify-start gap-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={newUser.gender === "Erkek"}
-                onChange={() => {
-                  setNewUser((prev: any) => ({
-                    ...prev,
-                    gender: "Erkek",
-                  }));
-                }}
-                className="w-4 h-4"
-              />
-              Erkek
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={newUser.gender === "Kadın"}
-                onChange={() => {
-                  setNewUser((prev: any) => ({
-                    ...prev,
-                    gender: "Kadın",
-                  }));
-                }}
-                className="w-4 h-4"
-              />
-              Kadın
-            </label>
+          {/* Cinsiyet */}
+          <div className="flex flex-col gap-2">
+            <label className="font-medium">Cinsiyet</label>
+            <div className="flex flex-row justify-start gap-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="gender"
+                  checked={newUser.gender === "Erkek"}
+                  onChange={() => {
+                    setNewUser((prev: any) => ({
+                      ...prev,
+                      gender: "Erkek",
+                    }));
+                  }}
+                  className="w-4 h-4"
+                />
+                Erkek
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="gender"
+                  checked={newUser.gender === "Kadın"}
+                  onChange={() => {
+                    setNewUser((prev: any) => ({
+                      ...prev,
+                      gender: "Kadın",
+                    }));
+                  }}
+                  className="w-4 h-4"
+                />
+                Kadın
+              </label>
+            </div>
           </div>
 
+          {/* Email */}
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="font-medium">
               E-Posta
               <span className="text-red-500">*</span>
             </label>
             <input
-              type="text"
+              type="email"
               name="email"
               placeholder="örn: yenigünemlak@gmail.com"
               value={newUser.email}
-              onChange={(e: any) => {
-                e.preventDefault();
-                setNewUser((prev: any) => ({
-                  ...prev,
-                  email: e.target.value,
-                }));
-              }}
+              onChange={handleInputChange}
               autoComplete="off"
               className="px-2 py-1 focus:outline-none border border-gray-300 rounded-md bg-gray-100"
             />
           </div>
 
+          {/* Telefonlar */}
           <div className="flex flex-col gap-2">
             <label htmlFor="phone" className="font-medium">
               Zorunlu Telefon
@@ -350,7 +428,6 @@ const App = ({ open, setOpen, user, cookies }: any) => {
               placeholder="örn: 0 (555) 555 55 55"
               value={firstPhone}
               onChange={(e: any) => {
-                e.preventDefault();
                 handlePhoneChange(e.target.value);
               }}
               autoComplete="off"
@@ -358,6 +435,7 @@ const App = ({ open, setOpen, user, cookies }: any) => {
             />
           </div>
 
+          {/* Ek Telefonlar */}
           <div className="flex flex-col gap-2">
             <button
               className="bg-custom-orange hover:bg-custom-orange-dark duration-300 text-white rounded-md px-2 focus:outline-none py-2"
@@ -376,42 +454,39 @@ const App = ({ open, setOpen, user, cookies }: any) => {
               + Telefon Ekle
             </button>
 
-            {newPhone &&
-              newPhone.map((phone: any, index: any) => {
-                return (
-                  <div key={index} className="flex flex-col gap-2">
-                    <label htmlFor="phone" className="font-medium">
-                      Ek {index + 2}. Telefon
-                    </label>
-                    <div key={index} className="flex flex-row gap-2">
-                      <input
-                        type="text"
-                        name="phone"
-                        placeholder="örn: 0 (555) 555 55 55"
-                        value={phone.number}
-                        onChange={(e: any) => {
-                          e.preventDefault();
-                          handlePhoneChange(e.target.value, index);
-                        }}
-                        autoComplete="off"
-                        className="px-2 py-1 focus:outline-none border border-gray-300 rounded-md bg-gray-100 w-[90%]"
-                      />
-                      <button
-                        onClick={() => {
-                          setNewPhone((prev: any) =>
-                            prev.filter((item: any) => item !== phone)
-                          );
-                        }}
-                        className="bg-red-500 hover:bg-red-600 duration-300 text-white rounded-md px-2 focus:outline-none flex items-center justify-center"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+            {newPhone.map((phone: any, index: any) => (
+              <div key={index} className="flex flex-col gap-2">
+                <label htmlFor="phone" className="font-medium">
+                  Ek {index + 2}. Telefon
+                </label>
+                <div className="flex flex-row gap-2">
+                  <input
+                    type="text"
+                    placeholder="örn: 0 (555) 555 55 55"
+                    value={phone.number}
+                    onChange={(e: any) => {
+                      handlePhoneChange(e.target.value, index);
+                    }}
+                    autoComplete="off"
+                    className="px-2 py-1 focus:outline-none border border-gray-300 rounded-md bg-gray-100 w-[90%]"
+                  />
+                  <button
+                    onClick={() => {
+                      setNewPhone((prev: any) =>
+                        prev.filter((_: any, i: any) => i !== index)
+                      );
+                    }}
+                    className="bg-red-500 hover:bg-red-600 duration-300 text-white rounded-md px-2 focus:outline-none flex items-center justify-center"
+                    type="button"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
+          {/* SMS İzni ve Resim */}
           <div className="flex flex-col items-center sm:flex-row justify-between gap-2">
             <label className="flex items-center gap-2">
               <input
@@ -427,19 +502,21 @@ const App = ({ open, setOpen, user, cookies }: any) => {
               type="file"
               name="image"
               accept=".jpg, .jpeg, .png"
-              onChange={(e) => {
-                e.preventDefault();
-                setNewUser((prev: any) => ({
-                  ...prev,
-                  image: e.target.value,
-                }));
+              onChange={(e: any) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setNewUser((prev: any) => ({
+                    ...prev,
+                    image: file,
+                  }));
+                }
               }}
-              value={newUser.image}
               className="border border-gray-300 rounded-md w-full sm:w-auto p-1 focus:outline-none"
               aria-label="Resim Yükle"
             />
           </div>
 
+          {/* Müşteri Türü */}
           <div className="flex flex-col gap-2">
             <label htmlFor="status" className="font-medium">
               Müşteri Türü
@@ -452,17 +529,10 @@ const App = ({ open, setOpen, user, cookies }: any) => {
                 value: type,
                 label: type,
               }))}
-              defaultValue={
-                userTypes.find((type: string) => type === newUser.status) || {
-                  value: "Mülk Sahibi",
-                  label: "Mülk Sahibi",
-                }
-              }
               value={
-                userTypes.find((type: string) => type === newUser.status) || {
-                  value: "Mülk Sahibi",
-                  label: "Mülk Sahibi",
-                }
+                newUser.status
+                  ? { value: newUser.status, label: newUser.status }
+                  : null
               }
               styles={{
                 control: (baseStyles, state) => ({
@@ -477,16 +547,17 @@ const App = ({ open, setOpen, user, cookies }: any) => {
                   },
                 }),
               }}
-              onChange={(e: any) => {
-                e.preventDefault();
+              onChange={(selectedOption: any) => {
                 setNewUser((prev: any) => ({
                   ...prev,
-                  status: e.value,
+                  status: selectedOption?.value || "",
                 }));
               }}
+              placeholder="Müşteri türü seçin..."
             />
           </div>
 
+          {/* Kimlik Bilgileri */}
           <div className="flex flex-col gap-2">
             <label htmlFor="fullname" className="font-medium">
               Kimlik No / Mernis No
@@ -494,18 +565,11 @@ const App = ({ open, setOpen, user, cookies }: any) => {
             </label>
             <div className="flex flex-row justify-between">
               <input
-                type="number"
+                type="text"
                 name="turkish_id"
                 value={newUser.turkish_id}
-                onChange={(e: any) => {
-                  e.preventDefault();
-                  setNewUser((prev: any) => ({
-                    ...prev,
-                    turkish_id: e.target.value,
-                  }));
-                }}
+                onChange={handleInputChange}
                 autoComplete="off"
-                pattern="[0-9]{11}"
                 placeholder="TC Kimlik No"
                 className="px-2 py-1 focus:outline-none border w-[49%] border-gray-300 rounded-md bg-gray-100"
               />
@@ -513,13 +577,7 @@ const App = ({ open, setOpen, user, cookies }: any) => {
                 type="text"
                 name="mernis_no"
                 value={newUser.mernis_no}
-                onChange={(e: any) => {
-                  e.preventDefault();
-                  setNewUser((prev: any) => ({
-                    ...prev,
-                    mernis_no: e.target.value,
-                  }));
-                }}
+                onChange={handleInputChange}
                 autoComplete="off"
                 placeholder="Mernis No"
                 className="px-2 py-1 focus:outline-none border w-[49%] border-gray-300 rounded-md bg-gray-100"
@@ -527,12 +585,14 @@ const App = ({ open, setOpen, user, cookies }: any) => {
             </div>
           </div>
 
+          {/* Adres */}
           <div className="flex flex-col gap-2">
             <label htmlFor="fullname" className="font-medium">
               Tam Adres
               <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {/* İl Seçimi */}
               <Select
                 className="basic-single"
                 classNamePrefix="select"
@@ -540,10 +600,11 @@ const App = ({ open, setOpen, user, cookies }: any) => {
                   value: city.province,
                   label: city.province,
                 }))}
-                value={{
-                  value: newUser.province,
-                  label: newUser.province,
-                }}
+                value={
+                  newUser.province
+                    ? { value: newUser.province, label: newUser.province }
+                    : null
+                }
                 styles={{
                   control: (baseStyles, state) => ({
                     ...baseStyles,
@@ -557,27 +618,24 @@ const App = ({ open, setOpen, user, cookies }: any) => {
                     },
                   }),
                 }}
-                onChange={(e: any) => {
-                  e.preventDefault();
-                  setNewUser((prev: any) => ({
-                    ...prev,
-                    province: e.value,
-                  }));
-                }}
+                onChange={handleProvinceChange}
+                placeholder="İl"
+                isClearable
               />
+
+              {/* İlçe Seçimi */}
               <Select
                 className="basic-single"
                 classNamePrefix="select"
-                options={turkeyCities
-                  .find((city: any) => city.province === newUser.province)
-                  ?.districts.map((district: any) => ({
-                    value: district.district,
-                    label: district.district,
-                  }))}
-                value={{
-                  value: newUser.district,
-                  label: newUser.district,
-                }}
+                options={districts.map((dist: any) => ({
+                  value: dist.district,
+                  label: dist.district,
+                }))}
+                value={
+                  newUser.district
+                    ? { value: newUser.district, label: newUser.district }
+                    : null
+                }
                 styles={{
                   control: (baseStyles, state) => ({
                     ...baseStyles,
@@ -591,31 +649,25 @@ const App = ({ open, setOpen, user, cookies }: any) => {
                     },
                   }),
                 }}
-                noOptionsMessage={() => "İlk İl Seçiniz"}
-                onChange={(e: any) => {
-                  e.preventDefault();
-                  setNewUser((prev: any) => ({
-                    ...prev,
-                    district: e.value,
-                  }));
-                }}
+                onChange={handleDistrictChange}
+                placeholder="İlçe"
+                isDisabled={!newUser.province}
+                isClearable
               />
+
+              {/* Mahalle Seçimi */}
               <Select
                 className="basic-single col-span-2 sm:col-span-1"
                 classNamePrefix="select"
-                options={turkeyCities
-                  .find((city: any) => city.province === newUser.province)
-                  ?.districts.find(
-                    (district: any) => district.district === newUser.district
-                  )
-                  ?.quarters.map((quarter: any) => ({
-                    value: quarter,
-                    label: quarter,
-                  }))}
-                value={{
-                  value: newUser.quarters,
-                  label: newUser.quarters,
-                }}
+                options={quarters.map((quarter: string) => ({
+                  value: quarter,
+                  label: quarter,
+                }))}
+                value={
+                  newUser.quarters
+                    ? { value: newUser.quarters, label: newUser.quarters }
+                    : null
+                }
                 styles={{
                   control: (baseStyles, state) => ({
                     ...baseStyles,
@@ -629,33 +681,26 @@ const App = ({ open, setOpen, user, cookies }: any) => {
                     },
                   }),
                 }}
-                noOptionsMessage={() => "İlk İlçe Seçiniz"}
-                onChange={(e: any) => {
-                  e.preventDefault();
-                  setNewUser((prev: any) => ({
-                    ...prev,
-                    quarter: e.value,
-                  }));
-                }}
+                onChange={handleQuarterChange}
+                placeholder="Mahalle"
+                isDisabled={!newUser.district}
+                isClearable
               />
             </div>
+
+            {/* Detaylı Adres */}
             <input
               type="text"
               name="address"
               placeholder="örn: XXX Sokak, No: XX, Daire: XX, Kat: X"
               value={newUser.address}
-              onChange={(e: any) => {
-                e.preventDefault();
-                setNewUser((prev: any) => ({
-                  ...prev,
-                  address: e.target.value,
-                }));
-              }}
+              onChange={handleInputChange}
               autoComplete="off"
-              className="px-2 py-1 focus:outline-none border border-gray-300 rounded-md bg-gray-100"
+              className="px-2 py-1 focus:outline-none border border-gray-300 rounded-md bg-gray-100 mt-2"
             />
           </div>
 
+          {/* Link */}
           <div className="flex flex-col gap-2">
             <label htmlFor="fullname" className="font-medium">
               Link
@@ -664,39 +709,30 @@ const App = ({ open, setOpen, user, cookies }: any) => {
               type="text"
               name="owner_url"
               value={newUser.owner_url}
-              onChange={(e: any) => {
-                e.preventDefault();
-                setNewUser((prev: any) => ({
-                  ...prev,
-                  owner_url: e.target.value,
-                }));
-              }}
+              onChange={handleInputChange}
               autoComplete="off"
               placeholder="örn: https://www.yenigunemlak.com"
               className="px-2 py-1 focus:outline-none border border-gray-300 rounded-md bg-gray-100"
             />
           </div>
 
+          {/* Not */}
           <div className="flex flex-col gap-2">
             <label htmlFor="fullname" className="font-medium">
               Yetkili Notu
             </label>
             <textarea
-              name="note"
+              name="comment"
               value={newUser.comment}
-              onChange={(e: any) => {
-                e.preventDefault();
-                setNewUser((prev: any) => ({
-                  ...prev,
-                  comment: e.target.value,
-                }));
-              }}
+              onChange={handleInputChange}
               autoComplete="off"
               placeholder="Yetkili notu giriniz..."
               className="px-2 py-1 focus:outline-none border border-gray-300 rounded-md bg-gray-100"
+              rows={3}
             />
           </div>
 
+          {/* Kaydet Butonu */}
           <button
             type="submit"
             className="bg-orange-500 bg-custom-orange hover:bg-custom-orange-dark duration-300 py-2 text-white rounded-md mt-3 text-lg focus:outline-none"
@@ -709,4 +745,4 @@ const App = ({ open, setOpen, user, cookies }: any) => {
   );
 };
 
-export default App;
+export default EditUserModal;

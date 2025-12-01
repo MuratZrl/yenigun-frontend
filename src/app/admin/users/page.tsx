@@ -30,7 +30,6 @@ const PoppinsFont = Poppins({
 });
 import EditUserModal from "@/app/components/modals/EditUserModal";
 import { useCookies } from "react-cookie";
-import axios from "axios";
 import { toast } from "react-toastify";
 import Image from "next/image";
 import ListUserModal from "@/app/components/modals/ListUserModals";
@@ -722,14 +721,26 @@ const Users = () => {
       });
   };
 
-  const handleFilterUsers = () => {
+  const handleFilterUsers = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+
     setOpenFilter(false);
 
-    if (
-      !filteredValues.fullname &&
-      !filteredValues.email &&
-      !filteredValues.phone
-    ) {
+    const hasActiveFilters =
+      filteredValues.fullname ||
+      filteredValues.email ||
+      filteredValues.phone ||
+      filteredValues.gender ||
+      filteredValues.status.selected ||
+      filteredValues.turkish_id ||
+      filteredValues.mernis_no ||
+      filteredValues.province ||
+      filteredValues.district ||
+      filteredValues.quarter;
+
+    if (!hasActiveFilters) {
       setFilteredUsers(allUsers);
       setPagination((prev) => ({ ...prev, page: 0 }));
       return;
@@ -737,32 +748,105 @@ const Users = () => {
 
     const filteredData = allUsers.filter((user: any) => {
       if (filteredValues.fullname) {
-        const fullName = `${user.name} ${user.surname}`.toLowerCase();
+        const fullName = `${user.name || ""} ${
+          user.surname || ""
+        }`.toLowerCase();
         if (!fullName.includes(filteredValues.fullname.toLowerCase()))
           return false;
       }
 
-      if (filteredValues.email && user.mail?.mail) {
+      if (filteredValues.email) {
+        const userEmail = user.mail?.mail || "";
         if (
-          !user.mail.mail
-            .toLowerCase()
-            .includes(filteredValues.email.toLowerCase())
+          !userEmail.toLowerCase().includes(filteredValues.email.toLowerCase())
         )
           return false;
       }
 
       if (filteredValues.phone) {
-        const hasPhone = user.phones?.some((phone: any) =>
-          phone.number?.includes(filteredValues.phone)
-        );
+        const hasPhone = user.phones?.some((phone: any) => {
+          const phoneNumber = phone.number || "";
+          return phoneNumber.includes(filteredValues.phone);
+        });
         if (!hasPhone) return false;
+      }
+
+      if (filteredValues.gender) {
+        const userGender = user.gender || "";
+        const genderMap: Record<string, string> = {
+          erkek: "male",
+          kadın: "female",
+          male: "male",
+          female: "female",
+        };
+
+        const normalizedFilterGender =
+          genderMap[filteredValues.gender.toLowerCase()];
+        if (userGender !== normalizedFilterGender) return false;
+      }
+
+      if (filteredValues.status.selected) {
+        const userStatus = user.status || "";
+        if (userStatus !== filteredValues.status.selected) return false;
+      }
+
+      if (filteredValues.turkish_id) {
+        const userTc = user.tcNumber || "";
+        if (!userTc.includes(filteredValues.turkish_id)) return false;
+      }
+
+      if (filteredValues.mernis_no) {
+        const userMernis = user.mernisNo || "";
+        if (!userMernis.includes(filteredValues.mernis_no)) return false;
+      }
+
+      if (filteredValues.province) {
+        const userCity = user.city || "";
+        if (
+          !userCity
+            .toLowerCase()
+            .includes(filteredValues.province.toLowerCase())
+        )
+          return false;
+      }
+
+      if (filteredValues.district) {
+        const userCounty = user.county || "";
+        if (
+          !userCounty
+            .toLowerCase()
+            .includes(filteredValues.district.toLowerCase())
+        )
+          return false;
+      }
+
+      if (filteredValues.quarter) {
+        const userNeighbourhood = user.neighbourhood || "";
+        if (
+          !userNeighbourhood
+            .toLowerCase()
+            .includes(filteredValues.quarter.toLowerCase())
+        )
+          return false;
       }
 
       return true;
     });
 
+    console.log("Filtrelenen veri sayısı:", filteredData.length);
+    console.log("Aktif filtreler:", {
+      status: filteredValues.status.selected,
+      gender: filteredValues.gender,
+      email: filteredValues.email,
+      phone: filteredValues.phone,
+    });
+
     setFilteredUsers(filteredData);
-    setPagination((prev) => ({ ...prev, page: 0, total: filteredData.length }));
+    setPagination((prev) => ({
+      ...prev,
+      page: 0,
+      total: filteredData.length,
+    }));
   };
 
   const [editUser, setEditUser] = useState({
