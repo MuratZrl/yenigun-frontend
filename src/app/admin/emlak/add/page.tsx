@@ -997,23 +997,56 @@ export default function AddE() {
       const formData = new FormData();
       formData.append("uid", uid.toString());
 
-      images.forEach((image: any) => {
+      console.log("📤 Yüklenen resimler:");
+      images.forEach((image: any, index: number) => {
         if (image.src && image.src instanceof File) {
           formData.append("images", image.src);
+          console.log(`Resim ${index + 1}:`, {
+            name: image.src.name,
+            type: image.src.type,
+            size: image.src.size,
+            lastModified: image.src.lastModified,
+          });
+        } else {
+          console.log(`Resim ${index + 1}: Geçersiz dosya`, image);
         }
       });
 
-      const formDataArray = Array.from(formData.entries());
-      formDataArray.forEach((pair) => {});
+      console.log("📦 FormData içeriği:");
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}:`, {
+            name: value.name,
+            type: value.type,
+            size: value.size,
+          });
+        } else {
+          console.log(`${key}:`, value);
+        }
+      }
 
-      if (images.length === 0) {
+      const imageFiles = images.filter((img: any) => img.src instanceof File);
+      if (imageFiles.length === 0) {
+        console.log("⚠️ Yüklenecek resim dosyası bulunamadı");
         return;
       }
 
-      const response = await api.post("/admin/upload-advert-images", formData);
+      console.log("🚀 API isteği gönderiliyor...");
+      const response = await api.post("/admin/upload-advert-images", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
+      console.log("✅ Resim yükleme başarılı:", response.data);
       return response;
     } catch (error: any) {
+      console.error("❌ Resim yükleme hatası:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers,
+      });
       throw error;
     }
   };
@@ -1030,7 +1063,11 @@ export default function AddE() {
       const formDataArray = Array.from(formData.entries());
       formDataArray.forEach((pair) => {});
 
-      const response = await axios.post("/admin/upload-advert-video", formData);
+      const response = await api.post("/admin/upload-advert-video", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       return response;
     } catch (error: any) {

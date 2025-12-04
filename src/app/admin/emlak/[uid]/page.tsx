@@ -1157,43 +1157,132 @@ export default function EditE() {
   const handleFileUpdates = async () => {
     let uploadSuccess = true;
 
+    console.log("🔍 handleFileUpdates çağrıldı");
+    console.log("Images array:", images);
+    console.log("Images length:", images.length);
+
+    images.forEach((image: any, index: number) => {
+      console.log(`Resim ${index}:`, {
+        src: image.src,
+        isFile: image.src instanceof File,
+        name: image.src?.name,
+        type: image.src?.type,
+        size: image.src?.size,
+      });
+    });
+
     if (images && images.length > 0) {
       try {
         const imageToast = toast.loading("İlan Resimleri Güncelleniyor...");
         const formData = new FormData();
+
+        console.log("Advert UID:", advertUid);
         formData.append("uid", advertUid);
 
+        let validImageCount = 0;
         images.forEach((image: any) => {
           if (image.src && image.src instanceof File) {
             formData.append("images", image.src);
+            validImageCount++;
+            console.log(`✅ Resim eklendi: ${image.src.name}`);
+          } else {
+            console.log(`❌ Geçersiz resim:`, image);
           }
         });
 
-        await api.post("/admin/update-advert-images", formData);
+        console.log(`Toplam ${validImageCount} geçerli resim dosyası eklendi`);
 
+        console.log("📦 FormData içeriği:");
+        for (let [key, value] of formData.entries()) {
+          if (value instanceof File) {
+            console.log(`${key}:`, {
+              name: value.name,
+              type: value.type,
+              size: value.size,
+            });
+          } else {
+            console.log(`${key}:`, value);
+          }
+        }
+
+        if (validImageCount === 0) {
+          console.log("⚠️ Yüklenecek geçerli resim dosyası yok");
+          toast.dismiss(imageToast);
+          return uploadSuccess;
+        }
+
+        console.log("🚀 API isteği gönderiliyor: /admin/update-advert-images");
+
+        const response = await api.post(
+          "/admin/update-advert-images",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / (progressEvent.total || 1)
+              );
+              console.log(`📤 Yükleme ilerlemesi: ${percentCompleted}%`);
+            },
+          }
+        );
+
+        console.log("✅ API yanıtı:", response.data);
         toast.dismiss(imageToast);
         toast.success("✅ Resimler başarıyla güncellendi!");
       } catch (error: any) {
+        console.error("❌ Resim yükleme hatası:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          config: {
+            url: error.config?.url,
+            method: error.config?.method,
+            headers: error.config?.headers,
+          },
+        });
+
         uploadSuccess = false;
         toast.warning("İlan güncellendi ancak resimler yüklenemedi");
       }
+    } else {
+      console.log("⚠️ Resim array'i boş veya tanımsız");
     }
-
     if (videoFile && videoFile instanceof File) {
       try {
+        console.log("🎥 Video dosyası:", {
+          name: videoFile.name,
+          type: videoFile.type,
+          size: videoFile.size,
+        });
+
         const videoToast = toast.loading("İlan Videosu Güncelleniyor...");
         const videoForm = new FormData();
         videoForm.append("uid", advertUid);
         videoForm.append("video", videoFile);
 
-        await api.post("/admin/update-advert-video", videoForm);
+        console.log("🚀 Video API isteği gönderiliyor...");
+
+        await api.post("/admin/update-advert-video", videoForm, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
 
         toast.dismiss(videoToast);
         toast.success("✅ Video başarıyla güncellendi!");
       } catch (error: any) {
+        console.error(
+          "❌ Video yükleme hatası:",
+          error.response?.data || error.message
+        );
         uploadSuccess = false;
         toast.warning("İlan güncellendi ancak video yüklenemedi");
       }
+    } else {
+      console.log("⚠️ Video dosyası yok veya geçerli değil");
     }
 
     return uploadSuccess;
