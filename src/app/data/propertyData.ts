@@ -6,7 +6,7 @@ export const propertyTypes = [
   },
   {
     id: 2,
-    value: "Bina",//
+    value: "Bina",
     img: "/bina.gif",
   },
   {
@@ -16,12 +16,12 @@ export const propertyTypes = [
   },
   {
     id: 5,
-    value: "Devremülk",//
+    value: "Devremülk",
     img: "/devremülk.gif",
   },
   {
     id: 6,
-    value: "Turistik Tesis",//
+    value: "Turistik Tesis",
     img: "/turistik-tesis.gif",
   },
   {
@@ -433,6 +433,7 @@ export const zoningStatusOptions = [
   "Villa",
   "Zeytinlik",
 ];
+
 
 export const defaultFormData = {
   title: "",

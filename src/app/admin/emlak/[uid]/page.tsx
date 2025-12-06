@@ -251,9 +251,8 @@ const baseTabs = [
   { id: 1, label: "Temel Bilgiler", icon: Settings },
   { id: 2, label: "Medya", icon: Camera },
   { id: 3, label: "Konum", icon: MapPin },
-  { id: 4, label: "Detaylar", icon: Ruler },
-  { id: 5, label: "Özellikler", icon: Star },
-  { id: 6, label: "Diğer", icon: Users },
+  { id: 4, label: "Özellikler", icon: Star },
+  { id: 5, label: "Diğer", icon: Users },
 ];
 
 export default function EditE() {
@@ -1481,7 +1480,7 @@ export default function EditE() {
             </div>
           </motion.div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={(e) => e.preventDefault()}>
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               {/* Progress Bar */}
               <div className="bg-gray-100 h-1.5 w-full">
@@ -1515,25 +1514,25 @@ export default function EditE() {
                               type="button"
                               onClick={() => setActiveTab(tab.id)}
                               className={`
-                                group flex items-center gap-2 pb-3 px-3 font-medium text-xs lg:text-sm border-b-2 
-                                transition-all duration-200 whitespace-nowrap relative shrink-0
-                                min-w-[100px] lg:min-w-[120px] justify-center
-                                ${
-                                  isActive
-                                    ? "border-blue-500 text-blue-600 bg-blue-50"
-                                    : "border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300"
-                                }
-                              `}
+                      group flex items-center gap-2 pb-3 px-3 font-medium text-xs lg:text-sm border-b-2 
+                      transition-all duration-200 whitespace-nowrap relative shrink-0
+                      min-w-[100px] lg:min-w-[120px] justify-center
+                      ${
+                        isActive
+                          ? "border-blue-500 text-blue-600 bg-blue-50"
+                          : "border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300"
+                      }
+                    `}
                             >
                               <div
                                 className={`
-                                  p-1.5 rounded-lg transition-colors shrink-0
-                                  ${
-                                    isActive
-                                      ? "bg-blue-100 text-blue-600"
-                                      : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
-                                  }
-                                `}
+                        p-1.5 rounded-lg transition-colors shrink-0
+                        ${
+                          isActive
+                            ? "bg-blue-100 text-blue-600"
+                            : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
+                        }
+                      `}
                               >
                                 <Icon size={16} />
                               </div>
@@ -1597,7 +1596,7 @@ export default function EditE() {
                       Geri
                     </motion.button>
 
-                    {activeTab < tabs.length ? (
+                    {activeTab !== tabs.length ? (
                       <motion.button
                         type="button"
                         onClick={() =>
@@ -1612,7 +1611,8 @@ export default function EditE() {
                       </motion.button>
                     ) : (
                       <motion.button
-                        type="submit"
+                        type="button"
+                        onClick={handleSubmit}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         disabled={isSubmitting}
@@ -1637,93 +1637,6 @@ export default function EditE() {
             </div>
           </form>
         </div>
-
-        <AnimatePresence>
-          {reOrderImages && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/25 backdrop-blur-sm z-40"
-                onClick={() => setReOrderImages(false)}
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="flex flex-col gap-4 w-[95vw] max-w-2xl max-h-[80vh] p-4 bg-white rounded-lg shadow-lg fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
-              >
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900">
-                    Resim Sıralama ({images.length} Adet)
-                  </h2>
-                  <button
-                    onClick={() => setReOrderImages(false)}
-                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <p className="text-xs text-gray-500 text-center">
-                  Fotoğrafları sıralamak için sürükleyip bırakabilirsiniz
-                </p>
-
-                <div className="flex-1 overflow-y-auto scrollbar-hide">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto">
-                    {images.map((image: any, index: number) => (
-                      <motion.div
-                        key={image.id}
-                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
-                        whileHover={{ scale: 1.01 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center shrink-0">
-                          <span className="text-xs font-bold text-gray-600">
-                            {index + 1}
-                          </span>
-                        </div>
-                        <img
-                          src={URL.createObjectURL(image.src)}
-                          alt={image.id}
-                          className="w-16 h-12 object-cover rounded shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {image.src.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {(image.src.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        </div>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleRemoveImage(image.id)}
-                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                          <div className="p-1.5 text-gray-400 cursor-grab">
-                            <Move size={14} />
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setReOrderImages(false)}
-                  className="bg-custom-orange text-white py-2.5 rounded-lg font-medium hover:bg-custom-orange-dark transition-colors duration-200 flex items-center justify-center gap-2"
-                >
-                  <CheckCircle size={16} />
-                  Sıralamayı Tamamla
-                </button>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
       </div>
     </AdminLayout>
   );

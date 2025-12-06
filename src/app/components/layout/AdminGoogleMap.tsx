@@ -10,6 +10,8 @@ const libraries: "places"[] = ["places"];
 const options = {
   disableDefaultUI: true,
   zoomControl: true,
+  minZoom: 8,
+  maxZoom: 20,
 };
 
 const mapContainerStyle = {
@@ -17,7 +19,7 @@ const mapContainerStyle = {
   height: "500px",
 };
 
-const center = {
+const defaultCenter = {
   lat: 38.9637,
   lng: 35.2433,
 };
@@ -44,6 +46,7 @@ export default function AdminGoogleMaps({
 
   const [selected, setSelected] = React.useState(null);
   const mapRef = React.useRef<google.maps.Map | null>(null);
+  const [zoom, setZoom] = React.useState(15);
 
   const onMapClick = React.useCallback(
     (e: google.maps.MapMouseEvent) => {
@@ -54,6 +57,9 @@ export default function AdminGoogleMaps({
           time: new Date(),
         };
         setMarkers([newMarker]);
+        if (mapRef.current) {
+          mapRef.current.setZoom(18);
+        }
       }
     },
     [setMarkers]
@@ -67,7 +73,7 @@ export default function AdminGoogleMaps({
     ({ lat, lng }: { lat: number; lng: number }) => {
       if (mapRef.current) {
         mapRef.current.panTo({ lat, lng });
-        mapRef.current.setZoom(14);
+        mapRef.current.setZoom(16);
         setMarkers([
           {
             lat,
@@ -79,6 +85,19 @@ export default function AdminGoogleMaps({
     },
     [setMarkers]
   );
+
+  const handleMarkerClick = React.useCallback((marker: MarkerType) => {
+    if (mapRef.current) {
+      mapRef.current.setZoom(19);
+      mapRef.current.panTo({ lat: marker.lat, lng: marker.lng });
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (validMarkers.length > 0 && mapRef.current) {
+      mapRef.current.setZoom(16);
+    }
+  }, [markers]);
 
   const validMarkers = markers.filter(
     (marker) =>
@@ -92,6 +111,12 @@ export default function AdminGoogleMaps({
       marker.lng >= -180 &&
       marker.lng <= 180
   );
+  const center =
+    validMarkers.length > 0
+      ? { lat: validMarkers[0].lat, lng: validMarkers[0].lng }
+      : defaultCenter;
+
+  const initialZoom = validMarkers.length > 0 ? 16 : 15;
 
   if (loadError) return <div>Error loading maps</div>;
   if (!isLoaded) return <div>Loading...</div>;
@@ -102,6 +127,34 @@ export default function AdminGoogleMaps({
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <Search panTo={panTo} />
         <Locate panTo={panTo} />
+
+        {/* Zoom kontrol butonları */}
+        <div className="flex gap-2">
+          <button
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg transition-colors duration-200 font-medium flex items-center gap-2"
+            onClick={() => {
+              if (mapRef.current) {
+                const currentZoom = mapRef.current.getZoom() || initialZoom;
+                mapRef.current.setZoom(currentZoom + 1);
+              }
+            }}
+          >
+            <span>➕</span>
+            Yakınlaş
+          </button>
+          <button
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg transition-colors duration-200 font-medium flex items-center gap-2"
+            onClick={() => {
+              if (mapRef.current) {
+                const currentZoom = mapRef.current.getZoom() || initialZoom;
+                mapRef.current.setZoom(Math.max(8, currentZoom - 1));
+              }
+            }}
+          >
+            <span>➖</span>
+            Uzaklaş
+          </button>
+        </div>
       </div>
 
       {/* Harita Container */}
@@ -112,12 +165,8 @@ export default function AdminGoogleMaps({
         <GoogleMap
           id="map"
           mapContainerStyle={mapContainerStyle}
-          zoom={8}
-          center={
-            validMarkers.length > 0
-              ? { lat: validMarkers[0].lat, lng: validMarkers[0].lng }
-              : center
-          }
+          zoom={initialZoom}
+          center={center}
           options={options}
           onClick={onMapClick}
           onLoad={onMapLoad}
@@ -130,6 +179,8 @@ export default function AdminGoogleMaps({
                   : `marker-${index}`
               }
               position={{ lat: marker.lat, lng: marker.lng }}
+              onClick={() => handleMarkerClick(marker)}
+              animation={google.maps.Animation.DROP}
             />
           ))}
         </GoogleMap>

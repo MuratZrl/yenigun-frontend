@@ -54,6 +54,52 @@ export default function LocationTab({
   };
 
   React.useEffect(() => {
+    const updateMapLocation = async () => {
+      if (fourthStep.province && fourthStep.district && fourthStep.quarter) {
+        try {
+          const fullAddress = `${fourthStep.quarter}, ${fourthStep.district}, ${fourthStep.province}, Türkiye`;
+
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+              fullAddress
+            )}&key=AIzaSyDL9J82iDhcUWdQiuIvBYa0t5asrtz3Swk`
+          );
+
+          const data = await response.json();
+
+          if (data.results && data.results.length > 0) {
+            const location = data.results[0].geometry.location;
+
+            const newMarker = {
+              lat: location.lat,
+              lng: location.lng,
+              time: new Date(),
+            };
+
+            setMarker([newMarker]);
+
+            if (fourthStep.address !== fullAddress) {
+              const event = {
+                target: {
+                  value: fullAddress,
+                  name: "address",
+                },
+              } as React.ChangeEvent<HTMLInputElement>;
+              onAddressChange(event);
+            }
+
+            console.log("📍 Harita konumu güncellendi:", location);
+          }
+        } catch (error) {
+          console.error("❌ Konum bulunamadı:", error);
+        }
+      }
+    };
+
+    updateMapLocation();
+  }, [fourthStep.province, fourthStep.district, fourthStep.quarter]);
+
+  React.useEffect(() => {
     console.log("🔍 Adres değeri:", fourthStep.address);
     console.log("🔍 Adres tipi:", typeof fourthStep.address);
 
@@ -168,7 +214,6 @@ export default function LocationTab({
             Adres Bilgisi
           </h3>
 
-          {/* Düzeltilmiş SimpleInput - [object Object] hatasını önler */}
           <SimpleInput
             label="Tam Adres"
             value={getSafeAddress(fourthStep.address)}
