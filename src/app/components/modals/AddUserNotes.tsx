@@ -110,44 +110,61 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
     <div>
       {data.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-[350px] sm:w-[500px] md:w-[750px] h-[70vh] overflow-y-auto flex flex-col relative p-5 gap-3 rounded-xl">
-            {/* Close Button */}
-            <button
-              onClick={handleClose}
-              className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
-            >
-              <X size={24} />
-            </button>
+          <div className="bg-white w-[350px] sm:w-[500px] md:w-[750px] max-h-[85vh] overflow-y-auto flex flex-col relative p-5 md:p-6 rounded-xl shadow-2xl">
+            {/* Header - Üst kısımda kapatma butonu */}
+            <div className="flex items-start justify-between mb-4 pb-4 border-b">
+              <div className="flex-1">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-800">
+                  İlan Kullanıcı Notları
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Bu ilan için kullanıcı notlarını yönetin
+                </p>
+              </div>
 
-            <div className="flex flex-row items-center justify-between">
-              <h2 className="text-xl font-bold mb-2">İlan Kullanıcı Notları</h2>
+              {/* Kapatma butonu - sağ üstte */}
+              <button
+                onClick={handleClose}
+                className="ml-4 p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+                aria-label="Kapat"
+              >
+                <X size={24} className="text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+
+            {/* Mod değiştirme butonu - header'ın altında */}
+            <div className="flex justify-end mb-6">
               {mode === 0 ? (
                 <button
                   onClick={() => setMode(1)}
-                  className="text-orange-500 flex items-center gap-1"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200 shadow-md hover:shadow-lg"
                 >
-                  <Plus size={18} />
-                  Not Ekle
+                  <Plus size={20} />
+                  <span className="font-medium">Yeni Not Ekle</span>
                 </button>
               ) : (
                 <button
                   onClick={() => setMode(0)}
-                  className="text-orange-500 flex items-center gap-1"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 border border-gray-300"
                 >
-                  <ArrowLeft size={18} />
-                  Geri Dön
+                  <ArrowLeft size={20} />
+                  <span className="font-medium">Notlara Geri Dön</span>
                 </button>
               )}
             </div>
 
             {mode === 1 && (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div>
-                  <label className="text-sm">Kullanıcı</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kullanıcı Seçin
+                  </label>
                   <Select
                     options={customers.map((item: any) => ({
                       value: item.uid,
-                      label: `${item.name} ${item.surname} (${item.phones[0].number})`,
+                      label: `${item.name} ${item.surname} (${
+                        item.phones[0]?.number || "Telefon yok"
+                      })`,
                     }))}
                     value={
                       selectedCustomer
@@ -161,72 +178,145 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
                               customers.find(
                                 (item: any) => item.uid === selectedCustomer
                               )?.surname
-                            }
-                            (
-                              ${
-                                customers.find(
-                                  (item: any) => item.uid === selectedCustomer
-                                )?.phones[0].number
-                              }
-                            )
-                            `,
+                            } (${
+                              customers.find(
+                                (item: any) => item.uid === selectedCustomer
+                              )?.phones[0]?.number || "Telefon yok"
+                            })`,
                           }
                         : null
                     }
                     onChange={(e: any) => {
                       console.log(e);
-                      setSelectedCustomer(e.value);
+                      setSelectedCustomer(e?.value || null);
                     }}
-                    placeholder="Seçiniz"
+                    placeholder="Bir kullanıcı seçin..."
                     isClearable
                     styles={{
                       control: (base) => ({
                         ...base,
                         border: "1px solid #D1D5DB",
                         borderRadius: "0.5rem",
-                        padding: "0.25rem",
+                        padding: "0.5rem 0.25rem",
+                        minHeight: "44px",
+                        "&:hover": {
+                          borderColor: "#9CA3AF",
+                        },
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        zIndex: 9999,
                       }),
                     }}
+                    className="text-sm"
                   />
                 </div>
-                <textarea
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  placeholder="Not"
-                  value={note}
-                  rows={10.5}
-                  onChange={(e) => setNote(e.target.value)}
-                ></textarea>
-                <button
-                  type="submit"
-                  className="bg-orange-500 text-white p-2 rounded-md hover:bg-orange-600 transition-colors"
-                >
-                  Ekle
-                </button>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Not İçeriği
+                  </label>
+                  <textarea
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all duration-200 resize-none"
+                    placeholder="Notunuzu buraya yazın..."
+                    value={note}
+                    rows={8}
+                    onChange={(e) => setNote(e.target.value)}
+                  ></textarea>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setMode(0)}
+                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium border border-gray-300"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200 font-medium shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!selectedCustomer || !note.trim()}
+                  >
+                    Notu Kaydet
+                  </button>
+                </div>
               </form>
             )}
 
             {mode === 0 && (
-              <div className="flex flex-col gap-3">
-                {noteList.map((item: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex flex-col gap-2 border border-gray-300 p-2 rounded-md"
-                  >
-                    <div className="flex flex-row justify-between items-center">
-                      <h4 className="text-lg font-bold">
-                        {item.user.name} - {item.user.email}
-                      </h4>
-                      <button
-                        onClick={handleDelete(item, index)}
-                        className="text-red-500 cursor-pointer hover:text-red-700"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+              <div className="flex flex-col gap-4">
+                {noteList.length > 0 ? (
+                  noteList.map((item: any, index: number) => (
+                    <div
+                      key={index}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="font-semibold text-gray-800">
+                            {item.user.name} {item.user.surname}
+                          </h4>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            <span className="text-sm text-gray-600">
+                              {item.user.email}
+                            </span>
+                            {item.user.phones?.[0]?.number && (
+                              <span className="text-sm bg-gray-100 px-2 py-0.5 rounded">
+                                {item.user.phones[0].number}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={handleDelete(item, index)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200"
+                          aria-label="Notu sil"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+
+                      <div className="bg-gray-50 p-3 rounded border border-gray-100">
+                        <p className="text-gray-700 whitespace-pre-wrap">
+                          {item.note}
+                        </p>
+                      </div>
                     </div>
-                    <p>{item.note}</p>
+                  ))
+                ) : (
+                  <div className="text-center py-10">
+                    <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <svg
+                        className="w-8 h-8 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">
+                      Henüz not bulunmuyor
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      Bu ilan için henüz bir not eklenmemiş.
+                    </p>
+                    <button
+                      onClick={() => setMode(1)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200"
+                    >
+                      <Plus size={18} />
+                      İlk Notu Ekle
+                    </button>
                   </div>
-                ))}
-                {!noteList.length && <p>Not bulunmamaktadır.</p>}
+                )}
               </div>
             )}
           </div>

@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { use } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
@@ -21,9 +22,25 @@ import {
   DollarSign,
   Building,
   Navigation,
+  Loader,
+  Home,
+  Check,
+  ChevronDown,
+  Tag,
+  Bed,
+  Bath,
+  Car,
+  Ruler,
+  Thermometer,
 } from "lucide-react";
 import api from "@/app/lib/api";
-import { Advert, FilterState } from "@/app/types/advert";
+import {
+  Advert,
+  FilterState,
+  Category,
+  Subcategory,
+  Feature,
+} from "@/app/types/advert";
 
 const turkeyCities = JSONDATA.map((city: any) => {
   return {
@@ -51,27 +68,175 @@ const actionOptions = [
   { value: "Devren Satılık", label: "Devren Satılık" },
 ];
 
-const typeOptions = [
-  { value: "Hepsi", label: "Hepsi" },
-  { value: "Arsa", label: "Arsa" },
-  { value: "Daire", label: "Daire" },
-  { value: "Residence", label: "Residence" },
-  { value: "Müstakil Ev", label: "Müstakil Ev" },
-  { value: "Villa", label: "Villa" },
-  { value: "Çiftlik Evi", label: "Çiftlik Evi" },
-  { value: "Köşk - Konak", label: "Köşk - Konak" },
-  { value: "Yalı", label: "Yalı" },
-  { value: "Yalı Dairesi", label: "Yalı Dairesi" },
-  { value: "Yazlık", label: "Yazlık" },
-  { value: "Prefabrik Ev", label: "Prefabrik Ev" },
-  { value: "Kooparatif", label: "Kooparatif" },
-];
+const staticTypeOptions = [{ value: "Hepsi", label: "Hepsi" }];
+
+const FeatureInput = ({
+  feature,
+  value,
+  onChange,
+}: {
+  feature: Feature;
+  value: any;
+  onChange: (value: any) => void;
+}) => {
+  switch (feature.type) {
+    case "boolean":
+      return (
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id={`feature-${feature._id}`}
+            checked={!!value}
+            onChange={(e) => onChange(e.target.checked)}
+            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+          />
+          <label
+            htmlFor={`feature-${feature._id}`}
+            className="text-sm text-gray-700"
+          >
+            {feature.name}
+          </label>
+        </div>
+      );
+
+    case "single_select":
+      return (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            {feature.name}
+          </label>
+          <select
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Seçiniz</option>
+            {feature.options?.map((option: string, index: number) => (
+              <option key={index} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+
+    case "multi_select":
+      return (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            {feature.name}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {feature.options?.map((option: string, index: number) => {
+              const isSelected = value?.includes(option);
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => {
+                    const newValue = isSelected
+                      ? value.filter((v: string) => v !== option)
+                      : [...(value || []), option];
+                    onChange(newValue);
+                  }}
+                  className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                    isSelected
+                      ? "bg-blue-100 text-blue-700 border-blue-300"
+                      : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                  }`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+
+    case "number":
+      return (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            {feature.name}
+          </label>
+          <input
+            type="number"
+            value={value || ""}
+            onChange={(e) =>
+              onChange(e.target.value ? Number(e.target.value) : null)
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder={`${feature.name} girin`}
+          />
+        </div>
+      );
+
+    case "range":
+      return (
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-700">
+            {feature.name}
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Min</label>
+              <input
+                type="number"
+                value={value?.min || ""}
+                onChange={(e) =>
+                  onChange({
+                    ...value,
+                    min: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Min"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Max</label>
+              <input
+                type="number"
+                value={value?.max || ""}
+                onChange={(e) =>
+                  onChange({
+                    ...value,
+                    max: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Max"
+              />
+            </div>
+          </div>
+        </div>
+      );
+
+    default:
+      return (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            {feature.name}
+          </label>
+          <input
+            type="text"
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder={`${feature.name} girin`}
+          />
+        </div>
+      );
+  }
+};
+
 export default function AdsPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const resolvedSearchParams = use(searchParams);
+  const router = useRouter();
 
   const [filters, setFilters] = useState<FilterState>({
     keyword: "",
@@ -84,100 +249,56 @@ export default function AdsPage({
   });
 
   const [data, setData] = useState<Advert[]>([]);
-  const [adverts, setAdverts] = useState<Advert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [modal, setModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = isMobile ? 10 : 15;
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
+  const [selectedSubcategory, setSelectedSubcategory] =
+    useState<Subcategory | null>(null);
+  const [selectedSubSubcategory, setSelectedSubSubcategory] =
+    useState<Subcategory | null>(null);
+  const [availableSubcategories, setAvailableSubcategories] = useState<
+    Subcategory[]
+  >([]);
+  const [availableSubSubcategories, setAvailableSubSubcategories] = useState<
+    Subcategory[]
+  >([]);
+
+  const [featureFilters, setFeatureFilters] = useState<Record<string, any>>({});
+
+  const itemsPerPage = 12;
 
   useEffect(() => {
-    const fetchAllAdverts = async () => {
+    const fetchCategories = async () => {
       try {
-        setLoading(true);
-        let allAdverts: Advert[] = [];
-        let currentPage = 1;
-        let hasMorePages = true;
-        const limit = 100;
+        setLoadingCategories(true);
+        const response = await api.get("/admin/categories");
+        console.log("Kategoriler:", response.data);
 
-        console.log("Tüm ilanlar çekiliyor...");
-
-        while (hasMorePages) {
-          try {
-            const response = await api.get("/advert/adverts", {
-              params: {
-                page: currentPage,
-                limit: limit,
-              },
-            });
-
-            const fetchedAdverts: Advert[] = response.data.data || [];
-            console.log(
-              `Sayfa ${currentPage}'de ${fetchedAdverts.length} ilan bulundu`
-            );
-
-            if (fetchedAdverts.length > 0) {
-              allAdverts = [...allAdverts, ...fetchedAdverts];
-
-              const totalPages = response.data.totalPages;
-              const currentPageFromApi = response.data.currentPage;
-
-              console.log(
-                `Total Pages: ${totalPages}, Current Page: ${currentPageFromApi}`
-              );
-
-              if (totalPages && currentPage >= totalPages) {
-                console.log(`Toplam sayfa sayısına ulaşıldı: ${totalPages}`);
-                hasMorePages = false;
-              } else if (fetchedAdverts.length === 0) {
-                console.log(
-                  `Sayfa ${currentPage} boş, pagination durduruluyor`
-                );
-                hasMorePages = false;
-              } else if (currentPage > 50) {
-                console.warn(
-                  "Maksimum sayfa limitine ulaşıldı, pagination durduruluyor"
-                );
-                hasMorePages = false;
-              } else {
-                currentPage++;
-              }
-            } else {
-              console.log(`Sayfa ${currentPage} boş, pagination durduruluyor`);
-              hasMorePages = false;
-            }
-          } catch (pageError) {
-            console.error(`Sayfa ${currentPage} çekilirken hata:`, pageError);
-            hasMorePages = false;
-          }
+        if (response.data.success && Array.isArray(response.data.data)) {
+          const categoriesData = response.data.data;
+          setCategories(categoriesData);
         }
-
-        console.log(`Toplam çekilen ilan sayısı: ${allAdverts.length}`);
-
-        const activeAdverts = allAdverts
-          .filter((ad: Advert) => ad.active === true)
-          .sort((a: Advert, b: Advert) => {
-            const aC = a.created?.createdTimestamp || 0;
-            const bC = b.created?.createdTimestamp || 0;
-            return bC - aC;
-          });
-
-        console.log(`Aktif ilan sayısı: ${activeAdverts.length}`);
-
-        setAdverts(activeAdverts);
-        setData(activeAdverts);
-        setLoading(false);
       } catch (error) {
-        console.error("İlanlar çekilirken hata oluştu:", error);
-        setLoading(false);
+        console.error("Kategoriler yüklenirken hata oluştu:", error);
+      } finally {
+        setLoadingCategories(false);
       }
     };
 
-    fetchAllAdverts();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
-    if (resolvedSearchParams && Object.keys(resolvedSearchParams).length > 0) {
+    const initializeFilters = async () => {
       const newFilters: FilterState = {
         keyword:
           typeof resolvedSearchParams.q === "string"
@@ -191,13 +312,10 @@ export default function AdsPage({
           typeof resolvedSearchParams.district === "string"
             ? resolvedSearchParams.district
             : "Hepsi",
-        action: resolvedSearchParams.action
-          ? resolvedSearchParams.action === "buy"
-            ? "Satılık"
-            : resolvedSearchParams.action === "rent"
-            ? "Kiralık"
-            : "Tümü"
-          : "Tümü",
+        action:
+          typeof resolvedSearchParams.action === "string"
+            ? resolvedSearchParams.action
+            : "Tümü",
         type:
           typeof resolvedSearchParams.type === "string"
             ? resolvedSearchParams.type
@@ -209,10 +327,28 @@ export default function AdsPage({
           ? Number(resolvedSearchParams.maxPrice)
           : null,
       };
+
       setFilters(newFilters);
-      handleFilter(newFilters);
-    }
+
+      const pageFromUrl = resolvedSearchParams.page
+        ? Number(resolvedSearchParams.page)
+        : 1;
+      setCurrentPage(pageFromUrl);
+
+      await fetchSearchResults(newFilters, pageFromUrl);
+    };
+
+    initializeFilters();
   }, [resolvedSearchParams]);
+
+  useEffect(() => {
+    const handlePageChange = async () => {
+      await fetchSearchResults(filters, currentPage);
+      window.scrollTo(0, 0);
+    };
+
+    handlePageChange();
+  }, [currentPage]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -223,96 +359,231 @@ export default function AdsPage({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentPage]);
+  const handleCategorySelect = (category: Category | null) => {
+    setSelectedCategory(category);
+    setSelectedSubcategory(null);
+    setSelectedSubSubcategory(null);
+    setFeatureFilters({});
 
-  function normalizeString(str: string): string {
-    return str
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-  }
-
-  const parsePrice = (priceStr: string): number => {
-    if (!priceStr) return 0;
-    const cleanPrice = priceStr.replace(/[^\d,]/g, "").replace(",", ".");
-    return parseFloat(cleanPrice) || 0;
+    if (category) {
+      setAvailableSubcategories(category.subcategories || []);
+      setFilters((prev) => ({ ...prev, type: category.name }));
+    } else {
+      setAvailableSubcategories([]);
+      setAvailableSubSubcategories([]);
+      setFilters((prev) => ({ ...prev, type: "Hepsi" }));
+    }
   };
 
-  const handleFilter = (autoFilters: FilterState | null = null) => {
+  const handleSubcategorySelect = (subcategory: Subcategory | null) => {
+    setSelectedSubcategory(subcategory);
+    setSelectedSubSubcategory(null);
+    setFeatureFilters({});
+
+    if (subcategory) {
+      setAvailableSubSubcategories(subcategory.subcategories || []);
+
+      if (subcategory.features && subcategory.features.length > 0) {
+        const initialFilters: Record<string, any> = {};
+        subcategory.features.forEach((feature: Feature) => {
+          if (feature.type === "multi_select") {
+            initialFilters[feature._id] = [];
+          }
+        });
+        setFeatureFilters(initialFilters);
+      }
+
+      const categoryPath = selectedCategory
+        ? `${selectedCategory.name} > ${subcategory.name}`
+        : subcategory.name;
+      setFilters((prev) => ({ ...prev, type: categoryPath }));
+    } else {
+      setAvailableSubSubcategories([]);
+      if (selectedCategory) {
+        setFilters((prev) => ({ ...prev, type: selectedCategory.name }));
+      }
+    }
+  };
+
+  const handleSubSubcategorySelect = (subsubcategory: Subcategory | null) => {
+    setSelectedSubSubcategory(subsubcategory);
+    setFeatureFilters({});
+
+    if (subsubcategory) {
+      if (subsubcategory.features && subsubcategory.features.length > 0) {
+        const initialFilters: Record<string, any> = {};
+        subsubcategory.features.forEach((feature: Feature) => {
+          if (feature.type === "multi_select") {
+            initialFilters[feature._id] = [];
+          }
+        });
+        setFeatureFilters(initialFilters);
+      }
+
+      const categoryPath =
+        selectedCategory && selectedSubcategory
+          ? `${selectedCategory.name} > ${selectedSubcategory.name} > ${subsubcategory.name}`
+          : subsubcategory.name;
+      setFilters((prev) => ({ ...prev, type: categoryPath }));
+    } else if (selectedSubcategory) {
+      const categoryPath = selectedCategory
+        ? `${selectedCategory.name} > ${selectedSubcategory.name}`
+        : selectedSubcategory.name;
+      setFilters((prev) => ({ ...prev, type: categoryPath }));
+    }
+  };
+
+  const handleFeatureFilterChange = (featureId: string, value: any) => {
+    setFeatureFilters((prev) => ({
+      ...prev,
+      [featureId]: value,
+    }));
+  };
+
+  const getCurrentFeatures = (): Feature[] => {
+    if (selectedSubSubcategory?.features) {
+      return selectedSubSubcategory.features;
+    }
+    if (selectedSubcategory?.features) {
+      return selectedSubcategory.features;
+    }
+    return [];
+  };
+
+  const fetchSearchResults = async (
+    filterValues: FilterState,
+    page: number = 1
+  ) => {
+    try {
+      setLoading(true);
+
+      const params: any = {
+        page: page,
+        limit: itemsPerPage,
+      };
+
+      if (filterValues.keyword && filterValues.keyword.trim() !== "") {
+        params.search = filterValues.keyword.trim();
+      }
+
+      if (filterValues.location && filterValues.location !== "Hepsi") {
+        params.city = filterValues.location;
+
+        if (filterValues.district && filterValues.district !== "Hepsi") {
+          params.district = filterValues.district;
+        }
+      }
+
+      if (filterValues.type && filterValues.type !== "Hepsi") {
+        const categoryPath = filterValues.type;
+        const lastCategory = categoryPath.split(" > ").pop();
+        params.category = lastCategory || categoryPath;
+      }
+
+      const features = getCurrentFeatures();
+      features.forEach((feature) => {
+        const filterValue = featureFilters[feature._id];
+        if (
+          filterValue !== undefined &&
+          filterValue !== null &&
+          filterValue !== ""
+        ) {
+          if (Array.isArray(filterValue) && filterValue.length > 0) {
+            params[`features.${feature.name}`] = filterValue.join(",");
+          } else if (typeof filterValue === "object" && filterValue !== null) {
+            if (filterValue.min !== undefined && filterValue.min !== null) {
+              params[`features.${feature.name}.min`] = filterValue.min;
+            }
+            if (filterValue.max !== undefined && filterValue.max !== null) {
+              params[`features.${feature.name}.max`] = filterValue.max;
+            }
+          } else if (filterValue !== false) {
+            params[`features.${feature.name}`] = filterValue;
+          }
+        }
+      });
+
+      if (filterValues.action && filterValues.action !== "Tümü") {
+        if (!params.search) {
+          params.search = filterValues.action;
+        } else {
+          params.search += ` ${filterValues.action}`;
+        }
+      }
+
+      if (filterValues.minPrice !== null && filterValues.minPrice > 0) {
+        params.minPrice = filterValues.minPrice;
+      }
+
+      if (filterValues.maxPrice !== null && filterValues.maxPrice > 0) {
+        params.maxPrice = filterValues.maxPrice;
+      }
+
+      console.log("📤 API İSTEĞİ:", params);
+
+      const response = await api.get("/advert/search", {
+        params,
+        validateStatus: function (status) {
+          return status < 500;
+        },
+      });
+
+      let filteredData = response.data.data || [];
+
+      if (Array.isArray(filteredData)) {
+        setData(filteredData);
+
+        if (response.data.pagination) {
+          setTotalPages(response.data.pagination.totalPages || 1);
+          setTotalItems(response.data.pagination.totalItems || 0);
+        }
+      } else {
+        setData([]);
+        setTotalPages(1);
+        setTotalItems(0);
+      }
+
+      setLoading(false);
+    } catch (error: any) {
+      console.error("❌ API İstek Hatası:", error);
+      setData([]);
+      setLoading(false);
+    }
+  };
+
+  const handleFilter = useCallback(async () => {
     setModal(false);
-    let filteredData = adverts.filter((ad: Advert) => ad.active === true);
-    let filterValues = autoFilters || filters;
-
-    console.log("Filtreleme başlıyor:", filterValues);
-    console.log("Toplam ilan sayısı:", filteredData.length);
-
-    if (filterValues.keyword && filterValues.keyword.trim() !== "") {
-      const keyword = normalizeString(filterValues.keyword.trim());
-      filteredData = filteredData.filter((ad: Advert) => {
-        const title = normalizeString(ad.title || "");
-        return title.includes(keyword);
-      });
-      console.log("Anahtar kelime filtresi sonrası:", filteredData.length);
-    }
-
-    if (filterValues.location && filterValues.location !== "Hepsi") {
-      filteredData = filteredData.filter((ad: Advert) => {
-        return ad.address?.province === filterValues.location;
-      });
-      console.log("Konum filtresi sonrası:", filteredData.length);
-    }
-
-    if (filterValues.district && filterValues.district !== "Hepsi") {
-      filteredData = filteredData.filter((ad: Advert) => {
-        return ad.address?.district === filterValues.district;
-      });
-      console.log("İlçe filtresi sonrası:", filteredData.length);
-    }
-
-    if (filterValues.action && filterValues.action !== "Tümü") {
-      filteredData = filteredData.filter(
-        (ad: Advert) => ad.steps?.second === filterValues.action
-      );
-      console.log("İşlem türü filtresi sonrası:", filteredData.length);
-    }
-
-    if (filterValues.type && filterValues.type !== "Hepsi") {
-      filteredData = filteredData.filter(
-        (ad: Advert) => ad.steps?.third === filterValues.type
-      );
-      console.log("Emlak tipi filtresi sonrası:", filteredData.length);
-    }
-
-    if (filterValues.minPrice !== null && filterValues.minPrice > 0) {
-      filteredData = filteredData.filter((ad: Advert) => {
-        if (!ad.fee) return false;
-        const priceNumber = parsePrice(ad.fee);
-        return priceNumber >= filterValues.minPrice!;
-      });
-      console.log("Min fiyat filtresi sonrası:", filteredData.length);
-    }
-
-    if (filterValues.maxPrice !== null && filterValues.maxPrice > 0) {
-      filteredData = filteredData.filter((ad: Advert) => {
-        if (!ad.fee) return false;
-        const priceNumber = parsePrice(ad.fee);
-        return priceNumber <= filterValues.maxPrice!;
-      });
-      console.log("Max fiyat filtresi sonrası:", filteredData.length);
-    }
-
-    console.log("Son filtreleme sonucu:", filteredData.length);
-
-    setData(
-      filteredData.sort((a: Advert, b: Advert) => {
-        const aC = a.created?.createdTimestamp || 0;
-        const bC = b.created?.createdTimestamp || 0;
-        return bC - aC;
-      })
-    );
     setCurrentPage(1);
+    await fetchSearchResults(filters, 1);
+  }, [filters, featureFilters]);
+
+  const clearFilters = async () => {
+    const clearedFilters: FilterState = {
+      keyword: "",
+      location: "Hepsi",
+      district: "Hepsi",
+      action: "Tümü",
+      type: "Hepsi",
+      minPrice: null,
+      maxPrice: null,
+    };
+
+    setFilters(clearedFilters);
+    setSelectedCategory(null);
+    setSelectedSubcategory(null);
+    setSelectedSubSubcategory(null);
+    setAvailableSubcategories([]);
+    setAvailableSubSubcategories([]);
+    setFeatureFilters({});
+    setCurrentPage(1);
+
+    await fetchSearchResults(clearedFilters, 1);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleFilter();
+    }
   };
 
   const hasValidImage = (ad: Advert): boolean => {
@@ -331,10 +602,6 @@ export default function AdsPage({
 
     return !!validPhoto;
   };
-
-  const totalPages = Math.ceil(data.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = data.slice(startIndex, startIndex + itemsPerPage);
 
   const CustomPagination = () => {
     if (totalPages <= 1) return null;
@@ -399,12 +666,12 @@ export default function AdsPage({
 
   const logoUrl = "/logo.png";
 
-  if (loading) {
+  if (loading && data.length === 0) {
     return (
       <div className="w-full min-h-screen flex justify-center items-center bg-white">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-gray-600"></div>
-          <p className="text-gray-600 font-medium">Tüm ilanlar yükleniyor...</p>
+          <p className="text-gray-600 font-medium">İlanlar yükleniyor...</p>
         </div>
       </div>
     );
@@ -431,16 +698,14 @@ export default function AdsPage({
                 onChange={(e) => {
                   setFilters({ ...filters, keyword: e.target.value });
                 }}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") handleFilter();
-                }}
+                onKeyPress={handleKeyPress}
               />
             </div>
 
             <div className="flex gap-2 w-full lg:w-auto">
               <button
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 flex-1 lg:flex-none justify-center font-medium text-sm transition-colors shadow-sm hover:shadow-md"
-                onClick={() => handleFilter()}
+                onClick={handleFilter}
               >
                 <Search size={16} />
                 Ara
@@ -462,46 +727,30 @@ export default function AdsPage({
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
               {filters.keyword ? `"${filters.keyword}"` : "Tüm İlanlar"}
-              {filters.keyword && (
-                <span className="text-sm text-gray-500 ml-2">
-                  ({data.length} sonuç)
-                </span>
-              )}
+              <span className="text-sm text-gray-500 ml-2">
+                ({totalItems} sonuç)
+              </span>
             </h2>
-            {!filters.keyword && (
+            {filters.location !== "Hepsi" && (
               <p className="text-gray-600 mt-1">
-                {data.length} aktif ilan bulundu
-                {adverts.length > 0 && (
-                  <span className="text-sm text-gray-500 ml-2">
-                    (Toplam {adverts.length} ilan)
-                  </span>
-                )}
+                {filters.location}
+                {filters.district !== "Hepsi" && ` / ${filters.district}`}
+                {filters.action !== "Tümü" && ` / ${filters.action}`}
+                {filters.type !== "Hepsi" && ` / ${filters.type}`}
               </p>
             )}
           </div>
 
-          {data.length < adverts.length && (
+          {(filters.location !== "Hepsi" ||
+            filters.district !== "Hepsi" ||
+            filters.action !== "Tümü" ||
+            filters.type !== "Hepsi" ||
+            filters.minPrice ||
+            filters.maxPrice ||
+            Object.keys(featureFilters).length > 0) && (
             <button
               className="text-blue-600 hover:text-blue-800 hover:underline transition-colors flex items-center gap-2 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200"
-              onClick={() => {
-                setFilters({
-                  keyword: "",
-                  location: "Hepsi",
-                  district: "Hepsi",
-                  action: "Tümü",
-                  type: "Hepsi",
-                  minPrice: null,
-                  maxPrice: null,
-                });
-                setData(
-                  adverts.sort((a: Advert, b: Advert) => {
-                    const aC = a.created?.createdTimestamp || 0;
-                    const bC = b.created?.createdTimestamp || 0;
-                    return bC - aC;
-                  })
-                );
-                setModal(false);
-              }}
+              onClick={clearFilters}
             >
               <RotateCcw size={16} />
               Filtreleri Temizle
@@ -511,12 +760,12 @@ export default function AdsPage({
 
         {/* Ads Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {currentItems.length === 0 ? (
+          {data.length === 0 ? (
             <div className="col-span-3 py-16 text-center">
               <div className="max-w-md mx-auto">
                 <Search size={64} className="mx-auto text-gray-300 mb-4" />
                 <p className="text-xl font-semibold text-gray-900 mb-2">
-                  Sonuç bulunamadı
+                  İlan bulunamadı
                 </p>
                 <p className="text-gray-600 mb-4">
                   Filtrelerinizi değiştirerek tekrar deneyin
@@ -531,19 +780,18 @@ export default function AdsPage({
               </div>
             </div>
           ) : (
-            currentItems.map((ad: Advert, index: number) => (
+            data.map((ad: Advert, index: number) => (
               <Link
                 href={`/ads/${ad.uid}`}
                 key={ad.uid || index}
                 className="flex relative flex-col bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group hover:-translate-y-1 border border-gray-200"
               >
                 {ad.steps?.first && ad.steps?.second && (
-                  <div className="absolute z-10 top-3 left-3 bg-gradient-to-r from-orange-500 to-red-500 text-white py-1 px-3 rounded-full text-xs font-semibold shadow-lg">
+                  <div className="absolute z-10 top-3 left-3 bg-linear-to-r from-orange-500 to-red-500 text-white py-1 px-3 rounded-full text-xs font-semibold shadow-lg">
                     {ad.steps.second} / {ad.steps.first}
                   </div>
                 )}
 
-                {/* Image Section */}
                 <div className="relative h-48 overflow-hidden">
                   {hasValidImage(ad) ? (
                     <img
@@ -560,7 +808,7 @@ export default function AdsPage({
                       }}
                     />
                   ) : (
-                    <div className="flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 w-full h-full">
+                    <div className="flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 w-full h-full">
                       <img
                         src={logoUrl}
                         alt="Logo"
@@ -575,7 +823,6 @@ export default function AdsPage({
                   <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
                 </div>
 
-                {/* Content Section */}
                 <div className="flex flex-col gap-3 p-5 flex-1">
                   <h3 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
                     {ad.title || "Başlık Yok"}
@@ -596,7 +843,6 @@ export default function AdsPage({
                     </p>
                   )}
 
-                  {/* Features */}
                   <div className="flex flex-wrap gap-2 my-1">
                     {ad.steps?.third && (
                       <div className="flex items-center gap-1 text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">
@@ -635,7 +881,6 @@ export default function AdsPage({
                     )}
                   </div>
 
-                  {/* Price and Date */}
                   <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
                     <div className="text-xl font-bold text-gray-900 flex items-center gap-1">
                       {ad.fee ? `${ad.fee}` : "Fiyat belirtilmemiş"}
@@ -661,7 +906,6 @@ export default function AdsPage({
           )}
         </div>
 
-        {/* Custom Pagination */}
         {totalPages > 1 && <CustomPagination />}
       </div>
 
@@ -670,40 +914,56 @@ export default function AdsPage({
 
       {/* Filter Modal */}
       {modal && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl my-8 border border-gray-200">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-2xl">
-              <h2 className="text-2xl font-bold flex items-center gap-3">
-                <Filter size={24} />
-                Detaylı Filtreleme
-              </h2>
-              <button
-                onClick={() => setModal(false)}
-                className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
+        <div className="fixed inset-0 z-9999 flex items-start justify-center p-4 bg-gray-900/50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-linear-to-br from-gray-50 to-white w-full max-w-4xl rounded-2xl shadow-2xl shadow-gray-900/10 my-8 overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-100 bg-linear-to-r from-slate-900 to-slate-800">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-white/10 backdrop-blur-sm rounded-xl">
+                    <Filter size={22} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white tracking-tight">
+                      Detaylı Filtreleme
+                    </h2>
+                    <p className="text-sm text-gray-300 mt-1">
+                      İlanları özelliklerine göre filtreleyin
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-xl transition-all duration-300 group"
+                >
+                  <X
+                    size={22}
+                    className="text-gray-300 group-hover:text-white transition-colors"
+                  />
+                </button>
+              </div>
             </div>
 
-            {/* Modal Content */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleFilter();
               }}
-              className="p-6 space-y-6 max-h-[70vh] overflow-y-auto"
+              className="p-8 space-y-8 max-h-[80vh] overflow-y-auto"
             >
               {/* Location Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Navigation size={18} className="text-blue-500" />
-                  Konum
-                </h3>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-linear-to-r from-rose-100 to-pink-100 rounded-lg">
+                    <Navigation size={18} className="text-rose-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    Konum
+                  </h3>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-700">
                       İl
                     </label>
                     <select
@@ -715,7 +975,7 @@ export default function AdsPage({
                           district: "Hepsi",
                         });
                       }}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent bg-white transition-all duration-300 hover:border-gray-300"
                     >
                       <option value="Hepsi">Tüm İller</option>
                       {turkeyCities.map((city: any) => (
@@ -726,8 +986,8 @@ export default function AdsPage({
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-700">
                       İlçe
                     </label>
                     <select
@@ -739,7 +999,7 @@ export default function AdsPage({
                         });
                       }}
                       disabled={filters.location === "Hepsi"}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+                      className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent bg-white disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed transition-all duration-300 hover:border-gray-300"
                     >
                       <option value="Hepsi">
                         {filters.location === "Hepsi"
@@ -762,15 +1022,19 @@ export default function AdsPage({
               </div>
 
               {/* Property Type Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Building size={18} className="text-green-500" />
-                  Emlak Bilgileri
-                </h3>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-linear-to-r from-emerald-100 to-teal-100 rounded-lg">
+                    <Building size={18} className="text-emerald-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    Emlak Bilgileri
+                  </h3>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="grid grid-cols-1 gap-5">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-700">
                       Tür (Satılık/Kiralık)
                     </label>
                     <select
@@ -781,7 +1045,7 @@ export default function AdsPage({
                           action: e.target.value,
                         });
                       }}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent bg-white transition-all duration-300 hover:border-gray-300"
                     >
                       {actionOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -791,92 +1055,330 @@ export default function AdsPage({
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-700">
                       Emlak Tipi
                     </label>
-                    <select
-                      value={filters.type}
-                      onChange={(e) => {
-                        setFilters({
-                          ...filters,
-                          type: e.target.value,
-                        });
-                      }}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    >
-                      {typeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    {loadingCategories ? (
+                      <div className="w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-white flex items-center justify-center">
+                        <Loader
+                          size={18}
+                          className="animate-spin text-gray-400"
+                        />
+                        <span className="ml-2 text-gray-500">
+                          Kategoriler yükleniyor...
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="border border-gray-200 rounded-xl bg-white p-4">
+                        {/* Seçim Yolu */}
+                        <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Tag size={16} className="text-blue-600" />
+                            <span className="font-medium text-blue-800">
+                              Seçilen:
+                            </span>
+                            <div className="flex-1">
+                              <span className="text-blue-700">
+                                {filters.type === "Hepsi"
+                                  ? "Tüm Kategoriler"
+                                  : filters.type}
+                              </span>
+                            </div>
+                            {(selectedCategory ||
+                              selectedSubcategory ||
+                              selectedSubSubcategory) && (
+                              <button
+                                type="button"
+                                onClick={clearFilters}
+                                className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1"
+                              >
+                                <RotateCcw size={12} />
+                                Temizle
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Kategori Seçim Grid'i - Sahibinden.com stili */}
+                        <div className="grid grid-cols-3 gap-4">
+                          {/* Ana Kategoriler */}
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-semibold text-gray-800 mb-2 pb-2 border-b">
+                              Ana Kategori
+                            </h4>
+                            <button
+                              type="button"
+                              onClick={() => handleCategorySelect(null)}
+                              className={`w-full text-left p-3 rounded-lg border transition-all ${
+                                !selectedCategory
+                                  ? "bg-blue-100 border-blue-300 text-blue-700"
+                                  : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Home size={16} />
+                                <span className="font-medium">Tümü</span>
+                              </div>
+                            </button>
+                            {categories.map((category) => (
+                              <button
+                                key={category._id}
+                                type="button"
+                                onClick={() => handleCategorySelect(category)}
+                                className={`w-full text-left p-3 rounded-lg border transition-all ${
+                                  selectedCategory?._id === category._id
+                                    ? "bg-blue-100 border-blue-300 text-blue-700"
+                                    : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Building size={16} />
+                                    <span className="font-medium">
+                                      {category.name}
+                                    </span>
+                                  </div>
+                                  {selectedCategory?._id === category._id && (
+                                    <Check
+                                      size={16}
+                                      className="text-blue-600"
+                                    />
+                                  )}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Alt Kategoriler */}
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-semibold text-gray-800 mb-2 pb-2 border-b">
+                              Alt Kategori
+                            </h4>
+                            {selectedCategory ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSubcategorySelect(null)}
+                                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                                    !selectedSubcategory
+                                      ? "bg-blue-100 border-blue-300 text-blue-700"
+                                      : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Tag size={16} />
+                                    <span className="font-medium">Tümü</span>
+                                  </div>
+                                </button>
+                                {availableSubcategories.map((subcategory) => (
+                                  <button
+                                    key={subcategory._id}
+                                    type="button"
+                                    onClick={() =>
+                                      handleSubcategorySelect(subcategory)
+                                    }
+                                    className={`w-full text-left p-3 rounded-lg border transition-all ${
+                                      selectedSubcategory?._id ===
+                                      subcategory._id
+                                        ? "bg-blue-100 border-blue-300 text-blue-700"
+                                        : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-medium">
+                                        {subcategory.name}
+                                      </span>
+                                      {selectedSubcategory?._id ===
+                                        subcategory._id && (
+                                        <Check
+                                          size={16}
+                                          className="text-blue-600"
+                                        />
+                                      )}
+                                    </div>
+                                  </button>
+                                ))}
+                              </>
+                            ) : (
+                              <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
+                                Önce ana kategori seçin
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Alt Alt Kategoriler */}
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-semibold text-gray-800 mb-2 pb-2 border-b">
+                              Detay
+                            </h4>
+                            {selectedSubcategory ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleSubSubcategorySelect(null)
+                                  }
+                                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                                    !selectedSubSubcategory
+                                      ? "bg-blue-100 border-blue-300 text-blue-700"
+                                      : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Tag size={16} />
+                                    <span className="font-medium">Tümü</span>
+                                  </div>
+                                </button>
+                                {availableSubSubcategories.map(
+                                  (subsubcategory) => (
+                                    <button
+                                      key={subsubcategory._id}
+                                      type="button"
+                                      onClick={() =>
+                                        handleSubSubcategorySelect(
+                                          subsubcategory
+                                        )
+                                      }
+                                      className={`w-full text-left p-3 rounded-lg border transition-all ${
+                                        selectedSubSubcategory?._id ===
+                                        subsubcategory._id
+                                          ? "bg-blue-100 border-blue-300 text-blue-700"
+                                          : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-medium">
+                                          {subsubcategory.name}
+                                        </span>
+                                        {selectedSubSubcategory?._id ===
+                                          subsubcategory._id && (
+                                          <Check
+                                            size={16}
+                                            className="text-blue-600"
+                                          />
+                                        )}
+                                      </div>
+                                    </button>
+                                  )
+                                )}
+                              </>
+                            ) : (
+                              <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
+                                {selectedCategory
+                                  ? "Önce alt kategori seçin"
+                                  : "Önce kategori seçin"}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Özellik Filtreleri */}
+                        {getCurrentFeatures().length > 0 && (
+                          <div className="mt-8 pt-6 border-t border-gray-200">
+                            <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                              Özellik Filtreleri
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {getCurrentFeatures().map((feature) => (
+                                <div key={feature._id} className="space-y-3">
+                                  <FeatureInput
+                                    feature={feature}
+                                    value={featureFilters[feature._id]}
+                                    onChange={(value) =>
+                                      handleFeatureFilterChange(
+                                        feature._id,
+                                        value
+                                      )
+                                    }
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Price Range Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <DollarSign size={18} className="text-yellow-500" />
-                  Fiyat Aralığı
-                </h3>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-linear-to-r from-amber-100 to-yellow-100 rounded-lg">
+                    <DollarSign size={18} className="text-amber-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    Fiyat Aralığı
+                  </h3>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-700">
                       Min. Fiyat
                     </label>
-                    <input
-                      type="number"
-                      placeholder="Min. Fiyat"
-                      value={filters.minPrice || ""}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                      onChange={(e) =>
-                        setFilters({
-                          ...filters,
-                          minPrice: e.target.value
-                            ? Number(e.target.value)
-                            : null,
-                        })
-                      }
-                    />
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                        ₺
+                      </span>
+                      <input
+                        type="number"
+                        placeholder="Minimum"
+                        value={filters.minPrice || ""}
+                        className="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent bg-white transition-all duration-300 hover:border-gray-300"
+                        onChange={(e) =>
+                          setFilters({
+                            ...filters,
+                            minPrice: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-700">
                       Max. Fiyat
                     </label>
-                    <input
-                      type="number"
-                      placeholder="Max. Fiyat"
-                      value={filters.maxPrice || ""}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                      onChange={(e) =>
-                        setFilters({
-                          ...filters,
-                          maxPrice: e.target.value
-                            ? Number(e.target.value)
-                            : null,
-                        })
-                      }
-                    />
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                        ₺
+                      </span>
+                      <input
+                        type="number"
+                        placeholder="Maksimum"
+                        value={filters.maxPrice || ""}
+                        className="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent bg-white transition-all duration-300 hover:border-gray-300"
+                        onChange={(e) =>
+                          setFilters({
+                            ...filters,
+                            maxPrice: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-6 border-t border-gray-200">
+              <div className="flex gap-4 pt-8 border-t border-gray-100">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                  className="flex-1 bg-linear-to-r from-slate-800 to-slate-900 hover:from-slate-900 hover:to-slate-950 text-white py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                 >
                   <Filter size={20} />
-                  Filtrele ({data.length} ilan)
+                  Filtrele ({totalItems} ilan)
                 </button>
                 <button
                   type="button"
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-4 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2 border border-gray-300"
+                  className="flex-1 bg-white hover:bg-gray-50 text-slate-700 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow"
                   onClick={() => {
                     setFilters({
                       keyword: "",
@@ -887,18 +1389,17 @@ export default function AdsPage({
                       minPrice: null,
                       maxPrice: null,
                     });
-                    setData(
-                      adverts.sort((a: Advert, b: Advert) => {
-                        const aC = a.created?.createdTimestamp || 0;
-                        const bC = b.created?.createdTimestamp || 0;
-                        return bC - aC;
-                      })
-                    );
+                    setSelectedCategory(null);
+                    setSelectedSubcategory(null);
+                    setSelectedSubSubcategory(null);
+                    setAvailableSubcategories([]);
+                    setAvailableSubSubcategories([]);
+                    setFeatureFilters({});
                     setModal(false);
                   }}
                 >
                   <RotateCcw size={20} />
-                  Temizle
+                  Formu Temizle
                 </button>
               </div>
             </form>

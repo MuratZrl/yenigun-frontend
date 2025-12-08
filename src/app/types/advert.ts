@@ -120,3 +120,26 @@ export interface FilterState {
   minPrice: number | null;
   maxPrice: number | null;
 }
+
+export interface Category {
+  _id: string;
+  name: string;
+  subcategories: Subcategory[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface Subcategory {
+  name: string;
+  features: Feature[];
+  subcategories: any[];
+  _id: string;
+}
+
+export interface Feature {
+  name: string;
+  type: string;
+  options: string[];
+  _id: string;
+}

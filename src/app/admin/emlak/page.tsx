@@ -107,6 +107,37 @@ const Emlak = () => {
     setPage(0);
   };
 
+  const handleSearchResult = (resultData: any) => {
+    console.log("Search Result:", resultData);
+
+    if (resultData && Array.isArray(resultData)) {
+      const sortedData = resultData
+        .filter((ad: Advert) => ad.active !== false)
+        .sort((a: Advert, b: Advert) => {
+          const aC = a.created?.createdTimestamp || 0;
+          const bC = b.created?.createdTimestamp || 0;
+          return bC - aC;
+        });
+
+      setData(sortedData);
+    } else if (resultData?.data && Array.isArray(resultData.data)) {
+      const sortedData = resultData.data
+        .filter((ad: Advert) => ad.active !== false)
+        .sort((a: Advert, b: Advert) => {
+          const aC = a.created?.createdTimestamp || 0;
+          const bC = b.created?.createdTimestamp || 0;
+          return bC - aC;
+        });
+
+      setData(sortedData);
+    } else {
+      console.warn("Unexpected result format:", resultData);
+      toast.error("Sonuçlar beklenen formatta değil");
+    }
+
+    setPage(0);
+  };
+
   const startIndex = page * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const totalPages = Math.ceil(data.length / rowsPerPage);
@@ -288,97 +319,71 @@ const Emlak = () => {
 
   const [openFilter, setOpenFilter] = useState(false);
 
-  const handleFilter = () => {
-    let filteredData = defaultData;
+  const handleFilter = async () => {
+    try {
+      setLoading(true);
 
-    filteredData = filteredData.filter((ad: Advert) => {
-      if (filters.uid && ad.uid.toString() !== filters.uid) {
-        return false;
-      }
+      if (
+        filters.title &&
+        !filters.uid &&
+        !filters.province &&
+        !filters.district &&
+        !filters.quarter &&
+        !filters.type &&
+        !filters.otherType &&
+        !filters.minFee &&
+        !filters.maxFee &&
+        !filters.advisor &&
+        !filters.customer
+      ) {
+        console.log("Searching by title:", filters.title);
 
-      if (filters.title) {
-        const title = normalizeString(ad.title);
-        const keyword = normalizeString(filters.title);
-        if (!title.includes(keyword)) {
-          return false;
+        const response = await api.get("/admin/adverts/search", {
+          params: {
+            page: 1,
+            limit: 100,
+            search: filters.title,
+          },
+        });
+
+        console.log("API Search Response:", response.data);
+
+        let searchResults = [];
+
+        if (Array.isArray(response.data)) {
+          searchResults = response.data;
+        } else if (response.data?.data && Array.isArray(response.data.data)) {
+          searchResults = response.data.data;
+        } else if (response.data?.items && Array.isArray(response.data.items)) {
+          searchResults = response.data.items;
         }
+        const filteredAndSorted = searchResults
+          .filter((ad: Advert) => ad.active !== false)
+          .sort((a: Advert, b: Advert) => {
+            const aC = a.created?.createdTimestamp || 0;
+            const bC = b.created?.createdTimestamp || 0;
+            return bC - aC;
+          });
+
+        setData(filteredAndSorted);
+        toast.success(`${filteredAndSorted.length} ilan bulundu.`);
       }
 
-      if (
-        filters.province &&
-        !ad.address.province
-          .toLowerCase()
-          .includes(filters.province.toLowerCase())
-      ) {
-        return false;
-      }
+      setPage(0);
+    } catch (error: any) {
+      console.error("Filtreleme hatası:", error);
+      toast.error("Filtreleme sırasında bir hata oluştu");
 
-      if (
-        filters.district &&
-        !ad.address.district
-          .toLowerCase()
-          .includes(filters.district.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filters.quarter &&
-        !ad.address.quarter
-          .toLowerCase()
-          .includes(filters.quarter.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filters.type &&
-        filters.type !== "hepsi" &&
-        ad.steps.second !== filters.type
-      ) {
-        return false;
-      }
-
-      if (
-        filters.otherType &&
-        !ad.steps.first.toLowerCase().includes(filters.otherType.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (filters.minFee && ad.fee < Number(filters.minFee)) {
-        return false;
-      }
-
-      if (filters.maxFee && ad.fee > Number(filters.maxFee)) {
-        return false;
-      }
-
-      if (filters.advisor) {
-        const fullName = ad.advisor.name + " " + ad.advisor.surname;
-        if (!fullName.toLowerCase().includes(filters.advisor.toLowerCase())) {
-          return false;
-        }
-      }
-
-      if (filters.customer) {
-        const fullName = ad.customer.name + " " + ad.customer.surname;
-        if (!fullName.toLowerCase().includes(filters.customer.toLowerCase())) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    setData(
-      filteredData.sort((a: Advert, b: Advert) => {
-        const aC = a.created.createdTimestamp;
-        const bC = b.created.createdTimestamp;
-        return bC - aC;
-      })
-    );
-    setPage(0);
+      setData(
+        defaultData.sort((a: Advert, b: Advert) => {
+          const aC = a.created?.createdTimestamp || 0;
+          const bC = b.created?.createdTimestamp || 0;
+          return bC - aC;
+        })
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const hasValidPhotos = (ad: Advert) => {
@@ -449,27 +454,49 @@ const Emlak = () => {
                   type="text"
                   placeholder="İlan başlığı ara..."
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:border-custom-orange focus:ring-1 focus:ring-custom-orange outline-none"
+                  value={filters.title || ""}
                   onChange={(e) =>
                     setFilters({ ...filters, title: e.target.value })
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleFilter();
+                    }
+                  }}
                 />
               </div>
               <input
                 type="number"
                 placeholder="ID ara..."
                 className="w-32 px-3 py-2.5 border border-gray-300 rounded-lg focus:border-custom-orange focus:ring-1 focus:ring-custom-orange outline-none"
+                value={filters.uid || ""}
                 onChange={(e) =>
                   setFilters({ ...filters, uid: e.target.value })
                 }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleFilter();
+                  }
+                }}
               />
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handleFilter}
-                className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors font-medium"
+                disabled={loading}
+                className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-600 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors font-medium disabled:opacity-70"
               >
-                <Filter size={16} />
-                Filtrele
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                    Aranıyor...
+                  </>
+                ) : (
+                  <>
+                    <Filter size={16} />
+                    Ara
+                  </>
+                )}
               </button>
               <button
                 onClick={() => setOpenFilter(true)}
@@ -815,7 +842,6 @@ const Emlak = () => {
           </div>
         )}
 
-        {/* Other Modals */}
         <FilterAdminAds
           open={openFilter}
           setOpen={setOpenFilter}
@@ -836,15 +862,17 @@ const Emlak = () => {
               advisor: "",
               customer: "",
             });
+
             setData(
               defaultData.sort((a: Advert, b: Advert) => {
-                const aC = a.created.createdTimestamp;
-                const bC = b.created.createdTimestamp;
+                const aC = a.created?.createdTimestamp || 0;
+                const bC = b.created?.createdTimestamp || 0;
                 return bC - aC;
               })
             );
             setPage(0);
           }}
+          onSearchResult={handleSearchResult}
         />
         <AdUserNotes
           data={adUserNotes}

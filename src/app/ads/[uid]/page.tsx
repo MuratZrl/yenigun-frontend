@@ -221,7 +221,6 @@ const PhotoThumbnailsHorizontal = ({
     }
   }, [selectedPhoto]);
 
-  // Touch events for mobile scrolling
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
     setStartX(e.touches[0].pageX - (containerRef.current?.offsetLeft || 0));
@@ -257,7 +256,7 @@ const PhotoThumbnailsHorizontal = ({
         {photos.map((photo, index) => (
           <div
             key={index}
-            className="flex-shrink-0 w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer group"
+            className="shrink-0 w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer group"
             onClick={() => setSelectedPhoto(index)}
           >
             <img
@@ -486,8 +485,36 @@ function AdvertDetail({
     if (!data.address) return "Adres bilgisi bulunamadı";
 
     const { province, district, quarter, full_address } = data.address;
-    const parts = [quarter, full_address, district, province].filter(Boolean);
-    return parts.join(", ");
+
+    let addressParts = [];
+
+    if (quarter && quarter.trim() !== "") {
+      addressParts.push(quarter);
+    }
+
+    let effectiveFullAddress = "";
+    if (full_address) {
+      if (typeof full_address === "string" && full_address.trim() !== "") {
+        effectiveFullAddress = full_address;
+      }
+    }
+    if (effectiveFullAddress && effectiveFullAddress !== quarter) {
+      addressParts.push(effectiveFullAddress);
+    }
+
+    if (district && district.trim() !== "") {
+      addressParts.push(district);
+    }
+
+    if (province && province.trim() !== "") {
+      addressParts.push(province);
+    }
+
+    const uniqueParts = addressParts.filter(
+      (part, index, self) => self.indexOf(part) === index
+    );
+
+    return uniqueParts.join(", ");
   };
 
   const renderFeatureValues = () => {
@@ -700,7 +727,7 @@ function AdvertDetail({
 
         <div className="block lg:hidden mb-6">
           <div className="flex flex-col gap-6">
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
+            <div className="bg-linear-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
               <p className="text-sm opacity-90">Fiyat</p>
               <p className="text-3xl font-bold mt-1">{data.fee}</p>
               <p className="text-sm opacity-90 mt-2">{data.steps.second}</p>
@@ -926,10 +953,7 @@ function AdvertDetail({
               <h2 className="text-xl font-bold text-gray-900 mb-4">Konum</h2>
               <div className="mb-4 p-4 bg-gray-50 rounded-xl">
                 <div className="flex items-start gap-3">
-                  <MapPin
-                    className="text-blue-600 mt-0.5 flex-shrink-0"
-                    size={16}
-                  />
+                  <MapPin className="text-blue-600 mt-0.5 shrink-0" size={16} />
                   <div>
                     <p className="text-sm font-medium text-gray-900 mb-1">
                       Tam Adres
@@ -950,7 +974,7 @@ function AdvertDetail({
 
           <div className="hidden lg:block lg:col-span-1">
             <div className="sticky top-8 flex flex-col gap-6">
-              <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
+              <div className="bg-linear-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
                 <p className="text-sm opacity-90">Fiyat</p>
                 <p className="text-3xl font-bold mt-1">{data.fee}</p>
                 <p className="text-sm opacity-90 mt-2">{data.steps.second}</p>
@@ -1053,7 +1077,7 @@ function AdvertDetail({
               </div>
             )}
 
-            <div className="relative flex-grow sm:flex-grow-0 sm:aspect-[16/9] bg-black rounded-none sm:rounded-2xl overflow-hidden">
+            <div className="relative grow sm:grow-0 sm:aspect-video bg-black rounded-none sm:rounded-2xl overflow-hidden">
               <iframe
                 src={data.video}
                 className="w-full h-full"
