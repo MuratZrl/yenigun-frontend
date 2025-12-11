@@ -233,27 +233,6 @@ const CategorySidebar = ({ selectedCategoryId }: CategorySidebarProps) => {
           })}
         </div>
       )}
-
-      {/* İstatistikler */}
-      <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
-        <h3 className="font-semibold text-gray-900 mb-2">Toplam Kategoriler</h3>
-        <p className="text-2xl font-bold text-blue-700">{categories.length}</p>
-        <p className="text-sm text-gray-600 mt-1">
-          {categories.reduce((acc, cat) => acc + cat.subcategoryCount, 0)} alt
-          kategori
-        </p>
-      </div>
-
-      {/* Tümünü Seç Butonu */}
-      <div className="mt-6">
-        <button
-          onClick={handleAllCategoriesClick}
-          className="w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-        >
-          <span>Tüm Kategorileri Gör</span>
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
     </motion.aside>
   );
 };
