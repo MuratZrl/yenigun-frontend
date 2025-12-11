@@ -406,7 +406,7 @@ export default function CategoryDetailPage() {
                   <div className="space-y-2 pt-3">
                     {adverts.map((advert) => (
                       <Link
-                        href={`/ilan/${advert.uid}`}
+                        href={`/ads/${advert.uid}`}
                         key={advert.uid}
                         className="flex relative bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 overflow-hidden group"
                       >
