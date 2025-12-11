@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.7",
+    "@vis.gl/react-google-maps": "^1.7.1",
     "axios": "^1.13.2",
     "framer-motion": "^12.23.24",
     "google-maps-react-markers": "^2.0.15",

@@ -1,7 +1,7 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
@@ -32,6 +32,7 @@ import {
   Car,
   Ruler,
   Thermometer,
+  Eye,
 } from "lucide-react";
 import api from "@/app/lib/api";
 import {
@@ -59,16 +60,11 @@ const turkeyCities = JSONDATA.map((city: any) => {
   };
 });
 
-const actionOptions = [
-  { value: "Tümü", label: "Tümü" },
-  { value: "Kiralık", label: "Kiralık" },
-  { value: "Günlük Kiralık", label: "Günlük Kiralık" },
-  { value: "Devren Kiralık", label: "Devren Kiralık" },
-  { value: "Satılık", label: "Satılık" },
-  { value: "Devren Satılık", label: "Devren Satılık" },
-];
-
 const staticTypeOptions = [{ value: "Hepsi", label: "Hepsi" }];
+
+const decodeURLParam = (param: string): string => {
+  return decodeURIComponent(param.replace(/\+/g, " "));
+};
 
 const FeatureInput = ({
   feature,
@@ -237,13 +233,14 @@ export default function AdsPage({
 }) {
   const resolvedSearchParams = use(searchParams);
   const router = useRouter();
+  const searchParamsClient = useSearchParams();
 
   const [filters, setFilters] = useState<FilterState>({
     keyword: "",
     location: "Hepsi",
     district: "Hepsi",
-    action: "Tümü",
     type: "Hepsi",
+    action: "Tümü",
     minPrice: null,
     maxPrice: null,
   });
@@ -276,6 +273,9 @@ export default function AdsPage({
 
   const itemsPerPage = 12;
 
+  const isInitialLoad = useRef(true);
+  const isInitializingFilters = useRef(false);
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -298,52 +298,201 @@ export default function AdsPage({
   }, []);
 
   useEffect(() => {
-    const initializeFilters = async () => {
-      const newFilters: FilterState = {
-        keyword:
-          typeof resolvedSearchParams.q === "string"
-            ? resolvedSearchParams.q
-            : "",
-        location:
-          typeof resolvedSearchParams.location === "string"
-            ? resolvedSearchParams.location
-            : "Hepsi",
-        district:
-          typeof resolvedSearchParams.district === "string"
-            ? resolvedSearchParams.district
-            : "Hepsi",
-        action:
-          typeof resolvedSearchParams.action === "string"
-            ? resolvedSearchParams.action
-            : "Tümü",
-        type:
-          typeof resolvedSearchParams.type === "string"
-            ? resolvedSearchParams.type
-            : "Hepsi",
-        minPrice: resolvedSearchParams.minPrice
-          ? Number(resolvedSearchParams.minPrice)
-          : null,
-        maxPrice: resolvedSearchParams.maxPrice
-          ? Number(resolvedSearchParams.maxPrice)
-          : null,
-      };
+    if (loadingCategories || categories.length === 0) return;
 
-      setFilters(newFilters);
+    console.log("📋 Kategoriler yüklendi, URL'den filtreleri alıyorum...");
 
-      const pageFromUrl = resolvedSearchParams.page
-        ? Number(resolvedSearchParams.page)
-        : 1;
-      setCurrentPage(pageFromUrl);
+    const initializeFiltersFromURL = async () => {
+      if (isInitializingFilters.current) return;
+      isInitializingFilters.current = true;
 
-      await fetchSearchResults(newFilters, pageFromUrl);
+      try {
+        const typeParam = resolvedSearchParams.type as string;
+        const decodedTypeParam = typeParam
+          ? decodeURLParam(typeParam)
+          : "Hepsi";
+
+        const newFilters: FilterState = {
+          keyword:
+            typeof resolvedSearchParams.q === "string"
+              ? decodeURLParam(resolvedSearchParams.q)
+              : "",
+          location:
+            typeof resolvedSearchParams.location === "string"
+              ? decodeURLParam(resolvedSearchParams.location)
+              : "Hepsi",
+          district:
+            typeof resolvedSearchParams.district === "string"
+              ? decodeURLParam(resolvedSearchParams.district)
+              : "Hepsi",
+          type: decodedTypeParam,
+          action: "Tümü",
+          minPrice: resolvedSearchParams.minPrice
+            ? Number(resolvedSearchParams.minPrice)
+            : null,
+          maxPrice: resolvedSearchParams.maxPrice
+            ? Number(resolvedSearchParams.maxPrice)
+            : null,
+        };
+
+        console.log("📝 URL'den alınan filtreler:", newFilters);
+        console.log("🔍 Decoded type param:", decodedTypeParam);
+
+        setFilters(newFilters);
+
+        const featureFiltersFromUrl: Record<string, any> = {};
+        Object.keys(resolvedSearchParams).forEach((key) => {
+          if (key.startsWith("feature_")) {
+            const featureId = key.replace("feature_", "");
+            const value = resolvedSearchParams[key];
+
+            if (typeof value === "string") {
+              const decodedValue = decodeURLParam(value);
+              if (decodedValue.includes(",")) {
+                featureFiltersFromUrl[featureId] = decodedValue.split(",");
+              } else if (decodedValue === "true" || decodedValue === "false") {
+                featureFiltersFromUrl[featureId] = decodedValue === "true";
+              } else if (!isNaN(Number(decodedValue))) {
+                featureFiltersFromUrl[featureId] = Number(decodedValue);
+              } else {
+                featureFiltersFromUrl[featureId] = decodedValue;
+              }
+            }
+          }
+        });
+
+        if (Object.keys(featureFiltersFromUrl).length > 0) {
+          setFeatureFilters(featureFiltersFromUrl);
+        }
+
+        const pageFromUrl = resolvedSearchParams.page
+          ? Number(resolvedSearchParams.page)
+          : 1;
+        setCurrentPage(pageFromUrl);
+
+        if (decodedTypeParam && decodedTypeParam !== "Hepsi") {
+          await handleCategorySelectionFromURL(decodedTypeParam, categories);
+        }
+
+        if (isInitialLoad.current) {
+          console.log("🚀 İlk API isteğini gönderiyorum...");
+          await fetchSearchResults(
+            newFilters,
+            pageFromUrl,
+            featureFiltersFromUrl
+          );
+          isInitialLoad.current = false;
+        }
+      } catch (error) {
+        console.error("❌ Filtre başlatma hatası:", error);
+      } finally {
+        isInitializingFilters.current = false;
+      }
     };
 
-    initializeFilters();
-  }, [resolvedSearchParams]);
+    initializeFiltersFromURL();
+  }, [categories, loadingCategories, resolvedSearchParams]);
+
+  const handleCategorySelectionFromURL = async (
+    typeParam: string,
+    categories: Category[]
+  ) => {
+    console.log("🎯 URL'den kategori seçimi yapılıyor:", typeParam);
+
+    const categoryPath = typeParam.split(" > ");
+    console.log("🎯 Parsed category path:", categoryPath);
+
+    if (categoryPath.length === 0) {
+      console.log("🎯 Kategori path'i boş");
+      return;
+    }
+
+    const firstPart = categoryPath[0];
+    const secondPart = categoryPath[1];
+    const thirdPart = categoryPath[2];
+
+    const foundCategory = categories.find((cat) => cat.name === firstPart);
+    if (!foundCategory) {
+      console.log("❌ Ana kategori bulunamadı:", firstPart);
+      return;
+    }
+
+    console.log("✅ Ana kategori bulundu:", foundCategory.name);
+    setSelectedCategory(foundCategory);
+    setAvailableSubcategories(foundCategory.subcategories || []);
+
+    if (secondPart && foundCategory.subcategories) {
+      const foundSubcategory = foundCategory.subcategories.find(
+        (sub) => sub.name === secondPart
+      );
+
+      if (foundSubcategory) {
+        console.log("✅ Alt kategori bulundu:", foundSubcategory.name);
+        setSelectedSubcategory(foundSubcategory);
+        setAvailableSubSubcategories(foundSubcategory.subcategories || []);
+
+        if (thirdPart && foundSubcategory.subcategories) {
+          const foundSubSubcategory = foundSubcategory.subcategories.find(
+            (subsub) => subsub.name === thirdPart
+          );
+
+          if (foundSubSubcategory) {
+            console.log(
+              "✅ Alt-alt kategori bulundu:",
+              foundSubSubcategory.name
+            );
+            setSelectedSubSubcategory(foundSubSubcategory);
+          }
+        }
+      }
+    }
+  };
+
+  const updateURL = useCallback(
+    (
+      filters: FilterState,
+      page: number,
+      featureFilters: Record<string, any>
+    ) => {
+      const params = new URLSearchParams();
+
+      if (filters.keyword) params.set("q", filters.keyword);
+      if (filters.location && filters.location !== "Hepsi")
+        params.set("location", filters.location);
+      if (filters.district && filters.district !== "Hepsi")
+        params.set("district", filters.district);
+      if (filters.type && filters.type !== "Hepsi")
+        params.set("type", filters.type);
+      if (filters.minPrice) params.set("minPrice", filters.minPrice.toString());
+      if (filters.maxPrice) params.set("maxPrice", filters.maxPrice.toString());
+      if (page > 1) params.set("page", page.toString());
+
+      Object.entries(featureFilters).forEach(([featureId, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          if (Array.isArray(value) && value.length > 0) {
+            params.set(`feature_${featureId}`, value.join(","));
+          } else if (typeof value === "boolean") {
+            params.set(`feature_${featureId}`, value.toString());
+          } else {
+            params.set(`feature_${featureId}`, value.toString());
+          }
+        }
+      });
+
+      const queryString = params.toString();
+      const newUrl = queryString ? `/ads?${queryString}` : "/ads";
+
+      router.replace(newUrl, { scroll: false });
+    },
+    [router]
+  );
 
   useEffect(() => {
+    if (isInitialLoad.current) return;
+
     const handlePageChange = async () => {
-      await fetchSearchResults(filters, currentPage);
+      await fetchSearchResults(filters, currentPage, featureFilters);
+      updateURL(filters, currentPage, featureFilters);
       window.scrollTo(0, 0);
     };
 
@@ -452,10 +601,12 @@ export default function AdsPage({
 
   const fetchSearchResults = async (
     filterValues: FilterState,
-    page: number = 1
+    page: number = 1,
+    currentFeatureFilters: Record<string, any> = {}
   ) => {
     try {
       setLoading(true);
+      console.log("🔍 API isteği gönderiliyor, sayfa:", page);
 
       const params: any = {
         page: page,
@@ -476,40 +627,86 @@ export default function AdsPage({
 
       if (filterValues.type && filterValues.type !== "Hepsi") {
         const categoryPath = filterValues.type;
-        const lastCategory = categoryPath.split(" > ").pop();
-        params.category = lastCategory || categoryPath;
+        const categoryPathParts = categoryPath.split(" > ");
+
+        if (categoryPathParts.length > 0) {
+          params.category = categoryPathParts[0];
+          console.log(
+            "🎯 Backend'e gönderilen ana kategori:",
+            categoryPathParts[0]
+          );
+        }
+
+        if (categoryPathParts.length > 1) {
+          params.subcategory = categoryPathParts[1];
+          console.log(
+            "🎯 Backend'e gönderilen alt kategori:",
+            categoryPathParts[1]
+          );
+        }
+
+        if (categoryPathParts.length > 2) {
+          params.subsubcategory = categoryPathParts[2];
+          console.log(
+            "🎯 Backend'e gönderilen alt-alt kategori:",
+            categoryPathParts[2]
+          );
+        }
+
+        console.log("🎯 Tüm kategori path:", categoryPathParts);
       }
 
       const features = getCurrentFeatures();
+      let featureIndex = 0;
+
       features.forEach((feature) => {
-        const filterValue = featureFilters[feature._id];
+        const filterValue = currentFeatureFilters[feature._id];
+
         if (
           filterValue !== undefined &&
           filterValue !== null &&
           filterValue !== ""
         ) {
           if (Array.isArray(filterValue) && filterValue.length > 0) {
-            params[`features.${feature.name}`] = filterValue.join(",");
+            filterValue.forEach((value, index) => {
+              params[`featureFilters[${featureIndex}][featureId]`] =
+                feature._id;
+              params[`featureFilters[${featureIndex}][value]`] = value;
+              featureIndex++;
+            });
           } else if (typeof filterValue === "object" && filterValue !== null) {
             if (filterValue.min !== undefined && filterValue.min !== null) {
-              params[`features.${feature.name}.min`] = filterValue.min;
+              params[`featureFilters[${featureIndex}][featureId]`] =
+                feature._id;
+              params[`featureFilters[${featureIndex}][value]`] =
+                filterValue.min;
+              params[`featureFilters[${featureIndex}][operator]`] = "gte";
+              featureIndex++;
             }
             if (filterValue.max !== undefined && filterValue.max !== null) {
-              params[`features.${feature.name}.max`] = filterValue.max;
+              params[`featureFilters[${featureIndex}][featureId]`] =
+                feature._id;
+              params[`featureFilters[${featureIndex}][value]`] =
+                filterValue.max;
+              params[`featureFilters[${featureIndex}][operator]`] = "lte";
+              featureIndex++;
             }
           } else if (filterValue !== false) {
-            params[`features.${feature.name}`] = filterValue;
+            params[`featureFilters[${featureIndex}][featureId]`] = feature._id;
+
+            if (typeof filterValue === "boolean") {
+              params[`featureFilters[${featureIndex}][value]`] = filterValue
+                ? "true"
+                : "false";
+            } else {
+              params[`featureFilters[${featureIndex}][value]`] =
+                String(filterValue);
+            }
+
+            featureIndex++;
           }
         }
       });
-
-      if (filterValues.action && filterValues.action !== "Tümü") {
-        if (!params.search) {
-          params.search = filterValues.action;
-        } else {
-          params.search += ` ${filterValues.action}`;
-        }
-      }
 
       if (filterValues.minPrice !== null && filterValues.minPrice > 0) {
         params.minPrice = filterValues.minPrice;
@@ -527,6 +724,8 @@ export default function AdsPage({
           return status < 500;
         },
       });
+
+      console.log("📥 API YANITI:", response.data);
 
       let filteredData = response.data.data || [];
 
@@ -554,16 +753,17 @@ export default function AdsPage({
   const handleFilter = useCallback(async () => {
     setModal(false);
     setCurrentPage(1);
-    await fetchSearchResults(filters, 1);
-  }, [filters, featureFilters]);
+    await fetchSearchResults(filters, 1, featureFilters);
+    updateURL(filters, 1, featureFilters);
+  }, [filters, featureFilters, updateURL]);
 
   const clearFilters = async () => {
     const clearedFilters: FilterState = {
       keyword: "",
       location: "Hepsi",
       district: "Hepsi",
-      action: "Tümü",
       type: "Hepsi",
+      action: "Tümü",
       minPrice: null,
       maxPrice: null,
     };
@@ -577,7 +777,9 @@ export default function AdsPage({
     setFeatureFilters({});
     setCurrentPage(1);
 
-    await fetchSearchResults(clearedFilters, 1);
+    await fetchSearchResults(clearedFilters, 1, {});
+
+    router.replace("/ads", { scroll: false });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -630,7 +832,11 @@ export default function AdsPage({
     return (
       <div className="flex items-center justify-center gap-2 mt-8">
         <button
-          onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+          onClick={() => {
+            const newPage = Math.max(1, currentPage - 1);
+            setCurrentPage(newPage);
+            updateURL(filters, newPage, featureFilters);
+          }}
           disabled={currentPage === 1}
           className="flex items-center justify-center w-10 h-10 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -640,7 +846,10 @@ export default function AdsPage({
         {getPageNumbers().map((page) => (
           <button
             key={page}
-            onClick={() => setCurrentPage(page)}
+            onClick={() => {
+              setCurrentPage(page);
+              updateURL(filters, page, featureFilters);
+            }}
             className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-all ${
               currentPage === page
                 ? "bg-blue-600 text-white border-blue-600 shadow-lg"
@@ -652,9 +861,11 @@ export default function AdsPage({
         ))}
 
         <button
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-          }
+          onClick={() => {
+            const newPage = Math.min(totalPages, currentPage + 1);
+            setCurrentPage(newPage);
+            updateURL(filters, newPage, featureFilters);
+          }}
           disabled={currentPage === totalPages}
           className="flex items-center justify-center w-10 h-10 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -735,7 +946,6 @@ export default function AdsPage({
               <p className="text-gray-600 mt-1">
                 {filters.location}
                 {filters.district !== "Hepsi" && ` / ${filters.district}`}
-                {filters.action !== "Tümü" && ` / ${filters.action}`}
                 {filters.type !== "Hepsi" && ` / ${filters.type}`}
               </p>
             )}
@@ -743,7 +953,6 @@ export default function AdsPage({
 
           {(filters.location !== "Hepsi" ||
             filters.district !== "Hepsi" ||
-            filters.action !== "Tümü" ||
             filters.type !== "Hepsi" ||
             filters.minPrice ||
             filters.maxPrice ||
@@ -758,8 +967,7 @@ export default function AdsPage({
           )}
         </div>
 
-        {/* Ads Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="space-y-0 mb-8">
           {data.length === 0 ? (
             <div className="col-span-3 py-16 text-center">
               <div className="max-w-md mx-auto">
@@ -784,35 +992,30 @@ export default function AdsPage({
               <Link
                 href={`/ads/${ad.uid}`}
                 key={ad.uid || index}
-                className="flex relative flex-col bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group hover:-translate-y-1 border border-gray-200"
+                className="flex relative bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 overflow-hidden group"
               >
-                {ad.steps?.first && ad.steps?.second && (
-                  <div className="absolute z-10 top-3 left-3 bg-linear-to-r from-orange-500 to-red-500 text-white py-1 px-3 rounded-full text-xs font-semibold shadow-lg">
-                    {ad.steps.second} / {ad.steps.first}
-                  </div>
-                )}
-
-                <div className="relative h-48 overflow-hidden">
+                {/* Sol taraf - Resim (Mobilde daha küçük) */}
+                <div className="w-20 h-20 md:w-36 md:h-36 shrink-0 relative m-2 md:m-3">
                   {hasValidImage(ad) ? (
                     <img
                       src={ad.photos?.find(
                         (photo: any) => typeof photo === "string"
                       )}
                       alt={ad.title || "İlan görseli"}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      className="w-full h-full object-cover rounded group-hover:opacity-90 transition-opacity"
                       onError={(e) => {
                         e.currentTarget.src = logoUrl;
                         e.currentTarget.alt = "Logo";
                         e.currentTarget.className =
-                          "w-full h-full object-contain p-4 bg-gray-100";
+                          "w-full h-full object-contain p-2 md:p-3 bg-gray-100 rounded";
                       }}
                     />
                   ) : (
-                    <div className="flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 w-full h-full">
+                    <div className="flex items-center justify-center bg-gray-100 w-full h-full rounded">
                       <img
                         src={logoUrl}
                         alt="Logo"
-                        className="object-contain h-16 opacity-70"
+                        className="object-contain h-8 md:h-12 opacity-70"
                         onError={(e) => {
                           e.currentTarget.src =
                             "https://via.placeholder.com/150x150?text=Logo";
@@ -820,85 +1023,55 @@ export default function AdsPage({
                       />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
                 </div>
 
-                <div className="flex flex-col gap-3 p-5 flex-1">
-                  <h3 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {ad.title || "Başlık Yok"}
-                  </h3>
+                {/* Orta ve Sağ kısım */}
+                <div className="flex-1 flex flex-col justify-between py-2 md:py-3 pr-2 md:pr-3 min-w-0">
+                  {/* EN ÜST: Başlık */}
+                  <div className="mb-1">
+                    <h3 className="font-bold text-gray-900 text-xs md:text-base hover:text-blue-600 transition-colors wrap-break-words whitespace-normal line-clamp-2">
+                      {ad.title || "Başlık Yok"}
+                    </h3>
+                  </div>
 
-                  {(ad.address?.province ||
-                    ad.address?.district ||
-                    ad.address?.quarter) && (
-                    <p className="text-sm text-gray-600 flex items-center gap-1">
-                      <MapPin size={14} className="text-blue-500" />
-                      {[
-                        ad.address?.province,
-                        ad.address?.district,
-                        ad.address?.quarter,
-                      ]
-                        .filter(Boolean)
-                        .join(" / ")}
-                    </p>
-                  )}
-
-                  <div className="flex flex-wrap gap-2 my-1">
-                    {ad.steps?.third && (
-                      <div className="flex items-center gap-1 text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">
-                        <Building size={12} className="text-blue-500" />
-                        <span className="font-medium">{ad.steps.third}</span>
-                      </div>
-                    )}
-
-                    {ad.details?.roomCount && (
-                      <div className="flex items-center gap-1 text-xs text-gray-600 bg-green-50 px-2 py-1 rounded border border-green-100">
-                        <Armchair size={12} className="text-green-500" />
-                        <span className="font-medium">
-                          {ad.details.roomCount} Oda
-                        </span>
-                      </div>
-                    )}
-
-                    {ad.details?.floor && (
-                      <div className="flex items-center gap-1 text-xs text-gray-600 bg-purple-50 px-2 py-1 rounded border border-purple-100">
-                        <Layers size={12} className="text-purple-500" />
-                        <span className="font-medium">
-                          {ad.details.floor}. Kat
-                        </span>
-                      </div>
-                    )}
-
-                    {(ad.details?.netArea || ad.details?.acre) && (
-                      <div className="flex items-center gap-1 text-xs text-gray-600 bg-orange-50 px-2 py-1 rounded border border-orange-100">
-                        <Square size={12} className="text-orange-500" />
-                        <span className="font-medium">
-                          {ad.details.netArea
-                            ? `${ad.details.netArea} m²`
-                            : `${ad.details.acre} dönüm`}
-                        </span>
-                      </div>
+                  <div className="mb-1">
+                    {ad.steps?.second && (
+                      <span className="text-[10px] md:text-xs text-gray-600 bg-gray-100 px-1.5 md:px-2 py-0.5 rounded">
+                        {ad.steps.second}
+                      </span>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
-                    <div className="text-xl font-bold text-gray-900 flex items-center gap-1">
-                      {ad.fee ? `${ad.fee}` : "Fiyat belirtilmemiş"}
-                    </div>
-                    {ad.created?.createdTimestamp && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <Clock size={14} className="text-gray-400" />
-                        <span className="font-medium whitespace-nowrap">
-                          {new Date(
-                            ad.created.createdTimestamp
-                          ).toLocaleDateString("tr-TR", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
+                  {/* ALT KISIM: Adres ve Fiyat (Karşılıklı) */}
+                  <div className="flex justify-between items-center mt-auto">
+                    {/* Sol taraf - Adres (Mobilde sadece il-ilçe) */}
+                    <div className="text-[10px] md:text-sm text-gray-600 truncate pr-1 min-w-0">
+                      <p className="truncate">
+                        {ad.address?.province && `${ad.address.province}`}
+                        {ad.address?.district && ` - ${ad.address.district}`}
+                        {/* Mobilde quarter gözükmüyor */}
+                        <span className="hidden md:inline">
+                          {ad.address?.quarter && `, ${ad.address.quarter}`}
                         </span>
+                        {!ad.address?.province &&
+                          !ad.address?.district &&
+                          !ad.address?.quarter &&
+                          "Lokasyon yok"}
+                      </p>
+                    </div>
+
+                    {/* Sağ taraf - Fiyat (Mobilde daha küçük ama görünür) */}
+                    <div className="text-right shrink-0 pl-1">
+                      <div className="text-xs md:text-xl font-bold text-gray-900 whitespace-nowrap">
+                        {ad.fee ? (
+                          <>{ad.fee}</>
+                        ) : (
+                          <span className="text-gray-500 text-[10px] md:text-sm block">
+                            Fiyat Yok
+                          </span>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -1028,36 +1201,14 @@ export default function AdsPage({
                     <Building size={18} className="text-emerald-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-slate-800">
-                    Emlak Bilgileri
+                    Emlak Tipi
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 gap-5">
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-slate-700">
-                      Tür (Satılık/Kiralık)
-                    </label>
-                    <select
-                      value={filters.action}
-                      onChange={(e) => {
-                        setFilters({
-                          ...filters,
-                          action: e.target.value,
-                        });
-                      }}
-                      className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-transparent bg-white transition-all duration-300 hover:border-gray-300"
-                    >
-                      {actionOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-700">
-                      Emlak Tipi
+                      Kategori
                     </label>
                     {loadingCategories ? (
                       <div className="w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-white flex items-center justify-center">
@@ -1100,7 +1251,7 @@ export default function AdsPage({
                           </div>
                         </div>
 
-                        {/* Kategori Seçim Grid'i - Sahibinden.com stili */}
+                        {/* Kategori Seçim Grid'i */}
                         <div className="grid grid-cols-3 gap-4">
                           {/* Ana Kategoriler */}
                           <div className="space-y-2">

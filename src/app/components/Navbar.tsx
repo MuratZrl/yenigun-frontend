@@ -14,10 +14,10 @@ import {
   ChevronDown,
   Menu,
   X,
+  Search,
 } from "lucide-react";
 import api from "@/app/lib/api";
 import { User as UserType } from "@/app/types/user";
-import { div } from "framer-motion/client";
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
@@ -30,12 +30,12 @@ const Navbar = () => {
   const [loading, setLoading] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const navbar_items = [
-    { name: "Anasayfa", href: "/", icon: Home },
+    { name: "İlanlar", href: "/ads", icon: List },
     { name: "Hakkımızda", href: "/about", icon: Info },
     { name: "İletişim", href: "/contact", icon: Phone },
-    { name: "İlanlar", href: "/ads", icon: List },
   ];
 
   const [activeHref, setActiveHref] = useState<string>("");
@@ -90,6 +90,26 @@ const Navbar = () => {
     window.location.href = "/";
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      window.location.href = `/ads?q=${encodeURIComponent(searchQuery)}`;
+    }
+  };
+
+  const handleSearchButtonClick = () => {
+    if (searchQuery.trim()) {
+      window.location.href = `/ads?q=${encodeURIComponent(searchQuery)}`;
+    } else {
+      window.location.href = `/ads`;
+    }
+  };
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch(e as any);
+    }
+  };
+
   if (loading) {
     return (
       <div
@@ -104,7 +124,7 @@ const Navbar = () => {
     <>
       {!isMobile && (
         <div>
-          <div className="fixed top-0 left-0 right-0 h-24 bg-gray-900 z-[998]"></div>
+          <div className="fixed top-0 left-0 right-0 h-24 bg-gray-900 z-998"></div>
           <motion.nav
             className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-500 ${
               scrolled
@@ -117,19 +137,40 @@ const Navbar = () => {
           >
             <div className="max-w-7xl mx-auto px-6">
               <div className="flex items-center justify-between">
-                <Link href="/" className="flex items-center">
-                  <motion.img
-                    src="/logo.png"
-                    alt="Yenigün Emlak"
-                    className={`transition-all duration-300 ${
-                      scrolled ? "w-40" : "w-48"
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.2 }}
-                  />
-                </Link>
+                <div className="flex items-center gap-6">
+                  <Link href="/" className="flex items-center">
+                    <motion.img
+                      src="/logo.png"
+                      alt="Yenigün Emlak"
+                      className={`transition-all duration-300 ${
+                        scrolled ? "w-28" : "w-32"
+                      }`}
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.2 }}
+                    />
+                  </Link>
+                  <div className="relative">
+                    <form onSubmit={handleSearch} className="relative">
+                      <input
+                        type="text"
+                        placeholder="İlanlarda ara..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        className="w-48 px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-transparent transition-all duration-300 pl-10 text-sm"
+                      />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
+                      <button
+                        type="submit"
+                        className="absolute right-1.5 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded text-xs font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+                      >
+                        Ara
+                      </button>
+                    </form>
+                  </div>
+                </div>
 
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 absolute left-1/2 transform -translate-x-1/2">
                   {navbar_items.map((item, index) => {
                     const IconComponent = item.icon;
                     return (
@@ -151,86 +192,88 @@ const Navbar = () => {
                   })}
                 </div>
 
-                {user ? (
-                  <motion.div
-                    className="relative"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                  >
+                <div>
+                  {user ? (
+                    <motion.div
+                      className="relative"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                    >
+                      <motion.button
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all duration-300"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {user.profilePicture ? (
+                          <img
+                            src={user.profilePicture}
+                            alt="profile"
+                            className="w-8 h-8 rounded-full border-2 border-white/30"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-900 to-gray-900 flex items-center justify-center text-white font-semibold shadow-lg">
+                            <span className="text-sm">
+                              {user.name.charAt(0)}
+                              {user.surname.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+                        <span className="font-semibold">
+                          {user.name} {user.surname}
+                        </span>
+                        <motion.div
+                          animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <ChevronDown className="w-3 h-3" />
+                        </motion.div>
+                      </motion.button>
+
+                      <AnimatePresence>
+                        {isDropdownOpen && (
+                          <motion.div
+                            className="absolute top-full right-0 mt-2 w-64 bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden"
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <div className="p-2">
+                              <Link
+                                href="/admin/emlak"
+                                className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
+                                onClick={() => setIsDropdownOpen(false)}
+                              >
+                                <User className="w-4 h-4" />
+                                <span>Hesabım</span>
+                              </Link>
+                              <button
+                                onClick={handleLogout}
+                                className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-all duration-300"
+                              >
+                                <LogOut className="w-4 h-4" />
+                                <span>Çıkış Yap</span>
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  ) : (
                     <motion.button
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all duration-300"
-                      whileHover={{ scale: 1.05 }}
+                      onClick={() => {
+                        window.location.href = "/login";
+                      }}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 border border-white/20"
+                      whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      {user.profilePicture ? (
-                        <img
-                          src={user.profilePicture}
-                          alt="profile"
-                          className="w-8 h-8 rounded-full border-2 border-white/30"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-900 to-gray-900 flex items-center justify-center text-white font-semibold shadow-lg">
-                          <span className="text-sm">
-                            {user.name.charAt(0)}
-                            {user.surname.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-                      <span className="font-semibold">
-                        {user.name} {user.surname}
-                      </span>
-                      <motion.div
-                        animate={{ rotate: isDropdownOpen ? 180 : 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <ChevronDown className="w-3 h-3" />
-                      </motion.div>
+                      <User className="w-4 h-4" />
+                      <span>Giriş Yap</span>
                     </motion.button>
-
-                    <AnimatePresence>
-                      {isDropdownOpen && (
-                        <motion.div
-                          className="absolute top-full right-0 mt-2 w-64 bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 overflow-hidden"
-                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <div className="p-2">
-                            <Link
-                              href="/admin/emlak"
-                              className="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-300"
-                              onClick={() => setIsDropdownOpen(false)}
-                            >
-                              <User className="w-4 h-4" />
-                              <span>Hesabım</span>
-                            </Link>
-                            <button
-                              onClick={handleLogout}
-                              className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-all duration-300"
-                            >
-                              <LogOut className="w-4 h-4" />
-                              <span>Çıkış Yap</span>
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                ) : (
-                  <motion.button
-                    onClick={() => {
-                      window.location.href = "/login";
-                    }}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 border border-white/20"
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <User className="w-4 h-4" />
-                    <span>Giriş Yap</span>
-                  </motion.button>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </motion.nav>
@@ -257,6 +300,14 @@ const Navbar = () => {
                 </Link>
 
                 <div className="flex items-center gap-3">
+                  <motion.button
+                    onClick={handleSearchButtonClick}
+                    className="p-2.5 bg-white/10 border border-white/20 rounded-lg text-white hover:bg-white/20 transition-colors duration-300"
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <Search className="w-5 h-5" />
+                  </motion.button>
+
                   {user ? (
                     <Link href="/admin/emlak" className="flex items-center">
                       {user.profilePicture ? (
@@ -298,6 +349,29 @@ const Navbar = () => {
                   </motion.button>
                 </div>
               </div>
+
+              <AnimatePresence>
+                {false && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4"
+                  >
+                    <form onSubmit={handleSearch} className="relative">
+                      <input
+                        type="text"
+                        placeholder="İlanlarda ara..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 pl-12"
+                      />
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
+                    </form>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.nav>
 
@@ -330,6 +404,26 @@ const Navbar = () => {
                       >
                         <X className="w-6 h-6" />
                       </button>
+                    </div>
+
+                    <div className="mb-6">
+                      <form onSubmit={handleSearch} className="relative">
+                        <input
+                          type="text"
+                          placeholder="İlanlarda ara..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 pl-12"
+                        />
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
+                        <button
+                          type="submit"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded text-xs font-medium"
+                        >
+                          Ara
+                        </button>
+                      </form>
                     </div>
 
                     <nav className="flex-1">
@@ -395,7 +489,6 @@ const Navbar = () => {
         </>
       )}
 
-      {/* Navbar yüksekliği kadar boşluk - Arka plan rengi kaldırıldı */}
       <div
         className={`transition-all duration-300 ${scrolled ? "h-16" : "h-20"}`}
       ></div>

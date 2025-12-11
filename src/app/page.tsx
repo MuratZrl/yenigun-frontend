@@ -24,7 +24,7 @@ export default function Home() {
 
   useEffect(() => {
     api
-      .get("/advert/adverts")
+      .get("/advert/adverts?page=1&limit=6")
       .then((response) => {
         console.log(response.data.data);
         setData(response.data.data);
@@ -55,7 +55,7 @@ export default function Home() {
           ],
         }}
       />
-      <HeroSection />
+      {/* <HeroSection /> */}
       <Highlights data={data} />
       <Quality />
       <WhyUs />

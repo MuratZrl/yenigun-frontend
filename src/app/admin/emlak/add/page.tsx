@@ -939,6 +939,8 @@ export default function AddE() {
     try {
       const res = await api.post("/admin/create-advert", requestData);
 
+      console.log("giden", requestData);
+
       const advertUid = res.data.data.uid;
 
       let uploadSuccess = true;
@@ -1257,7 +1259,7 @@ export default function AddE() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`
                       group flex items-center gap-2 pb-3 px-3 font-medium text-xs lg:text-sm border-b-2 
-                      transition-all duration-200 whitespace-nowrap relative flex-shrink-0
+                      transition-all duration-200 whitespace-nowrap relative shrink-0
                       min-w-[100px] lg:min-w-[120px] justify-center
                       ${
                         isActive
@@ -1268,7 +1270,7 @@ export default function AddE() {
                     >
                       <div
                         className={`
-                        p-1.5 rounded-lg transition-colors flex-shrink-0
+                        p-1.5 rounded-lg transition-colors  shrink-0
                         ${
                           isActive
                             ? "bg-blue-100 text-blue-600"
