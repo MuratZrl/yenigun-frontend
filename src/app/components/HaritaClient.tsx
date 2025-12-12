@@ -348,7 +348,7 @@ export default function PropertyMap({
                 <button
                   className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors duration-200"
                   onClick={() => {
-                    window.open(`/ilan/${selectedMarker.id}`, "_blank");
+                    window.open(`/ads/${selectedMarker.id}`, "_blank");
                   }}
                 >
                   İlanı Görüntüle

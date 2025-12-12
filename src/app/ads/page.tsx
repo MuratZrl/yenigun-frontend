@@ -937,7 +937,9 @@ export default function AdsPage({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              {filters.keyword ? `"${filters.keyword}"` : "Tüm İlanlar"}
+              {filters.type && filters.type !== "Hepsi"
+                ? filters.type
+                : "Tüm İlanlar"}
               <span className="text-sm text-gray-500 ml-2">
                 ({totalItems} sonuç)
               </span>
