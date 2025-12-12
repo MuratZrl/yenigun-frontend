@@ -37,6 +37,7 @@ export default function LocationTab({
 }: LocationTabProps) {
   const [boundaryCoords, setBoundaryCoords] = React.useState<BoundaryCoord[]>([]);
   const [isLoadingBoundary, setIsLoadingBoundary] = React.useState(false);
+  const [currentDistrictKey, setCurrentDistrictKey] = React.useState<string>("");
 
   const getSafeAddress = (address: any): string => {
     if (!address) return "";
@@ -61,21 +62,85 @@ export default function LocationTab({
     return String(address);
   };
 
-  // Overpass API ile mahalle sınırlarını çek
-  const fetchFromOverpass = async (quarter: string, district: string, province: string): Promise<BoundaryCoord[] | null> => {
+  const fetchDistrictFromOverpass = async (district: string, province: string): Promise<BoundaryCoord[] | null> => {
     try {
-      // Overpass API sorgusu - admin_level 9 veya 10 mahalle seviyesidir
+      const closePath = (coords: BoundaryCoord[]) => {
+        if (!coords || coords.length === 0) return coords;
+        const first = coords[0];
+        const last = coords[coords.length - 1];
+        if (first.lat === last.lat && first.lng === last.lng) return coords;
+        return [...coords, first];
+      };
+
+      const samePoint = (a: BoundaryCoord, b: BoundaryCoord) => {
+        const eps = 1e-4;
+        return Math.abs(a.lat - b.lat) < eps && Math.abs(a.lng - b.lng) < eps;
+      };
+
+      const stitchOuterWays = (ways: any[]): BoundaryCoord[] => {
+        const segments: BoundaryCoord[][] = ways
+          .map((w: any) => (w.geometry || []).map((p: any) => ({ lat: p.lat, lng: p.lon })))
+          .filter((seg: BoundaryCoord[]) => seg.length > 1);
+
+        if (segments.length === 0) return [];
+
+        const ring: BoundaryCoord[] = [...segments.shift()!];
+
+        while (segments.length > 0) {
+          const end = ring[ring.length - 1];
+          let foundIndex = -1;
+          let foundReversed = false;
+
+          for (let i = 0; i < segments.length; i++) {
+            const seg = segments[i];
+            const segStart = seg[0];
+            const segEnd = seg[seg.length - 1];
+
+            if (samePoint(end, segStart)) {
+              foundIndex = i;
+              foundReversed = false;
+              break;
+            }
+            if (samePoint(end, segEnd)) {
+              foundIndex = i;
+              foundReversed = true;
+              break;
+            }
+          }
+
+          if (foundIndex === -1) {
+            // Bağlayamadık: kalanları olduğu gibi ekleme yerine bırak.
+            break;
+          }
+
+          const seg = segments.splice(foundIndex, 1)[0];
+          const segOrdered = foundReversed ? [...seg].reverse() : seg;
+
+          // İlk nokta end ile aynıysa tekrar ekleme
+          const toAppend = samePoint(ring[ring.length - 1], segOrdered[0])
+            ? segOrdered.slice(1)
+            : segOrdered;
+          ring.push(...toAppend);
+        }
+
+        return ring;
+      };
+
+      // İlçe ismi normalize et
+      const districtNormalized = district.trim();
+
+      // Overpass API sorgusu - ilçe sınırları için (admin_level 6-7)
       const overpassQuery = `
-        [out:json][timeout:25];
+        [out:json][timeout:30];
         area["name"="${province}"]["admin_level"="4"]->.province;
-        area["name"="${district}"]["admin_level"~"6|7"]->.district;
         (
-          relation["name"~"${quarter}"]["boundary"="administrative"](area.district);
-          relation["name"~"${quarter}"]["admin_level"~"9|10"](area.district);
-          way["name"~"${quarter}"]["boundary"="administrative"](area.district);
+          relation["name"~"${districtNormalized}"]["boundary"="administrative"]["admin_level"~"6|7"](area.province);
+          relation["name"~"${districtNormalized}"]["admin_level"~"6|7"](area.province);
         );
         out geom;
       `;
+
+      console.log("🔍 Overpass API ilçe sınırları sorgulanıyor:", districtNormalized, province);
 
       const response = await fetch('https://overpass-api.de/api/interpreter', {
         method: 'POST',
@@ -88,32 +153,43 @@ export default function LocationTab({
       const data = await response.json();
       
       if (data.elements && data.elements.length > 0) {
-        // İlk uygun elementi bul
+        // En uygun elementi bul (en çok geometri noktasına sahip olan)
+        let bestCoords: BoundaryCoord[] = [];
+        
         for (const element of data.elements) {
+          let coords: BoundaryCoord[] = [];
+          
           if (element.type === 'relation' && element.members) {
-            // Relation'dan outer way'leri al
+            // Relation'dan outer way'leri al ve sırala
             const outerWays = element.members
               .filter((m: any) => m.type === 'way' && (m.role === 'outer' || m.role === ''))
-              .map((m: any) => m.geometry)
-              .filter((g: any) => g);
+              .filter((m: any) => m.geometry && m.geometry.length > 0);
             
             if (outerWays.length > 0) {
-              const coords: BoundaryCoord[] = [];
-              outerWays.forEach((way: any[]) => {
-                way.forEach((point: any) => {
-                  coords.push({ lat: point.lat, lng: point.lon });
-                });
-              });
-              if (coords.length > 0) return coords;
+              // Way'leri uç uca ekleyip ring oluştur
+              coords = stitchOuterWays(outerWays);
             }
           } else if (element.type === 'way' && element.geometry) {
-            return element.geometry.map((point: any) => ({
+            coords = element.geometry.map((point: any) => ({
               lat: point.lat,
               lng: point.lon,
             }));
           }
+
+          coords = closePath(coords);
+          
+          if (coords.length > bestCoords.length) {
+            bestCoords = coords;
+          }
+        }
+        
+        if (bestCoords.length > 3) {
+          console.log("✅ Overpass'tan ilçe sınırları bulundu:", bestCoords.length, "nokta");
+          return bestCoords;
         }
       }
+      
+      console.log("⚠️ Overpass'tan ilçe sınırı bulunamadı");
       return null;
     } catch (error) {
       console.error("Overpass API hatası:", error);
@@ -121,178 +197,46 @@ export default function LocationTab({
     }
   };
 
-  // Nominatim API ile mahalle sınırlarını çek (yedek)
-  const fetchFromNominatim = async (quarter: string, district: string, province: string): Promise<BoundaryCoord[] | null> => {
-    try {
-      // Farklı arama stratejileri dene
-      const searchQueries = [
-        `${quarter} mahallesi, ${district}, ${province}`,
-        `${quarter}, ${district}, ${province}`,
-        `${quarter} mh., ${district}`,
-      ];
-
-      for (const searchQuery of searchQueries) {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&polygon_geojson=1&addressdetails=1&limit=5&countrycodes=tr`,
-          {
-            headers: {
-              'Accept-Language': 'tr',
-              'User-Agent': 'YenigunEmlak/1.0'
-            }
-          }
-        );
-
-        const data = await response.json();
-
-        // En uygun sonucu bul (suburb, neighbourhood, quarter tipi)
-        const relevantResult = data.find((item: any) => 
-          item.geojson && 
-          (item.geojson.type === 'Polygon' || item.geojson.type === 'MultiPolygon') &&
-          (item.type === 'suburb' || item.type === 'neighbourhood' || item.type === 'quarter' || item.type === 'administrative')
-        ) || data.find((item: any) => 
-          item.geojson && 
-          (item.geojson.type === 'Polygon' || item.geojson.type === 'MultiPolygon')
-        );
-
-        if (relevantResult && relevantResult.geojson) {
-          const geojson = relevantResult.geojson;
-          
-          if (geojson.type === 'Polygon') {
-            return geojson.coordinates[0].map((coord: number[]) => ({
-              lat: coord[1],
-              lng: coord[0],
-            }));
-          } else if (geojson.type === 'MultiPolygon') {
-            // Tüm polygonları birleştir veya en büyüğünü al
-            let allCoords: BoundaryCoord[] = [];
-            geojson.coordinates.forEach((polygon: number[][][]) => {
-              const polygonCoords = polygon[0].map((coord: number[]) => ({
-                lat: coord[1],
-                lng: coord[0],
-              }));
-              if (polygonCoords.length > allCoords.length) {
-                allCoords = polygonCoords;
-              }
-            });
-            return allCoords;
-          }
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error("Nominatim API hatası:", error);
-      return null;
+  // İlçe sınırlarını çekmek için ana fonksiyon
+  const fetchDistrictBoundary = async (district: string, province: string) => {
+    // Aynı ilçe için tekrar istek atmayı önle
+    const districtKey = `${province}-${district}`;
+    if (districtKey === currentDistrictKey) {
+      return;
     }
-  };
-
-  // Google Maps Geocoding API'den viewport ile dikdörtgen sınır oluştur
-  const fetchFromGoogleViewport = async (quarter: string, district: string, province: string): Promise<BoundaryCoord[] | null> => {
-    try {
-      const searchQuery = `${quarter}, ${district}, ${province}, Türkiye`;
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchQuery)}&key=AIzaSyDL9J82iDhcUWdQiuIvBYa0t5asrtz3Swk`
-      );
-      
-      const data = await response.json();
-      
-      if (data.results && data.results.length > 0) {
-        const result = data.results[0];
-        
-        // Viewport varsa kullan
-        if (result.geometry && result.geometry.viewport) {
-          const viewport = result.geometry.viewport;
-          const ne = viewport.northeast;
-          const sw = viewport.southwest;
-          
-          // Viewport'tan dikdörtgen oluştur
-          return [
-            { lat: ne.lat, lng: sw.lng },
-            { lat: ne.lat, lng: ne.lng },
-            { lat: sw.lat, lng: ne.lng },
-            { lat: sw.lat, lng: sw.lng },
-            { lat: ne.lat, lng: sw.lng }, // Kapatmak için
-          ];
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error("Google Viewport hatası:", error);
-      return null;
-    }
-  };
-
-  // Mahalle sınırlarını çekmek için ana fonksiyon
-  const fetchNeighborhoodBoundary = async (quarter: string, district: string, province: string) => {
+    setCurrentDistrictKey(districtKey);
+    
     setIsLoadingBoundary(true);
     setBoundaryCoords([]);
     
     try {
-      console.log("📍 Mahalle sınırları aranıyor:", quarter, district, province);
+      console.log("📍 İlçe sınırları aranıyor:", district, province);
       
-      // 1. Önce Nominatim'i dene (daha hızlı)
-      let coords = await fetchFromNominatim(quarter, district, province);
+      // Sadece Overpass API kullan
+      const coords = await fetchDistrictFromOverpass(district, province);
       
-      if (coords && coords.length > 3) {
-        console.log("✅ Nominatim'den sınırlar bulundu:", coords.length, "nokta");
+      if (coords && coords.length > 10) {
         setBoundaryCoords(coords);
         return;
       }
 
-      // 2. Overpass API'yi dene
-      coords = await fetchFromOverpass(quarter, district, province);
-      
-      if (coords && coords.length > 3) {
-        console.log("✅ Overpass'tan sınırlar bulundu:", coords.length, "nokta");
-        setBoundaryCoords(coords);
-        return;
-      }
-
-      // 3. Google viewport kullan (son çare - dikdörtgen)
-      coords = await fetchFromGoogleViewport(quarter, district, province);
-      
-      if (coords && coords.length > 0) {
-        console.log("✅ Google viewport'tan sınırlar oluşturuldu");
-        setBoundaryCoords(coords);
-        return;
-      }
-
-      // 4. Hiçbir şey bulunamazsa marker etrafında alan çiz
-      console.log("⚠️ Sınır bulunamadı, varsayılan alan çiziliyor");
-      if (marker.length > 0) {
-        const center = { lat: marker[0].lat, lng: marker[0].lng };
-        const defaultBoundary = generateCircleCoords(center, 800);
-        setBoundaryCoords(defaultBoundary);
-      }
+      console.log("⚠️ İlçe sınırı bulunamadı");
     } catch (error) {
-      console.error("❌ Mahalle sınırları alınırken hata:", error);
+      console.error("❌ İlçe sınırları alınırken hata:", error);
     } finally {
       setIsLoadingBoundary(false);
     }
   };
 
-  // Daire koordinatları oluşturma fonksiyonu
-  const generateCircleCoords = (center: { lat: number; lng: number }, radiusMeters: number): BoundaryCoord[] => {
-    const coords: BoundaryCoord[] = [];
-    const numPoints = 64; // Daha yumuşak daire için 64 nokta
-    
-    for (let i = 0; i <= numPoints; i++) {
-      const angle = (i * 360) / numPoints;
-      const lat = center.lat + (radiusMeters / 111320) * Math.cos((angle * Math.PI) / 180);
-      const lng = center.lng + (radiusMeters / (111320 * Math.cos((center.lat * Math.PI) / 180))) * Math.sin((angle * Math.PI) / 180);
-      coords.push({ lat, lng });
-    }
-    
-    return coords;
-  };
-
-  // Mahalle değiştiğinde sınırları çek
+  // İlçe değiştiğinde sınırları çek
   React.useEffect(() => {
-    if (fourthStep.province && fourthStep.district && fourthStep.quarter) {
-      fetchNeighborhoodBoundary(fourthStep.quarter, fourthStep.district, fourthStep.province);
+    if (fourthStep.province && fourthStep.district) {
+      fetchDistrictBoundary(fourthStep.district, fourthStep.province);
     } else {
       setBoundaryCoords([]);
+      setCurrentDistrictKey("");
     }
-  }, [fourthStep.quarter]);
+  }, [fourthStep.district, fourthStep.province]);
 
   React.useEffect(() => {
     const updateMapLocation = async () => {
@@ -473,24 +417,24 @@ export default function LocationTab({
         </div>
       </div>
 
-      {/* Mahalle sınırları yüklenirken gösterge */}
+      {/* İlçe sınırları yüklenirken gösterge */}
       {isLoadingBoundary && (
         <div className="flex items-center gap-2 text-blue-600 text-sm">
           <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
-          <span>Mahalle sınırları yükleniyor...</span>
+          <span>İlçe sınırları yükleniyor...</span>
         </div>
       )}
 
-      {/* Mahalle sınırları yüklendiğinde bilgi */}
+      {/* İlçe sınırları yüklendiğinde bilgi */}
       {boundaryCoords.length > 0 && !isLoadingBoundary && (
         <div className="flex items-center gap-2 text-green-600 text-sm">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <span>Mahalle sınırları haritada gösteriliyor ({fourthStep.quarter})</span>
+          <span>İlçe sınırları haritada gösteriliyor ({fourthStep.district})</span>
         </div>
       )}
 

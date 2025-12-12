@@ -55,19 +55,20 @@ export default function AdminGoogleMaps({
   const mapRef = React.useRef<google.maps.Map | null>(null);
   const [zoom, setZoom] = React.useState(15);
 
-  // Polygon stilleri - daha belirgin
-  const polygonOptions = {
-    fillColor: "#3B82F6",
-    fillOpacity: 0.2,
-    strokeColor: "#1D4ED8",
-    strokeOpacity: 1,
-    strokeWeight: 3,
-    clickable: false,
-    draggable: false,
-    editable: false,
-    geodesic: true,
-    zIndex: 1,
-  };
+  // Sadece mavi sınır çizgisi göster
+  const boundaryLineOptions = React.useMemo(() => {
+    return {
+      fillOpacity: 0,
+      strokeColor: "#2563EB",
+      strokeOpacity: 1,
+      strokeWeight: 3,
+      clickable: false,
+      draggable: false,
+      editable: false,
+      geodesic: false,
+      zIndex: 1,
+    };
+  }, []);
 
   const onMapClick = React.useCallback(
     (e: google.maps.MapMouseEvent) => {
@@ -215,12 +216,12 @@ export default function AdminGoogleMaps({
               animation={google.maps.Animation.DROP}
             />
           ))}
-          
-          {/* Mahalle sınırları polygon */}
+
+          {/* İlçe sınır çizgisi */}
           {boundaryCoords && boundaryCoords.length > 0 && (
             <Polygon
               paths={boundaryCoords}
-              options={polygonOptions}
+              options={boundaryLineOptions}
             />
           )}
         </GoogleMap>
