@@ -7,12 +7,8 @@ import {
   Loader2,
   Home,
   Building,
-  MapPin,
   ChevronRight,
   Search,
-  Grid,
-  List,
-  Camera,
   Calendar,
   User,
 } from "lucide-react";
@@ -402,7 +398,6 @@ export default function CategoryDetailPage() {
                 </div>
               ) : (
                 <>
-                  {/* İLAN LİSTE GÖRÜNÜMÜ */}
                   <div className="space-y-2 pt-3">
                     {adverts.map((advert) => (
                       <Link
@@ -410,7 +405,6 @@ export default function CategoryDetailPage() {
                         key={advert.uid}
                         className="flex relative bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 overflow-hidden group"
                       >
-                        {/* Sol taraf - Resim */}
                         <div className="w-20 h-20 md:w-36 md:h-36 shrink-0 relative m-2 md:m-3">
                           {hasValidImage(advert) ? (
                             <>
@@ -448,16 +442,13 @@ export default function CategoryDetailPage() {
                             </div>
                           )}
                         </div>
-                        {/* Orta ve Sağ kısım */}
                         <div className="flex-1 flex flex-col justify-between py-2 md:py-3 pr-2 md:pr-3 min-w-0">
-                          {/* EN ÜST: Başlık */}
                           <div className="mb-1">
                             <h3 className="font-bold text-gray-900 text-xs md:text-base hover:text-blue-600 transition-colors break-words whitespace-normal line-clamp-2">
                               {advert.title || "İsimsiz İlan"}
                             </h3>
                           </div>
 
-                          {/* İkinci Adım Bilgisi */}
                           <div className="mb-1">
                             {advert.steps?.second && (
                               <span className="text-[10px] md:text-xs text-gray-600 bg-gray-100 px-1.5 md:px-2 py-0.5 rounded">
@@ -466,7 +457,6 @@ export default function CategoryDetailPage() {
                             )}
                           </div>
 
-                          {/* Özellikler (Mobilde gizli, desktop'ta göster) */}
                           <div className="hidden md:grid md:grid-cols-3 gap-2 mb-2">
                             {advert.details?.netArea && (
                               <div className="text-center">
@@ -501,12 +491,8 @@ export default function CategoryDetailPage() {
                               </div>
                             )}
                           </div>
-
-                          {/* ALT KISIM: Bilgiler ve Fiyat */}
                           <div className="flex justify-between items-center mt-auto">
-                            {/* Sol taraf - Adres ve Diğer Bilgiler */}
                             <div className="text-[10px] md:text-sm text-gray-600 truncate pr-1 min-w-0">
-                              {/* Adres - Desktop'ta daha detaylı */}
                               <p className="truncate hidden md:block">
                                 {advert.address?.province &&
                                   `${advert.address.province}`}
@@ -520,7 +506,6 @@ export default function CategoryDetailPage() {
                                   "Lokasyon yok"}
                               </p>
 
-                              {/* Mobilde sadece tarih ve danışman */}
                               <div className="md:hidden flex flex-col gap-0.5">
                                 <div className="flex items-center">
                                   <Calendar className="w-3 h-3 mr-1" />
@@ -541,8 +526,6 @@ export default function CategoryDetailPage() {
                                 )}
                               </div>
                             </div>
-
-                            {/* Sağ taraf - Fiyat */}
                             <div className="text-right shrink-0 pl-1">
                               <div className="text-xs md:text-xl font-bold text-gray-900 whitespace-nowrap">
                                 {advert.fee ? (
@@ -556,7 +539,6 @@ export default function CategoryDetailPage() {
                             </div>
                           </div>
 
-                          {/* Desktop'ta ek bilgiler */}
                           <div className="hidden md:flex items-center gap-4 text-gray-500 text-xs mt-1">
                             <div className="flex items-center">
                               <Calendar className="w-3 h-3 mr-1" />
@@ -578,7 +560,6 @@ export default function CategoryDetailPage() {
                     ))}
                   </div>
 
-                  {/* Sayfalama */}
                   {totalItems > itemsPerPage && (
                     <div className="mt-8 flex justify-center">
                       <div className="flex items-center gap-2">
@@ -628,7 +609,6 @@ export default function CategoryDetailPage() {
         </div>
       </div>
 
-      {/* Mobile-only CSS */}
       <style jsx global>{`
         @media (max-width: 767px) {
           .category-detail-page .right-content {

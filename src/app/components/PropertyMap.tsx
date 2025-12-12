@@ -1,170 +1,186 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
+// Marker icon URL'leri
+const markerIcon2x = "/leaflet/marker-icon-2x.png";
+const markerIcon = "/leaflet/marker-icon.png";
+const markerShadow = "/leaflet/marker-shadow.png";
 
-const DefaultIcon = L.icon({
-  iconUrl: icon.src,
-  shadowUrl: iconShadow.src,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
+// Marker icon fix
+// @ts-ignore
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
 });
 
-L.Marker.prototype.options.icon = DefaultIcon;
-
-interface GeoJSONMapProps {
-  geoJSONData: any;
+interface GeoJSONProperties {
+  id: number;
+  title: string;
+  price: string;
+  address: string;
+  description: string;
+  details: any;
+  category: string;
+  type: string;
+  subType: string;
+  link: string;
+  photos: string[];
+  advisor?: any;
+  district?: string;
 }
 
-const GeoJSONMap: React.FC<GeoJSONMapProps> = ({ geoJSONData }) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<L.Map | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
+interface GeoJSONFeature {
+  type: "Feature";
+  properties: GeoJSONProperties;
+  geometry: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+}
 
+interface GeoJSONFeatureCollection {
+  type: "FeatureCollection";
+  features: GeoJSONFeature[];
+}
+
+interface PropertyMapProps {
+  geoJSONData: GeoJSONFeatureCollection;
+  initialCenter?: [number, number];
+  initialZoom?: number;
+  showControls?: boolean;
+  onMarkerClick?: (property: GeoJSONProperties) => void;
+}
+
+const PropertyMap = ({
+  geoJSONData,
+  initialCenter = [40.7569, 30.3783],
+  initialZoom = 11,
+  showControls = true,
+  onMarkerClick,
+}: PropertyMapProps) => {
+  const mapRef = useRef<L.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<L.Marker[]>([]);
+
+  // Harita başlatma
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (!containerRef.current || mapRef.current) return;
 
-  useEffect(() => {
-    if (!isMounted || !mapRef.current || !geoJSONData) return;
+    // Harita oluştur
+    mapRef.current = L.map(containerRef.current, {
+      center: initialCenter,
+      zoom: initialZoom,
+      zoomControl: showControls,
+    });
 
-    if (mapInstance.current) {
-      mapInstance.current.remove();
-    }
-
-    try {
-      mapInstance.current = L.map(mapRef.current, {
-        center: [41.0082, 28.9784],
-        zoom: 6,
-        scrollWheelZoom: true,
-      });
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-      }).addTo(mapInstance.current);
-
-      const customIcon = L.divIcon({
-        html: `
-          <div style="
-            background-color: #3b82f6;
-            width: 30px;
-            height: 30px;
-            border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-          ">
-            <div style="
-              transform: rotate(45deg);
-              color: white;
-              font-weight: bold;
-              font-size: 12px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
-              </svg>
-            </div>
-          </div>
-        `,
-        className: "custom-marker",
-        iconSize: [30, 30],
-        iconAnchor: [15, 30],
-        popupAnchor: [0, -30],
-      });
-
-      const geoJsonLayer = L.geoJSON(geoJSONData, {
-        pointToLayer: (feature, latlng) => {
-          return L.marker(latlng, { icon: customIcon });
-        },
-        onEachFeature: (feature, layer) => {
-          if (feature.properties) {
-            const props = feature.properties;
-            const popupContent = `
-              <div style="min-width: 250px; max-width: 300px;">
-                <h4 style="font-weight: bold; margin: 0 0 8px 0; color: #1f2937;">${
-                  props.title || "İsimsiz İlan"
-                }</h4>
-                <div style="margin-bottom: 6px;">
-                  <strong style="color: #059669;">💰 Fiyat:</strong> ${
-                    props.price || "Belirtilmemiş"
-                  }
-                </div>
-                <div style="margin-bottom: 6px;">
-                  <strong style="color: #dc2626;">📍 Adres:</strong> ${
-                    props.address || "Adres bilgisi yok"
-                  }
-                </div>
-                ${
-                  props.description
-                    ? `<div style="margin-bottom: 8px; color: #4b5563; font-size: 13px;">
-                        ${props.description.substring(0, 120)}...
-                       </div>`
-                    : ""
-                }
-                <a href="${
-                  props.link || "#"
-                }" target="_blank" style="display: inline-block; margin-top: 8px; padding: 6px 12px; background: #3b82f6; color: white; text-decoration: none; border-radius: 4px; font-size: 13px;">
-                  👁️ İlanı Görüntüle
-                </a>
-              </div>
-            `;
-            layer.bindPopup(popupContent);
-          }
-        },
-      }).addTo(mapInstance.current);
-
-      if (geoJsonLayer.getBounds().isValid()) {
-        mapInstance.current.fitBounds(geoJsonLayer.getBounds(), {
-          padding: [50, 50],
-          maxZoom: 15,
-        });
-      } else {
-        mapInstance.current.setView([39.9334, 32.8597], 6);
-      }
-
-      console.log("🗺️ Harita başarıyla oluşturuldu");
-    } catch (error) {
-      console.error("❌ Harita oluşturulurken hata:", error);
-    }
+    // Tile layer ekle
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap",
+      maxZoom: 19,
+    }).addTo(mapRef.current);
 
     return () => {
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
     };
-  }, [geoJSONData, isMounted]);
+  }, []);
 
-  if (!isMounted) {
-    return (
-      <div className="w-full h-[400px] flex items-center justify-center bg-gray-100 rounded-lg">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Harita yükleniyor...</p>
+  // Marker'ları ekle
+  useEffect(() => {
+    if (!mapRef.current || !geoJSONData) return;
+
+    // Önceki marker'ları temizle
+    markersRef.current.forEach((marker) => {
+      mapRef.current?.removeLayer(marker);
+    });
+    markersRef.current = [];
+
+    // Her feature için marker oluştur
+    geoJSONData.features.forEach((feature) => {
+      const { coordinates } = feature.geometry;
+      const properties = feature.properties;
+
+      // Marker ikonu (kategoriye göre renk)
+      const getMarkerColor = (category: string) => {
+        switch (category.toLowerCase()) {
+          case "arsa":
+            return "#22c55e";
+          case "konut":
+            return "#3b82f6";
+          case "işyeri":
+            return "#f59e0b";
+          case "villa":
+            return "#ef4444";
+          case "tarla":
+            return "#10b981";
+          case "apartman":
+            return "#8b5cf6";
+          case "daire":
+            return "#06b6d4";
+          default:
+            return "#8b5cf6";
+        }
+      };
+
+      // Özel marker ikonu
+      const customIcon = L.divIcon({
+        html: `
+          <div class="custom-marker" style="background-color: ${getMarkerColor(
+            properties.category
+          )}">
+            <div class="marker-content">${properties.price.split(" ")[0]}</div>
+          </div>
+        `,
+        className: "custom-div-icon",
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+        popupAnchor: [0, -40],
+      });
+
+      // Marker oluştur
+      const marker = L.marker([coordinates[1], coordinates[0]], {
+        icon: customIcon,
+        title: properties.title,
+      });
+
+      // Popup içeriği
+      const popupContent = `
+        <div class="property-popup">
+          <h3 class="font-bold">${properties.title}</h3>
+          <p class="text-green-600 font-bold">${properties.price}</p>
+          <p class="text-sm text-gray-600">${properties.address}</p>
+          <a href="${properties.link}" class="block mt-2 text-blue-600 hover:text-blue-800">
+            İlanı Gör →
+          </a>
         </div>
-      </div>
-    );
-  }
+      `;
 
-  return (
-    <div className="w-full h-[400px] rounded-lg overflow-hidden shadow-lg border border-gray-200">
-      <div ref={mapRef} className="w-full h-full" />
-    </div>
-  );
+      marker.bindPopup(popupContent);
+
+      // Marker'ı haritaya ekle
+      marker.addTo(mapRef.current!);
+      markersRef.current.push(marker);
+    });
+
+    // Marker'lara göre zoom yap
+    if (geoJSONData.features.length > 0) {
+      const bounds = L.latLngBounds(
+        geoJSONData.features.map((f) => [
+          f.geometry.coordinates[1],
+          f.geometry.coordinates[0],
+        ])
+      );
+      mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+    }
+  }, [geoJSONData]);
+
+  return <div ref={containerRef} className="w-full h-[600px] rounded-lg" />;
 };
 
-export default GeoJSONMap;
+export default PropertyMap;

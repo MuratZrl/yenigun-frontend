@@ -1,0 +1,309 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Adapazarı",
+        "id": 1
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.368, 40.778],
+            [30.425, 40.778],
+            [30.425, 40.818],
+            [30.368, 40.818],
+            [30.368, 40.778]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Serdivan",
+        "id": 2
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.315, 40.755],
+            [30.368, 40.755],
+            [30.368, 40.778],
+            [30.315, 40.778],
+            [30.315, 40.755]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Erenler",
+        "id": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.368, 40.778],
+            [30.400, 40.778],
+            [30.400, 40.795],
+            [30.368, 40.795],
+            [30.368, 40.778]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Arifiye",
+        "id": 4
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.250, 40.700],
+            [30.315, 40.700],
+            [30.315, 40.755],
+            [30.250, 40.755],
+            [30.250, 40.700]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Sapanca",
+        "id": 5
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.150, 40.680],
+            [30.250, 40.680],
+            [30.250, 40.730],
+            [30.150, 40.730],
+            [30.150, 40.680]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kocaali",
+        "id": 6
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.750, 41.050],
+            [30.900, 41.050],
+            [30.900, 41.150],
+            [30.750, 41.150],
+            [30.750, 41.050]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Karasu",
+        "id": 7
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.650, 41.000],
+            [30.750, 41.000],
+            [30.750, 41.080],
+            [30.650, 41.080],
+            [30.650, 41.000]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hendek",
+        "id": 8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.420, 40.650],
+            [30.550, 40.650],
+            [30.550, 40.750],
+            [30.420, 40.750],
+            [30.420, 40.650]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Akyazı",
+        "id": 9
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.550, 40.650],
+            [30.700, 40.650],
+            [30.700, 40.750],
+            [30.550, 40.750],
+            [30.550, 40.650]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Geyve",
+        "id": 10
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.200, 40.500],
+            [30.350, 40.500],
+            [30.350, 40.600],
+            [30.200, 40.600],
+            [30.200, 40.500]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Pamukova",
+        "id": 11
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.100, 40.480],
+            [30.200, 40.480],
+            [30.200, 40.550],
+            [30.100, 40.550],
+            [30.100, 40.480]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Ferizli",
+        "id": 12
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.450, 40.850],
+            [30.550, 40.850],
+            [30.550, 40.900],
+            [30.450, 40.900],
+            [30.450, 40.850]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kaynarca",
+        "id": 13
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.200, 40.950],
+            [30.350, 40.950],
+            [30.350, 41.050],
+            [30.200, 41.050],
+            [30.200, 40.950]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Karapürçek",
+        "id": 14
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.450, 40.580],
+            [30.550, 40.580],
+            [30.550, 40.650],
+            [30.450, 40.650],
+            [30.450, 40.580]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Söğütlü",
+        "id": 15
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.350, 40.850],
+            [30.450, 40.850],
+            [30.450, 40.900],
+            [30.350, 40.900],
+            [30.350, 40.850]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Taraklı",
+        "id": 16
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [30.450, 40.350],
+            [30.550, 40.350],
+            [30.550, 40.450],
+            [30.450, 40.450],
+            [30.450, 40.350]
+          ]
+        ]
+      }
+    }
+  ]
+}

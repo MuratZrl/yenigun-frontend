@@ -1,5 +1,5 @@
 "use client";
-import { Advert, Advisor, AdvertDetails, Steps } from "@/app/types/search";
+import { Advert } from "@/app/types/search";
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -12,7 +12,6 @@ import {
   FolderTree,
 } from "lucide-react";
 import JSONDATA from "../data.json";
-import GeoJSONMap from "./PropertyMap";
 
 interface TurkeyCity {
   province: string;
@@ -93,85 +92,6 @@ const turkeyCities: TurkeyCity[] = JSONDATA.map((city: any) => {
   };
 });
 
-const convertAdvertToGeoJSON = (advert: Advert): GeoJSONFeature => {
-  const mapCoords = advert.address?.mapCoordinates;
-
-  if (!mapCoords?.lat || !mapCoords?.lng) {
-    console.warn(`⚠️ İlan ${advert.uid} için geçerli koordinat yok`);
-    const defaultCoords = {
-      lat: 41.0082,
-      lng: 28.9784,
-    };
-
-    return {
-      type: "Feature",
-      properties: {
-        id: advert.uid,
-        title: advert.title,
-        price: advert.fee,
-        address: advert.address?.full_address || "Adres bilgisi yok",
-        description: advert.thoughts || "",
-        details: advert.details || {},
-        category: advert.steps?.first || "",
-        type: advert.steps?.second || "",
-        subType: advert.steps?.third || "",
-        link: `/ilan/${advert.uid}`,
-        photos: advert.photos || [],
-        advisor: advert.advisor || {},
-      },
-      geometry: {
-        type: "Point",
-        coordinates: [defaultCoords.lng, defaultCoords.lat],
-      },
-    };
-  }
-
-  return {
-    type: "Feature",
-    properties: {
-      id: advert.uid,
-      title: advert.title,
-      price: advert.fee,
-      address: advert.address?.full_address || "Adres bilgisi yok",
-      description: advert.thoughts || "",
-      details: advert.details || {},
-      category: advert.steps?.first || "",
-      type: advert.steps?.second || "",
-      subType: advert.steps?.third || "",
-      link: `/ilan/${advert.uid}`,
-      photos: advert.photos || [],
-      advisor: advert.advisor || {},
-    },
-    geometry: {
-      type: "Point",
-      coordinates: [mapCoords.lng, mapCoords.lat],
-    },
-  };
-};
-
-const createGeoJSONFeatureCollection = (
-  adverts: Advert[]
-): GeoJSONFeatureCollection => {
-  const validAdverts = adverts.filter((advert) => {
-    const hasCoords =
-      advert.address?.mapCoordinates?.lat &&
-      advert.address?.mapCoordinates?.lng;
-    if (!hasCoords) {
-      console.warn(
-        `⚠️ İlan ${advert.uid} koordinatı eksik, varsayılan koordinat kullanılacak`
-      );
-    }
-    return true;
-  });
-
-  console.log(`📍 ${validAdverts.length} ilan haritada gösterilecek`);
-
-  return {
-    type: "FeatureCollection",
-    features: validAdverts.map(convertAdvertToGeoJSON),
-  };
-};
-
 const DynamicSearch = ({
   categoryName,
   categoryData,
@@ -183,7 +103,7 @@ const DynamicSearch = ({
   const [features, setFeatures] = useState<any[]>([]);
   const [geoJSONData, setGeoJSONData] =
     useState<GeoJSONFeatureCollection | null>(null);
-  const [showMap, setShowMap] = useState(false);
+  const [showMap, setShowMap] = useState(true);
   const [filterValues, setFilterValues] = useState<FilterValues>({
     minPrice: "",
     maxPrice: "",
@@ -212,9 +132,10 @@ const DynamicSearch = ({
       return;
     }
 
-    const geoJSON = createGeoJSONFeatureCollection(validAdverts);
-    setGeoJSONData(geoJSON);
-    setShowMap(true);
+    localStorage.setItem("haritaAdverts", JSON.stringify(validAdverts));
+
+    const url = `/Harita`;
+    window.open(url, "_blank");
   };
 
   const getAllSubcategories = (): Subcategory[] => {
@@ -429,11 +350,15 @@ const DynamicSearch = ({
   const GeoJSONMap = dynamic(() => import("./PropertyMap"), {
     ssr: false,
     loading: () => (
-      <div className="w-full h-[400px] flex items-center justify-center bg-gray-100 rounded-lg">
-        <p className="text-gray-500">Harita yükleniyor...</p>
+      <div className="w-full h-[600px] flex items-center justify-center bg-gray-100 rounded-lg">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Harita yükleniyor...</p>
+        </div>
       </div>
     ),
   });
+
   return (
     <div className="relative overflow-hidden rounded-lg shadow-sm border border-gray-200 w-full max-w-full">
       <div
@@ -460,7 +385,7 @@ const DynamicSearch = ({
             </h1>
           </div>
 
-          {/* {adverts.length > 0 && (
+          {adverts.length > 0 && (
             <button
               type="button"
               onClick={handleShowOnMap}
@@ -474,8 +399,7 @@ const DynamicSearch = ({
                 {adverts.length}
               </span>
             </button>
-          )} */}
-
+          )}
           {showMap && geoJSONData && (
             <div className="mt-4">
               <GeoJSONMap geoJSONData={geoJSONData} />
