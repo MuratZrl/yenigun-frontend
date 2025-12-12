@@ -1,11 +1,11 @@
 import React from "react";
-import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
+import { GoogleMap, useLoadScript, Marker, Polygon } from "@react-google-maps/api";
 import usePlacesAutocomplete, {
   getGeocode,
   getLatLng,
 } from "use-places-autocomplete";
 
-const libraries: "places"[] = ["places"];
+const libraries: ("places" | "drawing" | "geometry")[] = ["places", "drawing", "geometry"];
 
 const options = {
   disableDefaultUI: true,
@@ -30,14 +30,21 @@ interface MarkerType {
   time?: Date;
 }
 
+interface BoundaryCoord {
+  lat: number;
+  lng: number;
+}
+
 interface AdminGoogleMapsProps {
   markers: MarkerType[];
   setMarkers: (markers: MarkerType[]) => void;
+  boundaryCoords?: BoundaryCoord[];
 }
 
 export default function AdminGoogleMaps({
   markers,
   setMarkers,
+  boundaryCoords,
 }: AdminGoogleMapsProps) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: "AIzaSyDL9J82iDhcUWdQiuIvBYa0t5asrtz3Swk",
@@ -47,6 +54,20 @@ export default function AdminGoogleMaps({
   const [selected, setSelected] = React.useState(null);
   const mapRef = React.useRef<google.maps.Map | null>(null);
   const [zoom, setZoom] = React.useState(15);
+
+  // Polygon stilleri - daha belirgin
+  const polygonOptions = {
+    fillColor: "#3B82F6",
+    fillOpacity: 0.2,
+    strokeColor: "#1D4ED8",
+    strokeOpacity: 1,
+    strokeWeight: 3,
+    clickable: false,
+    draggable: false,
+    editable: false,
+    geodesic: true,
+    zIndex: 1,
+  };
 
   const onMapClick = React.useCallback(
     (e: google.maps.MapMouseEvent) => {
@@ -93,8 +114,19 @@ export default function AdminGoogleMaps({
     }
   }, []);
 
+  // Boundary değiştiğinde haritayı sınırlara fit et
   React.useEffect(() => {
-    if (validMarkers.length > 0 && mapRef.current) {
+    if (boundaryCoords && boundaryCoords.length > 0 && mapRef.current) {
+      const bounds = new google.maps.LatLngBounds();
+      boundaryCoords.forEach((coord) => {
+        bounds.extend({ lat: coord.lat, lng: coord.lng });
+      });
+      mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
+    }
+  }, [boundaryCoords]);
+
+  React.useEffect(() => {
+    if (validMarkers.length > 0 && mapRef.current && (!boundaryCoords || boundaryCoords.length === 0)) {
       mapRef.current.setZoom(16);
     }
   }, [markers]);
@@ -183,6 +215,14 @@ export default function AdminGoogleMaps({
               animation={google.maps.Animation.DROP}
             />
           ))}
+          
+          {/* Mahalle sınırları polygon */}
+          {boundaryCoords && boundaryCoords.length > 0 && (
+            <Polygon
+              paths={boundaryCoords}
+              options={polygonOptions}
+            />
+          )}
         </GoogleMap>
       </div>
     </div>
