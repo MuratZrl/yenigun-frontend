@@ -1,521 +1,478 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
-  ArrowLeft,
-  Filter,
-  Search,
-  MapPin,
-  X,
-  Home,
-  Layers,
-  ExternalLink,
-} from "lucide-react";
-import Navbar from "./Navbar";
+  GoogleMap,
+  useLoadScript,
+  Marker,
+  InfoWindow,
+  Polygon,
+} from "@react-google-maps/api";
+import usePlacesAutocomplete, {
+  getGeocode,
+  getLatLng,
+} from "use-places-autocomplete";
 
-const CDN_MARKER_ICON = "https://unpkg.com/leaflet@1.9.4/dist/images/";
+const libraries: ("places" | "drawing" | "geometry")[] = [
+  "places",
+  "drawing",
+  "geometry",
+];
 
-interface Advert {
+const options = {
+  disableDefaultUI: true,
+  zoomControl: true,
+  minZoom: 8,
+  maxZoom: 20,
+};
+
+const mapContainerStyle = {
+  width: "100%",
+  height: "600px",
+};
+
+const defaultCenter = {
+  lat: 40.6937,
+  lng: 30.4353,
+};
+
+interface Address {
+  mapCoordinates: {
+    lat: number;
+    lng: number;
+  };
+  full_address: string;
+  district: string;
+  province: string;
+  quarter: string;
+  parcel?: string;
+}
+
+interface PropertyListing {
+  _id: string;
   uid: number;
+  address: Address;
   title: string;
   fee: string;
-  address: {
-    full_address: string;
-    province: string;
-    district: string;
-    quarter: string;
-    mapCoordinates?: {
-      lat: number;
-      lng: number;
-    };
-  };
-  thoughts?: string;
-  details: any;
+  thoughts: string;
   photos: string[];
-  created?: {
-    createdTimestamp: number;
-  };
-  advisor?: {
-    name: string;
-    surname: string;
-    gsmNumber?: string;
-    mail?: string;
-  };
-  isNew?: boolean;
-  steps?: {
+  categoryId: string;
+  steps: {
     first: string;
     second: string;
-    third: string;
+  };
+  details?: {
+    netArea?: number;
+    grossArea?: number;
   };
 }
 
-const SAKARYA_CENTER: [number, number] = [40.7569, 30.3783];
-const DEFAULT_ZOOM = 11;
+interface MapProps {
+  listings?: PropertyListing[];
+  boundaryCoords?: Array<{ lat: number; lng: number }>;
+  selectedDistrict?: string;
+  selectedProvince?: string;
+}
 
-export default function HaritaClient() {
-  const router = useRouter();
-  const mapRef = useRef<L.Map | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<L.Marker[]>([]);
-  const leafletRef = useRef<any>(null);
+interface MarkerInfo {
+  id: string;
+  position: {
+    lat: number;
+    lng: number;
+  };
+  title: string;
+  fee: string;
+  address: Address;
+  thoughts: string;
+  photo: string;
+  type: string;
+  area?: number;
+}
 
-  const [adverts, setAdverts] = useState<Advert[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedAdvert, setSelectedAdvert] = useState<Advert | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({
-    category: [] as string[],
-    district: [] as string[],
+export default function PropertyMap({
+  listings = [],
+  boundaryCoords,
+  selectedDistrict,
+  selectedProvince,
+}: MapProps) {
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: "AIzaSyDL9J82iDhcUWdQiuIvBYa0t5asrtz3Swk",
+    libraries,
   });
-  const [showFilters, setShowFilters] = useState(false);
-  const [showAdvertDetails, setShowAdvertDetails] = useState(false);
-  const [mapInitialized, setMapInitialized] = useState(false);
 
-  useEffect(() => {
-    const savedAdverts = localStorage.getItem("haritaAdverts");
-    if (savedAdverts) {
-      try {
-        const parsedAdverts = JSON.parse(savedAdverts);
-        console.log(
-          "📍 LocalStorage'dan yüklenen ilanlar:",
-          parsedAdverts.length
-        );
-        setAdverts(parsedAdverts);
-      } catch (error) {
-        console.error("LocalStorage veri parse hatası:", error);
-      }
-    } else {
-      console.warn("⚠️ LocalStorage'da 'haritaAdverts' verisi bulunamadı!");
-    }
-    setLoading(false);
+  const [markers, setMarkers] = useState<MarkerInfo[]>([]);
+  const [selectedMarker, setSelectedMarker] = useState<MarkerInfo | null>(null);
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const mapRef = React.useRef<google.maps.Map | null>(null);
+
+  const boundaryLineOptions = useMemo(() => {
+    return {
+      fillOpacity: 0.5,
+      strokeColor: "#2563EB",
+      strokeOpacity: 1,
+      strokeWeight: 3,
+      clickable: false,
+      draggable: false,
+      editable: false,
+      geodesic: false,
+      zIndex: 1,
+    };
   }, []);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current || loading) return;
+    if (listings && listings.length > 0) {
+      const processedMarkers = listings
+        .filter(
+          (listing) =>
+            listing.address?.mapCoordinates &&
+            typeof listing.address.mapCoordinates.lat === "number" &&
+            typeof listing.address.mapCoordinates.lng === "number" &&
+            !isNaN(listing.address.mapCoordinates.lat) &&
+            !isNaN(listing.address.mapCoordinates.lng) &&
+            listing.address.mapCoordinates.lat >= -90 &&
+            listing.address.mapCoordinates.lat <= 90 &&
+            listing.address.mapCoordinates.lng >= -180 &&
+            listing.address.mapCoordinates.lng <= 180
+        )
+        .map((listing) => ({
+          id: listing._id || `marker-${listing.uid}`,
+          position: listing.address.mapCoordinates,
+          title: listing.title || "İsimsiz İlan",
+          fee: listing.fee || "Fiyat Belirtilmemiş",
+          address: listing.address,
+          thoughts: listing.thoughts || "",
+          photo: listing.photos?.[0] || "",
+          type: `${listing.steps?.first || ""} ${
+            listing.steps?.second || ""
+          }`.trim(),
+          area: listing.details?.netArea || listing.details?.grossArea,
+        }));
 
-    const initMap = async () => {
-      const L = await import("leaflet");
-      leafletRef.current = L;
+      setMarkers(processedMarkers);
 
-      // Marker icon fix
-      // @ts-ignore
-      delete L.Icon.Default.prototype._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: `${CDN_MARKER_ICON}marker-icon-2x.png`,
-        iconUrl: `${CDN_MARKER_ICON}marker-icon.png`,
-        shadowUrl: `${CDN_MARKER_ICON}marker-shadow.png`,
-      });
-
-      mapRef.current = L.map(containerRef.current!, {
-        center: SAKARYA_CENTER,
-        zoom: DEFAULT_ZOOM,
-        zoomControl: true,
-        scrollWheelZoom: true,
-        dragging: true,
-        doubleClickZoom: true,
-      });
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19,
-      }).addTo(mapRef.current);
-
-      console.log("🗺️ Harita başarıyla başlatıldı");
-      setMapInitialized(true);
-    };
-
-    initMap();
-
-    return () => {
-      if (mapRef.current) {
-        console.log("🗺️ Harita temizleniyor...");
-        mapRef.current.remove();
-        mapRef.current = null;
-        setMapInitialized(false);
+      if (selectedDistrict && processedMarkers.length > 0) {
+        const districtMarker =
+          processedMarkers.find(
+            (m) => m.address.district === selectedDistrict
+          ) || processedMarkers[0];
+        setMapCenter(districtMarker.position);
+      } else if (processedMarkers.length > 0) {
+        const avgLat =
+          processedMarkers.reduce((sum, m) => sum + m.position.lat, 0) /
+          processedMarkers.length;
+        const avgLng =
+          processedMarkers.reduce((sum, m) => sum + m.position.lng, 0) /
+          processedMarkers.length;
+        setMapCenter({ lat: avgLat, lng: avgLng });
       }
-    };
-  }, [loading]);
+    }
+  }, [listings, selectedDistrict, selectedProvince]);
+
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+  }, []);
+
+  const handleMarkerClick = useCallback((marker: MarkerInfo) => {
+    setSelectedMarker(marker);
+    if (mapRef.current) {
+      mapRef.current.panTo(marker.position);
+      mapRef.current.setZoom(16);
+    }
+  }, []);
+
+  const fitToBounds = useCallback(() => {
+    if (mapRef.current && markers.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+
+      markers.forEach((marker) => {
+        bounds.extend(marker.position);
+      });
+
+      if (boundaryCoords && boundaryCoords.length > 0) {
+        boundaryCoords.forEach((coord) => {
+          bounds.extend(coord);
+        });
+      }
+
+      mapRef.current.fitBounds(bounds, {
+        top: 50,
+        right: 50,
+        bottom: 50,
+        left: 50,
+      });
+    }
+  }, [markers, boundaryCoords]);
 
   useEffect(() => {
-    if (!mapRef.current || !mapInitialized || loading || adverts.length === 0) {
-      console.log("⏳ Marker ekleme için bekleniyor:", {
-        mapRef: !!mapRef.current,
-        mapInitialized,
-        loading,
-        advertsLength: adverts.length,
-      });
-      return;
-    }
-
-    console.log("📍 Marker'lar ekleniyor...", adverts.length);
-
-    markersRef.current.forEach((marker) => {
-      mapRef.current?.removeLayer(marker);
-    });
-    markersRef.current = [];
-
-    const filteredAdverts = adverts.filter((advert) => {
-      if (
-        !searchQuery &&
-        filters.category.length === 0 &&
-        filters.district.length === 0
-      ) {
-        return true;
-      }
-
-      const matchesSearch =
-        !searchQuery ||
-        advert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        advert.address.full_address
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        advert.address.district
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
-
-      const matchesCategory =
-        filters.category.length === 0 ||
-        (advert.steps?.first && filters.category.includes(advert.steps.first));
-
-      const matchesDistrict =
-        filters.district.length === 0 ||
-        filters.district.includes(advert.address.district);
-
-      return matchesSearch && matchesCategory && matchesDistrict;
-    });
-
-    console.log("✅ Gösterilecek ilan sayısı:", filteredAdverts.length);
-
-    filteredAdverts.forEach((advert) => {
-      const lat =
-        advert.address?.mapCoordinates?.lat ||
-        SAKARYA_CENTER[0] + (Math.random() - 0.5) * 0.1;
-      const lng =
-        advert.address?.mapCoordinates?.lng ||
-        SAKARYA_CENTER[1] + (Math.random() - 0.5) * 0.1;
-
-      console.log(`📍 İlan ${advert.uid}:`, { lat, lng });
-
-      const getMarkerColor = (category?: string) => {
-        if (!category) return "#8b5cf6";
-        switch (category.toLowerCase()) {
-          case "arsa":
-            return "#22c55e";
-          case "konut":
-            return "#3b82f6";
-          case "işyeri":
-            return "#f59e0b";
-          case "villa":
-            return "#ef4444";
-          case "tarla":
-            return "#10b981";
-          case "apartman":
-            return "#8b5cf6";
-          case "daire":
-            return "#06b6d4";
-          default:
-            return "#8b5cf6";
-        }
-      };
-      const customIcon = leafletRef.current.divIcon({
-        html: `
-          <div class="custom-marker" style="background-color: ${getMarkerColor(
-            advert.steps?.first
-          )}; border: 2px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); width: 40px; height: 40px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <div style="transform: rotate(45deg); color: white; font-size: 12px; font-weight: bold; text-align: center;">
-              ${advert.fee.replace(" TL", "").substring(0, 3)}K
-            </div>
-          </div>
-        `,
-        className: "custom-div-icon",
-        iconSize: [40, 40],
-        iconAnchor: [20, 40],
-        popupAnchor: [0, -40],
-      });
-
-      const marker = leafletRef.current.marker([lat, lng], {
-        icon: customIcon,
-        title: advert.title,
-      });
-
-      const popupContent = `
-        <div style="padding: 12px; min-width: 250px;">
-          <div style="margin-bottom: 8px;">
-            <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 4px; line-height: 1.2;">${
-              advert.title
-            }</h3>
-            <span style="font-size: 16px; font-weight: bold; color: #16a34a;">${
-              advert.fee
-            }</span>
-          </div>
-          <div style="font-size: 12px; color: #666;">
-            <p><strong>Konum:</strong> ${advert.address.district}, ${
-        advert.address.quarter
-      }</p>
-            <p><strong>Kategori:</strong> ${
-              advert.steps?.first || "Belirtilmemiş"
-            }</p>
-            <a href="/ilan/${
-              advert.uid
-            }" target="_blank" style="display: inline-block; margin-top: 8px; color: #3b82f6; text-decoration: none; font-weight: 500;">İlanı Gör →</a>
-          </div>
-        </div>
-      `;
-
-      marker.bindPopup(popupContent);
-
-      marker.on("click", () => {
-        setSelectedAdvert(advert);
-        setShowAdvertDetails(true);
-      });
-
-      marker.addTo(mapRef.current!);
-      markersRef.current.push(marker);
-    });
-
-    if (filteredAdverts.length > 0) {
-      const bounds = leafletRef.current.latLngBounds(
-        filteredAdverts
-          .filter(
-            (advert) =>
-              advert.address?.mapCoordinates?.lat &&
-              advert.address?.mapCoordinates?.lng
-          )
-          .map((advert) => [
-            advert.address.mapCoordinates!.lat,
-            advert.address.mapCoordinates!.lng,
-          ])
-      );
-
-      if (bounds.isValid()) {
-        mapRef.current?.fitBounds(bounds, { padding: [50, 50] });
+    if (markers.length > 0 && mapRef.current) {
+      if (markers.length === 1) {
+        mapRef.current.setCenter(markers[0].position);
+        mapRef.current.setZoom(16);
       } else {
-        mapRef.current?.setView(SAKARYA_CENTER, DEFAULT_ZOOM);
+        fitToBounds();
       }
-    } else {
-      mapRef.current?.setView(SAKARYA_CENTER, DEFAULT_ZOOM);
     }
-  }, [adverts, mapInitialized, searchQuery, filters, loading]);
+  }, [markers, fitToBounds]);
 
-  const categories = Array.from(
-    new Set(adverts.map((advert) => advert.steps?.first).filter(Boolean))
-  ) as string[];
-
-  const districts = Array.from(
-    new Set(adverts.map((advert) => advert.address.district).filter(Boolean))
-  ) as string[];
-
-  const filteredCount = adverts.filter((advert) => {
-    if (
-      !searchQuery &&
-      filters.category.length === 0 &&
-      filters.district.length === 0
-    ) {
-      return true;
+  useEffect(() => {
+    if (boundaryCoords && boundaryCoords.length > 0 && mapRef.current) {
+      const bounds = new google.maps.LatLngBounds();
+      boundaryCoords.forEach((coord) => {
+        bounds.extend(coord);
+      });
+      mapRef.current.fitBounds(bounds, {
+        top: 50,
+        right: 50,
+        bottom: 50,
+        left: 50,
+      });
     }
-    const matchesSearch =
-      !searchQuery ||
-      advert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      advert.address.full_address
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      advert.address.district.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      filters.category.length === 0 ||
-      (advert.steps?.first && filters.category.includes(advert.steps.first));
-    const matchesDistrict =
-      filters.district.length === 0 ||
-      filters.district.includes(advert.address.district);
-    return matchesSearch && matchesCategory && matchesDistrict;
-  }).length;
+  }, [boundaryCoords]);
 
-  const handleCategoryToggle = (category: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      category: prev.category.includes(category)
-        ? prev.category.filter((c) => c !== category)
-        : [...prev.category, category],
-    }));
-  };
+  const renderAddress = useCallback((address: Address) => {
+    if (!address) return "Adres bilgisi yok";
 
-  const handleDistrictToggle = (district: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      district: prev.district.includes(district)
-        ? prev.district.filter((d) => d !== district)
-        : [...prev.district, district],
-    }));
-  };
+    let fullAddress = address.full_address;
 
-  const resetFilters = () => {
-    setFilters({
-      category: [],
-      district: [],
-    });
-    setSearchQuery("");
-  };
+    if (fullAddress && typeof fullAddress === "object") {
+      const addrObj = fullAddress as any;
+      fullAddress =
+        addrObj.full_address ||
+        `${addrObj.province || ""}, ${addrObj.district || ""}, ${
+          addrObj.quarter || ""
+        }`;
+    }
 
-  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">İlanlar yükleniyor...</p>
-        </div>
-      </div>
+      fullAddress ||
+      `${address.province || ""}, ${address.district || ""}, ${
+        address.quarter || ""
+      }`
     );
-  }
+  }, []);
 
-  if (adverts.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-4">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MapPin className="w-8 h-8 text-yellow-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">
-              Haritada Gösterilecek İlan Yok
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Arama sayfasından "Haritada Göster" butonuna tıklayarak ilanları
-              haritada görüntüleyebilirsiniz.
-            </p>
-            <button
-              onClick={() => router.push("/")}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2"
-            >
-              <Home size={20} />
-              Ana Sayfaya Dön
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loadError) return <div>Harita yüklenirken hata oluştu</div>;
+  if (!isLoaded) return <div>Harita yükleniyor...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+    <div className="w-full">
+      {/* Kontroller - AdminGoogleMap ile aynı stil */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+        <Search panTo={(coords) => setMapCenter(coords)} />
+        <Locate panTo={(coords) => setMapCenter(coords)} />
+      </div>
 
-      <main className="container mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {showFilters && (
-            <div className="lg:w-1/4">
-              <div className="bg-white rounded-xl shadow-sm border p-4 sticky top-24">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-bold text-lg">Filtreler</h2>
-                  <button
-                    onClick={resetFilters}
-                    className="text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    Temizle
-                  </button>
-                </div>
-
-                {categories.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                      <Layers size={16} />
-                      Kategoriler
-                    </h3>
-                    <div className="space-y-2">
-                      {categories.map((category) => (
-                        <label
-                          key={category}
-                          className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={filters.category.includes(category)}
-                            onChange={() => handleCategoryToggle(category)}
-                            className="rounded text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-gray-700">{category}</span>
-                          <span className="ml-auto text-sm text-gray-500">
-                            {
-                              adverts.filter((a) => a.steps?.first === category)
-                                .length
-                            }
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {districts.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                      <MapPin size={16} />
-                      İlçeler
-                    </h3>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {districts.map((district) => (
-                        <label
-                          key={district}
-                          className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={filters.district.includes(district)}
-                            onChange={() => handleDistrictToggle(district)}
-                            className="rounded text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-gray-700">{district}</span>
-                          <span className="ml-auto text-sm text-gray-500">
-                            {
-                              adverts.filter(
-                                (a) => a.address.district === district
-                              ).length
-                            }
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="pt-6 border-t">
-                  <h3 className="font-semibold text-gray-700 mb-3">
-                    İstatistikler
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <div className="text-xs text-blue-700">Toplam</div>
-                      <div className="font-bold">{adverts.length}</div>
-                    </div>
-                    <div className="bg-green-50 p-3 rounded-lg">
-                      <div className="text-xs text-green-700">Gösterilen</div>
-                      <div className="font-bold">{filteredCount}</div>
-                    </div>
-                    <div className="bg-purple-50 p-3 rounded-lg">
-                      <div className="text-xs text-purple-700">Kategori</div>
-                      <div className="font-bold">{categories.length}</div>
-                    </div>
-                    <div className="bg-orange-50 p-3 rounded-lg">
-                      <div className="text-xs text-orange-700">İlçe</div>
-                      <div className="font-bold">{districts.length}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div className="rounded-lg overflow-hidden border border-gray-300 shadow-lg">
+        <GoogleMap
+          id="property-map"
+          mapContainerStyle={mapContainerStyle}
+          zoom={selectedDistrict ? 14 : 12}
+          center={mapCenter}
+          options={options}
+          onLoad={onMapLoad}
+        >
+          {boundaryCoords && boundaryCoords.length > 0 && (
+            <Polygon paths={boundaryCoords} options={boundaryLineOptions} />
           )}
 
-          <div className={`${showFilters ? "lg:w-3/4" : "w-full"}`}>
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <div
-                ref={containerRef}
-                className="w-full h-[600px] leaflet-container"
-                style={{ width: "100%", height: "600px", zIndex: 1 }}
-              />
-            </div>
-          </div>
-        </div>
-      </main>
+          {markers.map((marker) => (
+            <Marker
+              key={marker.id}
+              position={marker.position}
+              onClick={() => handleMarkerClick(marker)}
+              animation={google.maps.Animation.DROP}
+              icon={{
+                url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                scaledSize: new google.maps.Size(40, 40),
+              }}
+            />
+          ))}
+
+          {selectedMarker && (
+            <InfoWindow
+              position={selectedMarker.position}
+              onCloseClick={() => setSelectedMarker(null)}
+            >
+              <div className="p-3 max-w-xs">
+                <div className="mb-2">
+                  {selectedMarker.photo && (
+                    <img
+                      src={selectedMarker.photo}
+                      alt={selectedMarker.title}
+                      className="w-full h-40 object-cover rounded-lg mb-2"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://via.placeholder.com/300x200?text=Resim+Yok";
+                      }}
+                    />
+                  )}
+                </div>
+                <h3 className="font-bold text-lg mb-1 text-gray-800">
+                  {selectedMarker.title}
+                </h3>
+                <p className="text-red-600 font-bold text-xl mb-2">
+                  {selectedMarker.fee}
+                </p>
+
+                <div className="text-gray-600 text-sm mb-3 space-y-1">
+                  <p className="font-medium">
+                    {renderAddress(selectedMarker.address)}
+                  </p>
+                  {selectedMarker.address.parcel && (
+                    <p className="text-xs">
+                      <span className="font-semibold">Parsel:</span>{" "}
+                      {selectedMarker.address.parcel}
+                    </p>
+                  )}
+                  <p className="text-xs">
+                    <span className="font-semibold">Konum:</span>{" "}
+                    {selectedMarker.address.quarter},{" "}
+                    {selectedMarker.address.district},{" "}
+                    {selectedMarker.address.province}
+                  </p>
+                </div>
+
+                {selectedMarker.area && (
+                  <p className="text-gray-700 mb-2">
+                    <span className="font-semibold">Alan:</span>{" "}
+                    {selectedMarker.area} m²
+                  </p>
+                )}
+
+                {selectedMarker.thoughts && (
+                  <p className="text-gray-600 text-sm italic border-t pt-2 mt-2">
+                    "{selectedMarker.thoughts}"
+                  </p>
+                )}
+
+                <button
+                  className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors duration-200"
+                  onClick={() => {
+                    window.open(`/ilan/${selectedMarker.id}`, "_blank");
+                  }}
+                >
+                  İlanı Görüntüle
+                </button>
+              </div>
+            </InfoWindow>
+          )}
+        </GoogleMap>
+      </div>
     </div>
+  );
+}
+
+function Search({
+  panTo,
+}: {
+  panTo: (coords: { lat: number; lng: number }) => void;
+}) {
+  const {
+    ready,
+    value,
+    suggestions: { status, data },
+    setValue,
+    clearSuggestions,
+  } = usePlacesAutocomplete({
+    requestOptions: {
+      location: new google.maps.LatLng(40.6937, 30.4353),
+      radius: 100 * 1000,
+    },
+    debounce: 300,
+  });
+
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+    setShowSuggestions(true);
+  };
+
+  const handleSelect = async (address: string) => {
+    setValue(address, false);
+    clearSuggestions();
+    setShowSuggestions(false);
+
+    try {
+      const results = await getGeocode({ address });
+      const { lat, lng } = await getLatLng(results[0]);
+      panTo({ lat, lng });
+    } catch (error) {
+      console.log("Error: ", error);
+    }
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => setShowSuggestions(false), 200);
+  };
+
+  const handleFocus = () => {
+    if (value) {
+      setShowSuggestions(true);
+    }
+  };
+
+  return (
+    <div className="relative flex-1">
+      <input
+        value={value}
+        onChange={handleInput}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        disabled={!ready}
+        className="py-2 px-4 w-full bg-gray-100 rounded-lg border border-gray-300 focus:outline-none focus:bg-white focus:border-blue-500 focus:shadow-md transition-colors duration-200"
+        placeholder="Herhangi bir yer arayın..."
+      />
+      {showSuggestions && status === "OK" && (
+        <div className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
+          {data.map(({ place_id, description }) => (
+            <div
+              key={place_id}
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
+              onClick={() => handleSelect(description)}
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              {description}
+            </div>
+          ))}
+        </div>
+      )}
+      {showSuggestions && status === "ZERO_RESULTS" && (
+        <div className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1">
+          <div className="px-4 py-2 text-gray-500">Sonuç bulunamadı</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Locate({
+  panTo,
+}: {
+  panTo: (coords: { lat: number; lng: number }) => void;
+}) {
+  return (
+    <button
+      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium whitespace-nowrap flex items-center gap-2 justify-center"
+      onClick={() => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            panTo({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          },
+          () => null,
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0,
+          }
+        );
+      }}
+    >
+      <span></span>
+      Konumumu Bul
+    </button>
   );
 }

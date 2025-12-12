@@ -9,6 +9,7 @@ import {
   Bed,
   Bath,
   Square,
+  ChevronRight,
 } from "lucide-react";
 import { motion, Variants } from "framer-motion";
 import Link from "next/link";
@@ -127,17 +128,97 @@ const Highlights = ({ data }: HighlightProps) => {
       </motion.div>
 
       <div className="relative z-10 flex flex-col lg:flex-row gap-6 md:gap-8 w-full">
-        {/* Kategori Sidebar - Sol */}
         <div className="lg:w-1/4">
           <div className="sticky top-6">
             <CategorySidebar />
           </div>
         </div>
 
-        {/* İlanlar Grid - Sağ */}
         <div className="lg:w-3/4">
-          {/* İlan Grid Container */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+          {/* MOBİL GÖRÜNÜM - Liste formatı (Ads sayfası gibi) */}
+          <div className="space-y-0 mb-8 block md:hidden">
+            {visibleData.map((item: any, index: number) => (
+              <Link
+                href={`/ads/${item.uid}`}
+                key={item.uid || index}
+                className="flex relative bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 overflow-hidden group"
+              >
+                <div className="w-20 h-20 shrink-0 relative m-2">
+                  {item.photos && item.photos.length > 0 ? (
+                    <img
+                      src={item.photos.find(
+                        (photo: any) => typeof photo === "string"
+                      )}
+                      alt={item.title || "İlan görseli"}
+                      className="w-full h-full object-cover rounded group-hover:opacity-90 transition-opacity"
+                      onError={(e) => {
+                        e.currentTarget.src = "/logo.png";
+                        e.currentTarget.alt = "Logo";
+                        e.currentTarget.className =
+                          "w-full h-full object-contain p-2 bg-gray-100 rounded";
+                      }}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center bg-gray-100 w-full h-full rounded">
+                      <img
+                        src="/logo.png"
+                        alt="Logo"
+                        className="object-contain h-6 opacity-70"
+                        onError={(e) => {
+                          e.currentTarget.src =
+                            "https://via.placeholder.com/150x150?text=Logo";
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 flex flex-col justify-between py-2 pr-2 min-w-0">
+                  <div className="mb-1">
+                    <h3 className="font-bold text-gray-900 text-xs hover:text-blue-600 transition-colors wrap-break-words whitespace-normal line-clamp-2">
+                      {item.title || "Başlık Yok"}
+                    </h3>
+                  </div>
+
+                  <div className="mb-1">
+                    {item.steps?.second && (
+                      <span className="text-[10px] text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                        {item.steps.second}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center mt-auto">
+                    <div className="text-[10px] text-gray-600 truncate pr-1 min-w-0">
+                      <p className="truncate">
+                        {item.address?.province && `${item.address.province}`}
+                        {item.address?.district &&
+                          ` - ${item.address.district}`}
+                        {!item.address?.province &&
+                          !item.address?.district &&
+                          "Lokasyon yok"}
+                      </p>
+                    </div>
+
+                    <div className="text-right shrink-0 pl-1">
+                      <div className="text-xs font-bold text-gray-900 whitespace-nowrap">
+                        {item.fee ? (
+                          <>{item.fee}</>
+                        ) : (
+                          <span className="text-gray-500 text-[10px] block">
+                            Fiyat Yok
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* DESKTOP GÖRÜNÜM - Grid kart formatı */}
+          <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
             {visibleData.map((item: any, index: number) => (
               <motion.div
                 key={item.uid}
@@ -294,29 +375,11 @@ const Highlights = ({ data }: HighlightProps) => {
                       }}
                     />
                   )}
-
-                  {/* Detay Butonu */}
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="mt-auto"
-                  >
-                    <button className="w-full py-2.5 md:py-3 bg-linear-to-rrom-blue-900 to-blue-700 text-white rounded-lg md:rounded-xl font-semibold text-sm md:text-base shadow-md hover:shadow-lg transition-all duration-300 group">
-                      <span className="flex items-center justify-center gap-1.5 md:gap-2">
-                        İncele
-                        <ExternalLink
-                          className="transition-transform duration-300 group-hover:translate-x-0.5"
-                          size={12}
-                        />
-                      </span>
-                    </button>
-                  </motion.div>
                 </div>
               </motion.div>
             ))}
           </div>
 
-          {/* Daha Fazla Göster Butonu */}
           {visibleCount < filteredData.length && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -340,7 +403,6 @@ const Highlights = ({ data }: HighlightProps) => {
             </motion.div>
           )}
 
-          {/* İlan Yoksa Mesaj */}
           {filteredData.length === 0 && (
             <div className="text-center py-12 md:py-16">
               <div className="max-w-md mx-auto">
@@ -360,7 +422,6 @@ const Highlights = ({ data }: HighlightProps) => {
         </div>
       </div>
 
-      {/* Tüm İlanları Görüntüle Butonu - SAYFANIN ORTASINA ALINDI */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}

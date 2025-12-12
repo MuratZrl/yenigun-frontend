@@ -1,11 +1,20 @@
 import React from "react";
-import { GoogleMap, useLoadScript, Marker, Polygon } from "@react-google-maps/api";
+import {
+  GoogleMap,
+  useLoadScript,
+  Marker,
+  Polygon,
+} from "@react-google-maps/api";
 import usePlacesAutocomplete, {
   getGeocode,
   getLatLng,
 } from "use-places-autocomplete";
 
-const libraries: ("places" | "drawing" | "geometry")[] = ["places", "drawing", "geometry"];
+const libraries: ("places" | "drawing" | "geometry")[] = [
+  "places",
+  "drawing",
+  "geometry",
+];
 
 const options = {
   disableDefaultUI: true,
@@ -51,14 +60,12 @@ export default function AdminGoogleMaps({
     libraries,
   });
 
-  const [selected, setSelected] = React.useState(null);
   const mapRef = React.useRef<google.maps.Map | null>(null);
-  const [zoom, setZoom] = React.useState(15);
 
   // Sadece mavi sınır çizgisi göster
   const boundaryLineOptions = React.useMemo(() => {
     return {
-      fillOpacity: 0,
+      fillOpacity: 0.5,
       strokeColor: "#2563EB",
       strokeOpacity: 1,
       strokeWeight: 3,
@@ -122,12 +129,21 @@ export default function AdminGoogleMaps({
       boundaryCoords.forEach((coord) => {
         bounds.extend({ lat: coord.lat, lng: coord.lng });
       });
-      mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
+      mapRef.current.fitBounds(bounds, {
+        top: 50,
+        right: 50,
+        bottom: 50,
+        left: 50,
+      });
     }
   }, [boundaryCoords]);
 
   React.useEffect(() => {
-    if (validMarkers.length > 0 && mapRef.current && (!boundaryCoords || boundaryCoords.length === 0)) {
+    if (
+      validMarkers.length > 0 &&
+      mapRef.current &&
+      (!boundaryCoords || boundaryCoords.length === 0)
+    ) {
       mapRef.current.setZoom(16);
     }
   }, [markers]);
@@ -219,10 +235,7 @@ export default function AdminGoogleMaps({
 
           {/* İlçe sınır çizgisi */}
           {boundaryCoords && boundaryCoords.length > 0 && (
-            <Polygon
-              paths={boundaryCoords}
-              options={boundaryLineOptions}
-            />
+            <Polygon paths={boundaryCoords} options={boundaryLineOptions} />
           )}
         </GoogleMap>
       </div>

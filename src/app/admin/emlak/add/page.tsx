@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Category, FeatureValues, Subcategory } from "@/app/types/category";
 import PropertyTypeTab from "@/app/components/tabs/ProppertyTypeTabs";
 import ListingTypeTab from "@/app/components/tabs/ListingTypeTab";
-import CategoryTab from "@/app/components/tabs/CategoryTab";
+import CombinedCategoryTab from "@/app/components/tabs/CategoriesTab";
 import BasicInfoTab from "@/app/components/tabs/BasicInfoTab";
 import MediaTab from "@/app/components/tabs/MediaTab";
 import LocationTab from "@/app/components/tabs/LocationTab";
@@ -256,7 +256,7 @@ export default function AddE() {
       value: "",
       id: "",
       name: "",
-      categoryData: undefined,
+      categoryData: null,
     },
   });
 
@@ -265,7 +265,7 @@ export default function AddE() {
       isSelect: false,
       value: "",
       id: "",
-      subcategoryData: undefined,
+      subcategoryData: null,
     },
   });
 
@@ -274,7 +274,7 @@ export default function AddE() {
       isSelect: false,
       value: "",
       id: "",
-      subcategoryData: undefined,
+      subcategoryData: null,
     },
   });
   const [featuresStep, setFeaturesStep] = useState<StepState>({
@@ -293,14 +293,12 @@ export default function AddE() {
   const tabContainerRef = useRef<HTMLDivElement>(null);
 
   const tabs = [
-    { id: 1, label: "Emlak Türü", icon: Home },
-    { id: 2, label: "İlan Tipi", icon: FileText },
-    { id: 3, label: "Kategori", icon: Building },
-    { id: 4, label: "Temel Bilgiler", icon: Settings },
-    { id: 5, label: "Medya", icon: Camera },
-    { id: 6, label: "Konum", icon: MapPin },
-    { id: 7, label: "Özellikler", icon: Star },
-    { id: 8, label: "Diğer", icon: Users },
+    { id: 1, label: "Kategori", icon: Home },
+    { id: 2, label: "Temel Bilgiler", icon: Settings },
+    { id: 3, label: "Medya", icon: Camera },
+    { id: 4, label: "Konum", icon: MapPin },
+    { id: 5, label: "Özellikler", icon: Star },
+    { id: 6, label: "Diğer", icon: Users },
   ];
 
   const scrollTabs = (direction: "left" | "right") => {
@@ -1081,37 +1079,17 @@ export default function AddE() {
     switch (activeTab) {
       case 1:
         return (
-          <PropertyTypeTab
+          <CombinedCategoryTab
             firstStep={firstStep}
             setFirstStep={setFirstStep}
+            secondStep={secondStep}
+            setSecondStep={setSecondStep}
+            thirdStep={thirdStep}
+            setThirdStep={setThirdStep}
             onNext={() => setActiveTab(2)}
           />
         );
-
       case 2:
-        return (
-          <ListingTypeTab
-            firstStep={firstStep}
-            secondStep={secondStep}
-            setSecondStep={setSecondStep}
-            onBack={() => setActiveTab(1)}
-            onNext={() => setActiveTab(3)}
-          />
-        );
-
-      case 3:
-        return (
-          <CategoryTab
-            firstStep={firstStep}
-            secondStep={secondStep}
-            thirdStep={thirdStep}
-            setThirdStep={setThirdStep}
-            onBack={() => setActiveTab(2)}
-            onNext={() => setActiveTab(4)}
-          />
-        );
-
-      case 4:
         return (
           <BasicInfoTab
             fourthStep={fourthStep}
@@ -1125,7 +1103,7 @@ export default function AddE() {
           />
         );
 
-      case 5:
+      case 3:
         return (
           <MediaTab
             images={images}
@@ -1140,7 +1118,7 @@ export default function AddE() {
           />
         );
 
-      case 6:
+      case 4:
         return (
           <LocationTab
             fourthStep={fourthStep}
@@ -1155,7 +1133,7 @@ export default function AddE() {
           />
         );
 
-      case 7:
+      case 5:
         return (
           <FeaturesTab
             fourthStep={fourthStep}
@@ -1179,7 +1157,7 @@ export default function AddE() {
           />
         );
 
-      case 8:
+      case 6:
         return (
           <OtherInfoTab
             fourthStep={fourthStep}
@@ -1396,7 +1374,11 @@ export default function AddE() {
                   {firstStep.selected.value &&
                   secondStep.selected.value &&
                   thirdStep.selected.value
-                    ? `${firstStep.selected.value} • ${secondStep.selected.value} • ${thirdStep.selected.value}`
+                    ? `${firstStep.selected.value} ${
+                        secondStep.selected.value ? ">" : ""
+                      } ${secondStep.selected.value} ${
+                        thirdStep.selected.value ? ">" : ""
+                      } ${thirdStep.selected.value}`
                     : "Emlak ilanınızı oluşturun ve potansiyel alıcılara ulaştırın"}
                 </p>
               </div>

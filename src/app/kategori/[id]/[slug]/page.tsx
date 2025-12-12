@@ -255,7 +255,6 @@ export default function CategoryDetailPage() {
       <div className="pt-5 bg-white shadow-sm"></div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
         <div className="mb-6">
           <nav className="flex" aria-label="Breadcrumb">
             <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -281,7 +280,6 @@ export default function CategoryDetailPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sol Sidebar - Kategoriler (HER ZAMAN GÖZÜKÜR) */}
           <div className="lg:w-1/4">
             <div
               className="bg-white rounded-2xl shadow-lg p-6"
@@ -360,7 +358,6 @@ export default function CategoryDetailPage() {
             </div>
           </div>
 
-          {/* Sağ İçerik - MOBİLDE GİZLİ, DESKTOP'TA GÖZÜKÜR */}
           {!isMobile && (
             <div className="lg:w-3/4">
               <DynamicSearch

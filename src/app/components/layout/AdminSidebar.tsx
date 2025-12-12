@@ -44,11 +44,11 @@ const AdminSidebar = ({
   const pathname = usePathname();
 
   const adminLinks = [
-    {
-      name: "Pop-up Yönetimi",
-      url: "/admin/popup",
-      icon: <SquareStack size={20} />,
-    },
+    // {
+    //   name: "Pop-up Yönetimi",
+    //   url: "/admin/popup",
+    //   icon: <SquareStack size={20} />,
+    // },
     {
       name: "Emlak Yönetimi",
       url: "/admin/emlak",

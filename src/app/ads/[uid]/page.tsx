@@ -381,27 +381,59 @@ function AdvertDetail({
   const currentPhoto = hasPhotos ? safePhotos[selectedPhoto] : "/logo.png";
   const shouldShowLoading = hasPhotos && imageLoading;
 
-  const handleShare = async () => {
-    const shareData = {
-      title: data.title + " | Yenigün Emlak",
-      text: "Bu ilana bir göz atın: " + window.location.href,
-      url: window.location.href,
-    };
+  // 273-318. satırlar arasındaki handleShare fonksiyonunu bu şekilde düzeltin:
 
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        console.error("Paylaşım hatası:", err);
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        setCopied2(true);
+  const handleShare = async () => {
+    try {
+      if (!data) return; // advertData yerine data kullanın
+
+      const shareData = {
+        title: data.title || "İlan",
+        text: `Bu ilanı inceleyin: ${data.title}`,
+        url: window.location.href,
+
+        price: data.fee || "Fiyat belirtilmemiş",
+        image: data.photos?.[0] || null, // İlk fotoğrafı al
+        location: data.address
+          ? `${data.address.province || ""}${
+              data.address.district ? ` - ${data.address.district}` : ""
+            }`
+          : "Lokasyon belirtilmemiş",
+      };
+
+      console.log("📤 PAYLAŞIM VERİLERİ:");
+      console.log("─────────────────────");
+      console.log("📝 Başlık:", shareData.title);
+      console.log("💰 Fiyat:", shareData.price);
+      console.log("📍 Lokasyon:", shareData.location);
+      console.log(
+        "🖼️ Resim URL:",
+        shareData.image
+          ? shareData.image.substring(0, 100) + "..."
+          : "Resim yok"
+      );
+      console.log("🔗 URL:", shareData.url);
+      console.log("─────────────────────");
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: shareData.title,
+            text: `💰 ${shareData.price} - ${shareData.title}\n📍 ${shareData.location}\n${shareData.text}`,
+            url: shareData.url,
+          });
+        } catch (error) {
+          console.log("Paylaşım iptal edildi:", error);
+        }
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        setCopied2(true); // copied2 state'ini kullanarak kullanıcıya bildirim gösterin
         setTimeout(() => setCopied2(false), 2000);
-      } catch (err) {
-        console.error("Kopyalama hatası:", err);
+
+        console.log("📋 FALLBACK PAYLAŞIM (Kopyalanan URL):", shareData.url);
       }
+    } catch (error) {
+      console.error("Paylaşım hatası:", error);
     }
   };
 
@@ -904,11 +936,6 @@ function AdvertDetail({
                     >
                       <Share2 size={16} /> Paylaş
                     </button>
-                    {copied2 && (
-                      <span className="text-sm text-green-600 ml-2">
-                        Link kopyalandı!
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>

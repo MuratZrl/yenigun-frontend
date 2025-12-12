@@ -92,6 +92,31 @@ const turkeyCities: TurkeyCity[] = JSONDATA.map((city: any) => {
   };
 });
 
+const cleanAddressData = (address: any): any => {
+  if (!address || typeof address !== "object") return address;
+
+  const cleaned = { ...address };
+
+  if (cleaned.full_address && typeof cleaned.full_address === "object") {
+    cleaned.full_address =
+      cleaned.full_address.full_address ||
+      `${cleaned.province || ""}, ${cleaned.district || ""}, ${
+        cleaned.quarter || ""
+      }`;
+  }
+
+  return cleaned;
+};
+
+const cleanAdvertData = (advert: Advert): Advert => {
+  if (!advert.address) return advert;
+
+  return {
+    ...advert,
+    address: cleanAddressData(advert.address),
+  };
+};
+
 const DynamicSearch = ({
   categoryName,
   categoryData,
@@ -101,9 +126,6 @@ const DynamicSearch = ({
 }: DynamicSearchProps) => {
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [features, setFeatures] = useState<any[]>([]);
-  const [geoJSONData, setGeoJSONData] =
-    useState<GeoJSONFeatureCollection | null>(null);
-  const [showMap, setShowMap] = useState(true);
   const [filterValues, setFilterValues] = useState<FilterValues>({
     minPrice: "",
     maxPrice: "",
@@ -121,7 +143,9 @@ const DynamicSearch = ({
       return;
     }
 
-    const validAdverts = adverts.filter(
+    const cleanedAdverts = adverts.map(cleanAdvertData);
+
+    const validAdverts = cleanedAdverts.filter(
       (advert) =>
         advert.address?.mapCoordinates?.lat &&
         advert.address?.mapCoordinates?.lng
@@ -134,7 +158,15 @@ const DynamicSearch = ({
 
     localStorage.setItem("haritaAdverts", JSON.stringify(validAdverts));
 
-    const url = `/Harita`;
+    const firstAdvert = validAdverts[0];
+    const province = firstAdvert.address?.province || "";
+    const district = firstAdvert.address?.district || "";
+
+    const params = new URLSearchParams();
+    if (province) params.append("province", province);
+    if (district) params.append("district", district);
+
+    const url = `/Harita${params.toString() ? `?${params.toString()}` : ""}`;
     window.open(url, "_blank");
   };
 
@@ -347,18 +379,6 @@ const DynamicSearch = ({
 
   const provinces = turkeyCities.map((city: TurkeyCity) => city.province);
 
-  const GeoJSONMap = dynamic(() => import("./PropertyMap"), {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-[600px] flex items-center justify-center bg-gray-100 rounded-lg">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Harita yükleniyor...</p>
-        </div>
-      </div>
-    ),
-  });
-
   return (
     <div className="relative overflow-hidden rounded-lg shadow-sm border border-gray-200 w-full max-w-full">
       <div
@@ -399,11 +419,6 @@ const DynamicSearch = ({
                 {adverts.length}
               </span>
             </button>
-          )}
-          {showMap && geoJSONData && (
-            <div className="mt-4">
-              <GeoJSONMap geoJSONData={geoJSONData} />
-            </div>
           )}
         </div>
 
