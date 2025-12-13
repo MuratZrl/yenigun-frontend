@@ -13,6 +13,7 @@
     "@vis.gl/react-google-maps": "^1.7.1",
     "axios": "^1.13.2",
     "framer-motion": "^12.23.24",
+    "geist": "^1.5.1",
     "google-maps-react-markers": "^2.0.15",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.553.0",
