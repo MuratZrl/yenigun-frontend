@@ -6,7 +6,14 @@ import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import GoToTop from "@/app/components/GoToTop";
-import { RotateCcw, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  RotateCcw,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Check,
+} from "lucide-react";
 import api from "@/app/lib/api";
 import JSONDATA from "@/app/data.json";
 import {
@@ -57,6 +64,8 @@ export default function AdsPage({
     action: "Tümü",
     minPrice: null,
     maxPrice: null,
+    sortBy: "date",
+    sortOrder: "desc",
   });
 
   const [data, setData] = useState<Advert[]>([]);
@@ -129,6 +138,9 @@ export default function AdsPage({
           ? decodeURLParam(typeParam)
           : "Hepsi";
 
+        const sortByParam = resolvedSearchParams.sortBy as string;
+        const sortOrderParam = resolvedSearchParams.sortOrder as string;
+
         const newFilters: FilterState = {
           keyword:
             typeof resolvedSearchParams.q === "string"
@@ -150,6 +162,14 @@ export default function AdsPage({
           maxPrice: resolvedSearchParams.maxPrice
             ? Number(resolvedSearchParams.maxPrice)
             : null,
+          sortBy:
+            sortByParam === "date" || sortByParam === "price"
+              ? sortByParam
+              : "date",
+          sortOrder:
+            sortOrderParam === "asc" || sortOrderParam === "desc"
+              ? sortOrderParam
+              : "desc",
         };
 
         console.log("📝 URL'den alınan filtreler:", newFilters);
@@ -301,6 +321,10 @@ export default function AdsPage({
         params.set("type", filters.type);
       if (filters.minPrice) params.set("minPrice", filters.minPrice.toString());
       if (filters.maxPrice) params.set("maxPrice", filters.maxPrice.toString());
+
+      if (filters.sortBy) params.set("sortBy", filters.sortBy);
+      if (filters.sortOrder) params.set("sortOrder", filters.sortOrder);
+
       if (page > 1) params.set("page", page.toString());
 
       Object.entries(featureFilters).forEach(([featureId, value]) => {
@@ -369,6 +393,7 @@ export default function AdsPage({
       throw error;
     }
   };
+
   const buildApiFilters = (
     filterValues: FilterState,
     currentFeatureFilters: Record<string, any> = {}
@@ -410,6 +435,9 @@ export default function AdsPage({
       apiFilters.search = filterValues.keyword.trim();
     }
 
+    apiFilters.sortBy = filterValues.sortBy;
+    apiFilters.sortOrder = filterValues.sortOrder;
+
     const currentFeatures = getCurrentFeatures();
     if (currentFeatures.length > 0) {
       const featureFiltersArray = Object.entries(currentFeatureFilters)
@@ -448,6 +476,11 @@ export default function AdsPage({
 
       const apiFilters = buildApiFilters(filterValues, currentFeatureFilters);
 
+      console.log("📤 API İSTEĞİ SIRALAMA:", {
+        sortBy: apiFilters.sortBy,
+        sortOrder: apiFilters.sortOrder,
+      });
+
       console.log("📤 API İSTEĞİ:", {
         ...apiFilters,
         page,
@@ -478,6 +511,25 @@ export default function AdsPage({
       setLoading(false);
     }
   };
+
+  const handleSortChangeDesktop = useCallback(
+    async (sortBy: "date" | "price", sortOrder: "asc" | "desc") => {
+      const newFilters = {
+        ...filters,
+        sortBy,
+        sortOrder,
+      };
+
+      setFilters(newFilters);
+
+      setCurrentPage(1);
+
+      await fetchSearchResults(newFilters, 1, featureFilters);
+
+      updateURL(newFilters, 1, featureFilters);
+    },
+    [filters, featureFilters, fetchSearchResults, updateURL]
+  );
 
   const getCurrentFeatures = (): Feature[] => {
     console.log("🔍 getCurrentFeatures çağrıldı:");
@@ -532,17 +584,10 @@ export default function AdsPage({
   };
 
   const handleFilter = useCallback(async () => {
-    console.log("🎯 handleFilter çağrıldı");
-    console.log("   - filters.type:", filters.type);
-    console.log("   - categories uzunluğu:", categories.length);
-
-    const currentFeatures = getCurrentFeatures();
-    console.log("   - Bulunan özellikler:", currentFeatures);
-
     setCurrentPage(1);
     await fetchSearchResults(filters, 1, featureFilters);
     updateURL(filters, 1, featureFilters);
-  }, [filters, featureFilters, updateURL, categories]);
+  }, [filters, featureFilters, updateURL]);
 
   const clearFilters = async () => {
     const clearedFilters: FilterState = {
@@ -704,6 +749,8 @@ export default function AdsPage({
             onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
             onOpenSortMenu={handleOpenSortMenu}
             citiesData={turkeyCities}
+            handleSortChangeDesktop={handleSortChangeDesktop}
+            setCurrentPage={setCurrentPage}
           />
 
           <div className="flex-1 container mx-auto px-4 py-8">
@@ -838,7 +885,119 @@ export default function AdsPage({
           </div>
         </div>
       </div>
+      {isSortMenuOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden"
+            onClick={() => setIsSortMenuOpen(false)}
+          />
 
+          {/* Modal */}
+          <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl z-50 p-6 max-h-[80vh] overflow-y-auto md:hidden animate-slide-up">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Sıralama</h3>
+              <button
+                onClick={() => setIsSortMenuOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {[
+                {
+                  id: "date_desc",
+                  label: "Yeni ilanlar önce",
+                  sortBy: "date",
+                  sortOrder: "desc",
+                },
+                {
+                  id: "date_asc",
+                  label: "Eski ilanlar önce",
+                  sortBy: "date",
+                  sortOrder: "asc",
+                },
+                {
+                  id: "price_asc",
+                  label: "Ucuzdan pahalıya",
+                  sortBy: "price",
+                  sortOrder: "asc",
+                },
+                {
+                  id: "price_desc",
+                  label: "Pahalıdan ucuza",
+                  sortBy: "price",
+                  sortOrder: "desc",
+                },
+              ].map((option) => {
+                const isSelected =
+                  filters.sortBy === option.sortBy &&
+                  filters.sortOrder === option.sortOrder;
+
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => {
+                      const newFilters = {
+                        ...filters,
+                        sortBy: option.sortBy as "date" | "price",
+                        sortOrder: option.sortOrder as "asc" | "desc",
+                      };
+
+                      setFilters(newFilters);
+
+                      fetchSearchResults(
+                        newFilters,
+                        currentPage,
+                        featureFilters
+                      );
+
+                      updateURL(newFilters, currentPage, featureFilters);
+
+                      setIsSortMenuOpen(false);
+                    }}
+                    className={`w-full text-left p-4 rounded-lg transition-all ${
+                      isSelected
+                        ? "bg-blue-50 border border-blue-200 text-blue-700"
+                        : "border border-gray-200 hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{option.label}</span>
+                      {isSelected && (
+                        <Check size={20} className="text-blue-600" />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setIsSortMenuOpen(false)}
+              className="w-full mt-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              İptal
+            </button>
+          </div>
+
+          <style jsx>{`
+            @keyframes slide-up {
+              from {
+                transform: translateY(100%);
+              }
+              to {
+                transform: translateY(0);
+              }
+            }
+
+            .animate-slide-up {
+              animation: slide-up 0.3s ease-out;
+            }
+          `}</style>
+        </>
+      )}
       <Footer />
       <GoToTop />
     </main>

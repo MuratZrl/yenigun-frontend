@@ -384,54 +384,20 @@ function AdvertDetail({
   const shouldShowLoading = hasPhotos && imageLoading;
 
   const handleShare = async () => {
-    try {
-      if (!data) return;
+    if (!data) return;
 
-      const shareData = {
-        title: data.title || "İlan",
-        text: `Bu ilanı inceleyin: ${data.title}`,
+    if (navigator.share) {
+      await navigator.share({
+        title: data.title,
+        text: ` ${data.fee || "Fiyat yok"}\n📍 ${
+          data.address?.province || ""
+        } ${data.address?.district || ""}`,
         url: window.location.href,
-        price: data.fee || "Fiyat belirtilmemiş",
-        image: data.photos?.[0] || null,
-        location: data.address
-          ? `${data.address.province || ""}${
-              data.address.district ? ` - ${data.address.district}` : ""
-            }`
-          : "Lokasyon belirtilmemiş",
-      };
-
-      console.log("📤 PAYLAŞIM VERİLERİ:");
-      console.log("─────────────────────");
-      console.log("📝 Başlık:", shareData.title);
-      console.log("💰 Fiyat:", shareData.price);
-      console.log("📍 Lokasyon:", shareData.location);
-      console.log(
-        "🖼️ Resim URL:",
-        shareData.image
-          ? shareData.image.substring(0, 100) + "..."
-          : "Resim yok"
-      );
-      console.log("🔗 URL:", shareData.url);
-      console.log("─────────────────────");
-
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: shareData.title,
-            text: `💰 ${shareData.price} - ${shareData.title}\n📍 ${shareData.location}\n${shareData.text}`,
-            url: shareData.url,
-          });
-        } catch (error) {
-          console.log("Paylaşım iptal edildi:", error);
-        }
-      } else {
-        await navigator.clipboard.writeText(shareData.url);
-        setCopied2(true);
-        setTimeout(() => setCopied2(false), 2000);
-        console.log("📋 FALLBACK PAYLAŞIM (Kopyalanan URL):", shareData.url);
-      }
-    } catch (error) {
-      console.error("Paylaşım hatası:", error);
+      });
+    } else {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied2(true);
+      setTimeout(() => setCopied2(false), 2000);
     }
   };
 
@@ -855,6 +821,17 @@ function AdvertDetail({
                     decoding="async"
                   />
 
+                  <button
+                    className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all z-10"
+                    onClick={handleShare}
+                  >
+                    {copied2 ? (
+                      <Check className="text-green-600" size={16} />
+                    ) : (
+                      <Share2 className="text-gray-700" size={16} />
+                    )}
+                  </button>
+
                   {hasPhotos && safePhotos.length > 1 && (
                     <>
                       <button
@@ -928,7 +905,7 @@ function AdvertDetail({
                   <div className="relative rounded-2xl bg-white p-5 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] ring-1 ring-gray-100">
                     <div className="mb-1 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-cyan-500">
                           <Tag className="h-4 w-4 text-white" />
                         </div>
                         <div>

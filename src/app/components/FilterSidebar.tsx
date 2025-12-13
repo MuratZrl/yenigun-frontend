@@ -13,6 +13,8 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   Square,
+  ArrowUpDown,
+  Check,
 } from "lucide-react";
 import {
   FilterState,
@@ -229,6 +231,11 @@ interface FilterSidebarProps {
   showMobileTopBar?: boolean;
   onOpenMobileSidebar?: () => void;
   onOpenSortMenu?: () => void;
+  setCurrentPage?: React.Dispatch<React.SetStateAction<number>>;
+  handleSortChangeDesktop?: (
+    sortBy: "date" | "price",
+    sortOrder: "asc" | "desc"
+  ) => Promise<void>;
 }
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({
@@ -259,10 +266,13 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   showMobileTopBar = true,
   onOpenMobileSidebar,
   onOpenSortMenu,
+  handleSortChangeDesktop,
+  setCurrentPage,
 }) => {
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
   >({
+    sort: true,
     location: true,
     category: true,
     price: true,
@@ -274,6 +284,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   );
 
   const [currentFeatures, setCurrentFeatures] = useState<Feature[]>([]);
+  const [showSortModal, setShowSortModal] = useState(false);
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
@@ -310,6 +321,11 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       apiFilters.maxPrice = filters.maxPrice;
     }
 
+    if (filters.sortBy && filters.sortOrder) {
+      apiFilters.sortBy = filters.sortBy;
+      apiFilters.sortOrder = filters.sortOrder;
+    }
+
     if (currentFeatures.length > 0) {
       const featureFiltersArray = Object.entries(featureFilters)
         .filter(([_, value]) => {
@@ -334,6 +350,63 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     }
 
     return apiFilters;
+  };
+
+  const sortOptions = [
+    {
+      id: "date_desc",
+      label: "Yeni ilanlar önce",
+      sortBy: "date" as const,
+      sortOrder: "desc" as const,
+    },
+    {
+      id: "date_asc",
+      label: "Eski ilanlar önce",
+      sortBy: "date" as const,
+      sortOrder: "asc" as const,
+    },
+    {
+      id: "price_asc",
+      label: "Ucuzdan pahalıya",
+      sortBy: "price" as const,
+      sortOrder: "asc" as const,
+    },
+    {
+      id: "price_desc",
+      label: "Pahalıdan ucuza",
+      sortBy: "price" as const,
+      sortOrder: "desc" as const,
+    },
+  ];
+
+  const getActiveSortOption = () => {
+    return (
+      sortOptions.find(
+        (option) =>
+          option.sortBy === filters.sortBy &&
+          option.sortOrder === filters.sortOrder
+      ) || sortOptions[0]
+    );
+  };
+
+  const handleSortChange = (
+    sortBy: "date" | "price",
+    sortOrder: "asc" | "desc"
+  ) => {
+    setFilters({
+      ...filters,
+      sortBy,
+      sortOrder,
+    });
+    setShowSortModal(false);
+  };
+
+  const handleMobileSortClick = () => {
+    if (onOpenSortMenu) {
+      onOpenSortMenu();
+    } else {
+      setShowSortModal(true);
+    }
   };
 
   const handleCategorySelect = (category: Category | null) => {
@@ -610,6 +683,11 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     return `${filters.location}, ${filters.district}`;
   };
 
+  const getSortDisplayValue = () => {
+    const activeSort = getActiveSortOption();
+    return activeSort.label;
+  };
+
   const openMobileSection = (section: string) => {
     setMobileActiveSection(section);
   };
@@ -683,6 +761,12 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       if (urlParams.maxPrice) {
         newFilters.maxPrice = parseInt(urlParams.maxPrice);
       }
+      if (urlParams.sortBy) {
+        newFilters.sortBy = urlParams.sortBy as "date" | "price";
+      }
+      if (urlParams.sortOrder) {
+        newFilters.sortOrder = urlParams.sortOrder as "asc" | "desc";
+      }
 
       setFilters(newFilters);
     }
@@ -705,9 +789,8 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                 </span>
               )}
             </button>
-
             <button
-              onClick={onOpenSortMenu}
+              onClick={onOpenSortMenu || handleMobileSortClick}
               className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex-1 ml-2 justify-center"
             >
               <SlidersHorizontal size={18} />
@@ -1197,6 +1280,76 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         <div className="hidden md:block w-80 bg-white border-r border-gray-200 h-[calc(100vh-5rem)] sticky top-20">
           <div className="h-[calc(100vh-10rem)] overflow-y-auto pb-20 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]">
             <div className="p-4 space-y-4">
+              {/* SIRALAMA BÖLÜMÜ - DESKTOP */}
+              <div className="space-y-3 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                <button
+                  onClick={() => toggleSection("sort")}
+                  className="flex items-center justify-between w-full text-left pb-2"
+                >
+                  <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                    <ArrowUpDown size={18} />
+                    Sıralama
+                  </h4>
+                  <ChevronDown
+                    size={18}
+                    className={`transform transition-transform ${
+                      expandedSections.sort ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {expandedSections.sort && (
+                  <div className="space-y-3 border-t border-gray-100 pt-3">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Sıralama Ölçütü
+                      </label>
+                      <div className="space-y-2">
+                        {sortOptions.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={async () => {
+                              if (handleSortChangeDesktop) {
+                                await handleSortChangeDesktop(
+                                  option.sortBy,
+                                  option.sortOrder
+                                );
+                              } else {
+                                const newFilters = {
+                                  ...filters,
+                                  sortBy: option.sortBy,
+                                  sortOrder: option.sortOrder,
+                                };
+                                setFilters(newFilters);
+
+                                if (setCurrentPage) {
+                                  setCurrentPage(1);
+                                }
+
+                                await handleFilter();
+                              }
+                            }}
+                            className={`w-full text-left p-2.5 rounded-lg border text-sm transition-all duration-200 ${
+                              filters.sortBy === option.sortBy &&
+                              filters.sortOrder === option.sortOrder
+                                ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm"
+                                : "bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span>{option.label}</span>
+                              {filters.sortBy === option.sortBy &&
+                                filters.sortOrder === option.sortOrder && (
+                                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="space-y-3 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
                 <button
                   onClick={() => toggleSection("location")}

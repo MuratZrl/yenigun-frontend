@@ -100,21 +100,21 @@ const Highlights = ({ data }: HighlightProps) => {
         className="flex flex-col gap-4 md:gap-6 text-center relative z-10 px-4"
       >
         <div className="flex items-center justify-center gap-3 mb-2">
-          <div className="w-8 md:w-12 h-0.5 bg-gradient-to-r from-transparent to-blue-500"></div>
+          <div className="w-8 md:w-12 h-0.5 bg-linear-to-r from-transparent to-blue-500"></div>
           <span className="text-blue-500 font-semibold tracking-wider uppercase text-xs md:text-sm">
             Öne Çıkan İlanlar
           </span>
-          <div className="w-8 md:w-12 h-0.5 bg-gradient-to-l from-transparent to-blue-500"></div>
+          <div className="w-8 md:w-12 h-0.5 bg-linear-to-l from-transparent to-blue-500"></div>
         </div>
 
-        <motion.h2
+        {/* <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900"
         >
           Fırsatları Kaçırmayın
-        </motion.h2>
+        </motion.h2> */}
 
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -244,12 +244,12 @@ const Highlights = ({ data }: HighlightProps) => {
                     className="w-full h-full object-cover"
                   />
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                   {/* Öne Çıkan Badge */}
                   {item.isHighlight && (
                     <div className="absolute top-3 left-3">
-                      <div className="flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold text-xs shadow-lg">
+                      <div className="flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-linear-to-r from-orange-500 to-red-500 text-white font-semibold text-xs shadow-lg">
                         <Flame className="text-white" size={12} />
                         <span>Öne Çıkan</span>
                       </div>
@@ -288,16 +288,13 @@ const Highlights = ({ data }: HighlightProps) => {
                 {/* İçerik Alanı */}
                 <div className="p-4 md:p-5 flex-1 flex flex-col">
                   {/* Başlık */}
-                  <h3 className="font-bold text-base md:text-lg text-gray-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors duration-200 min-h-[3.5rem]">
+                  <h3 className="font-bold text-base md:text-lg text-gray-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors duration-200 min-h-14">
                     {item.title}
                   </h3>
 
                   {/* Konum */}
                   <div className="flex items-center gap-2 text-gray-600 mb-3 md:mb-4">
-                    <MapPin
-                      className="text-orange-500 flex-shrink-0"
-                      size={16}
-                    />
+                    <MapPin className="text-orange-500 shrink-0" size={16} />
                     <span className="text-xs md:text-sm font-medium truncate">
                       {item.address.province} / {item.address.district}
                     </span>
