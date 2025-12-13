@@ -135,7 +135,6 @@ const Highlights = ({ data }: HighlightProps) => {
         </div>
 
         <div className="lg:w-3/4">
-          {/* MOBİL GÖRÜNÜM - Liste formatı (Ads sayfası gibi) */}
           <div className="space-y-0 mb-8 block md:hidden">
             {visibleData.map((item: any, index: number) => (
               <Link
@@ -304,7 +303,6 @@ const Highlights = ({ data }: HighlightProps) => {
                     </span>
                   </div>
 
-                  {/* Özellikler (opsiyonel - eğer datada varsa) */}
                   {(item.features?.bedrooms ||
                     item.features?.bathrooms ||
                     item.features?.size) && (

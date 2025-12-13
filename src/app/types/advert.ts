@@ -115,15 +115,22 @@ export interface FilterState {
   keyword: string;
   location: string;
   district: string;
+  quarter?: string;
+    sortBy?: string;   
+  sortOrder?: string;
   action: string;
   type: string;
   minPrice: number | null;
   maxPrice: number | null;
+  categoryId?: string;  
+  subcategoryId?: string;  
+  subSubcategoryId?: string;  
 }
 
 export interface Category {
   _id: string;
   name: string;
+  features?: Feature[];
   subcategories: Subcategory[];
   createdAt: string;
   updatedAt: string;

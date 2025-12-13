@@ -297,8 +297,8 @@ const Emlak = () => {
   };
 
   const [filters, setFilters] = useState({
-    uid: "",
     title: "",
+    uid: "",
     province: "",
     district: "",
     quarter: "",
@@ -310,12 +310,22 @@ const Emlak = () => {
     customer: "",
   });
 
-  function normalizeString(str: string) {
-    return str
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-  }
+  const clearFilters = () => {
+    setFilters({
+      title: "",
+      uid: "",
+      province: "",
+      district: "",
+      quarter: "",
+      type: "",
+      otherType: "",
+      minFee: "",
+      maxFee: "",
+      advisor: "",
+      customer: "",
+    });
+    handleFilter();
+  };
 
   const [openFilter, setOpenFilter] = useState(false);
 
@@ -323,56 +333,114 @@ const Emlak = () => {
     try {
       setLoading(true);
 
-      if (
-        filters.title &&
-        !filters.uid &&
-        !filters.province &&
-        !filters.district &&
-        !filters.quarter &&
-        !filters.type &&
-        !filters.otherType &&
-        !filters.minFee &&
-        !filters.maxFee &&
-        !filters.advisor &&
-        !filters.customer
-      ) {
-        console.log("Searching by title:", filters.title);
+      const params: any = {
+        page: 1,
+        limit: 100,
+      };
 
-        const response = await api.get("/admin/adverts/search", {
-          params: {
-            page: 1,
-            limit: 100,
-            search: filters.title,
-          },
+      if (filters.title) {
+        params.search = filters.title.trim();
+      }
+
+      if (filters.uid) {
+        params.uid = filters.uid.trim();
+      }
+
+      if (filters.province) {
+        params.province = filters.province;
+        if (filters.district) {
+          params.district = filters.district;
+        }
+        if (filters.quarter) {
+          params.quarter = filters.quarter;
+        }
+      }
+
+      if (filters.type) {
+        params.type = filters.type;
+      }
+      if (filters.otherType) {
+        params.otherType = filters.otherType;
+      }
+
+      if (filters.minFee) {
+        params.minFee = Number(filters.minFee);
+      }
+      if (filters.maxFee) {
+        params.maxFee = Number(filters.maxFee);
+      }
+
+      if (filters.advisor) {
+        params.advisor = filters.advisor;
+      }
+      if (filters.customer) {
+        params.customer = filters.customer;
+      }
+
+      console.log("🔍 API'ye gönderilen parametreler:", params);
+
+      const hasAnyFilter = Object.keys(params).length > 2;
+
+      let response;
+      if (hasAnyFilter) {
+        response = await api.get("/admin/adverts/search", { params });
+      } else {
+        response = await api.get("/admin/adverts", {
+          params: { page: 1, limit: 100, active: true },
+        });
+      }
+
+      console.log("📥 API Yanıtı:", response.data);
+
+      let searchResults = [];
+
+      if (Array.isArray(response.data)) {
+        searchResults = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        searchResults = response.data.data;
+      } else if (response.data?.items && Array.isArray(response.data.items)) {
+        searchResults = response.data.items;
+      } else if (
+        response.data?.adverts &&
+        Array.isArray(response.data.adverts)
+      ) {
+        searchResults = response.data.adverts;
+      }
+
+      const filteredAndSorted = searchResults
+        .filter((ad: Advert) => ad.active !== false)
+        .sort((a: Advert, b: Advert) => {
+          const aC = a.created?.createdTimestamp || 0;
+          const bC = b.created?.createdTimestamp || 0;
+          return bC - aC;
         });
 
-        console.log("API Search Response:", response.data);
+      setData(filteredAndSorted);
 
-        let searchResults = [];
-
-        if (Array.isArray(response.data)) {
-          searchResults = response.data;
-        } else if (response.data?.data && Array.isArray(response.data.data)) {
-          searchResults = response.data.data;
-        } else if (response.data?.items && Array.isArray(response.data.items)) {
-          searchResults = response.data.items;
-        }
-        const filteredAndSorted = searchResults
-          .filter((ad: Advert) => ad.active !== false)
-          .sort((a: Advert, b: Advert) => {
-            const aC = a.created?.createdTimestamp || 0;
-            const bC = b.created?.createdTimestamp || 0;
-            return bC - aC;
-          });
-
-        setData(filteredAndSorted);
-        toast.success(`${filteredAndSorted.length} ilan bulundu.`);
+      const resultCount = filteredAndSorted.length;
+      if (resultCount > 0) {
+        toast.success(`${resultCount} ilan bulundu.`);
+      } else {
+        toast.info("Aramanıza uygun ilan bulunamadı.");
       }
 
       setPage(0);
     } catch (error: any) {
       console.error("Filtreleme hatası:", error);
-      toast.error("Filtreleme sırasında bir hata oluştu");
+
+      if (error.response) {
+        toast.error(
+          `API hatası: ${error.response.status} - ${
+            error.response.data?.message || "Bilinmeyen hata"
+          }`
+        );
+      } else if (error.request) {
+        toast.error(
+          "Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edin."
+        );
+      } else {
+        toast.error("Filtreleme sırasında bir hata oluştu");
+      }
 
       setData(
         defaultData.sort((a: Advert, b: Advert) => {
@@ -381,6 +449,31 @@ const Emlak = () => {
           return bC - aC;
         })
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSingleAdFetch = async () => {
+    if (!filters.uid) return;
+
+    try {
+      setLoading(true);
+      const response = await api.get(`/advert/adverts/${filters.uid}`);
+
+      if (response.data.success && response.data.data) {
+        const singleAd = response.data.data;
+        setData([singleAd]);
+        setPage(0);
+        toast.success("İlan bulundu!");
+      } else {
+        toast.error("İlan bulunamadı");
+        setData([]);
+      }
+    } catch (error) {
+      console.error("Tek ilan getirme hatası:", error);
+      toast.error("İlan yüklenirken hata oluştu");
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -484,7 +577,7 @@ const Emlak = () => {
               <button
                 onClick={handleFilter}
                 disabled={loading}
-                className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-600 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors font-medium disabled:opacity-70"
+                className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-600 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors font-medium disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -493,7 +586,7 @@ const Emlak = () => {
                   </>
                 ) : (
                   <>
-                    <Filter size={16} />
+                    <Search size={16} />
                     Ara
                   </>
                 )}
@@ -658,7 +751,6 @@ const Emlak = () => {
                       </h3>
                     </Link>
 
-                    {/* Location - DÜZELTİLDİ */}
                     <div className="flex items-center gap-1 text-gray-600 text-sm mb-3">
                       <MapPin size={14} className="text-custom-orange" />
                       <span className="line-clamp-1">
@@ -666,12 +758,10 @@ const Emlak = () => {
                       </span>
                     </div>
 
-                    {/* Address - DÜZELTİLDİ */}
                     <p className="text-gray-500 text-sm mb-3 line-clamp-2">
                       {renderAddressSafely()}
                     </p>
 
-                    {/* Customer Info */}
                     <div className="space-y-2 mb-4 text-sm">
                       <div className="flex items-center gap-2 text-gray-600">
                         <User size={14} className="text-custom-orange" />
@@ -698,7 +788,6 @@ const Emlak = () => {
                         </div>
                       </div>
 
-                      {/* Advisor Info */}
                       <div className="flex items-center gap-2 text-gray-600">
                         <Users size={14} className="text-custom-orange" />
                         <span className={ad.advisor.name ? "" : "text-red-500"}>
@@ -708,7 +797,6 @@ const Emlak = () => {
                       </div>
                     </div>
 
-                    {/* Admin Note */}
                     {ad.adminNote && (
                       <button
                         onClick={() => setAdminNote({ isOpen: true, ad: ad })}

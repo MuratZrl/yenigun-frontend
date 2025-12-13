@@ -8,24 +8,14 @@ import LocationTab from "@/app/components/tabs/LocationTab";
 import DetailsTab from "@/app/components/tabs/DetailsTab";
 import {
   MapPin,
-  Home,
   Camera,
   Settings,
   CheckCircle,
   ArrowLeft,
   ArrowRight,
-  X,
   Star,
-  Ruler,
-  Building,
-  FileText,
   Users,
-  Trash2,
   ChevronDown,
-  Image as ImageIcon,
-  Move,
-  ChevronLeft,
-  ChevronRight,
   Edit,
 } from "lucide-react";
 import { useCookies } from "react-cookie";

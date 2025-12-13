@@ -21,6 +21,7 @@ import {
   Share2,
   Phone,
   MessageCircle,
+  Tag,
 } from "lucide-react";
 import MapComponent from "@/app/components/MapComponnet";
 
@@ -364,6 +365,7 @@ function AdvertDetail({
   const [imageLoading, setImageLoading] = useState(true);
   const [videoLoading, setVideoLoading] = useState(true);
   const [copied2, setCopied2] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("details");
 
   useEffect(() => {
     if (data?.title) {
@@ -381,19 +383,16 @@ function AdvertDetail({
   const currentPhoto = hasPhotos ? safePhotos[selectedPhoto] : "/logo.png";
   const shouldShowLoading = hasPhotos && imageLoading;
 
-  // 273-318. satırlar arasındaki handleShare fonksiyonunu bu şekilde düzeltin:
-
   const handleShare = async () => {
     try {
-      if (!data) return; // advertData yerine data kullanın
+      if (!data) return;
 
       const shareData = {
         title: data.title || "İlan",
         text: `Bu ilanı inceleyin: ${data.title}`,
         url: window.location.href,
-
         price: data.fee || "Fiyat belirtilmemiş",
-        image: data.photos?.[0] || null, // İlk fotoğrafı al
+        image: data.photos?.[0] || null,
         location: data.address
           ? `${data.address.province || ""}${
               data.address.district ? ` - ${data.address.district}` : ""
@@ -427,9 +426,8 @@ function AdvertDetail({
         }
       } else {
         await navigator.clipboard.writeText(shareData.url);
-        setCopied2(true); // copied2 state'ini kullanarak kullanıcıya bildirim gösterin
+        setCopied2(true);
         setTimeout(() => setCopied2(false), 2000);
-
         console.log("📋 FALLBACK PAYLAŞIM (Kopyalanan URL):", shareData.url);
       }
     } catch (error) {
@@ -707,12 +705,61 @@ function AdvertDetail({
     );
   };
 
+  const renderContentByTab = () => {
+    switch (activeTab) {
+      case "description":
+        return (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Açıklama</h2>
+            <div
+              className="prose prose-gray max-w-none text-gray-700 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: data.thoughts }}
+            />
+          </div>
+        );
+      case "location":
+        return (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Konum</h2>
+            <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-start gap-3">
+                <MapPin className="text-blue-600 mt-0.5 shrink-0" size={16} />
+                <div>
+                  <p className="text-sm font-medium text-gray-900 mb-1">
+                    Tam Adres
+                  </p>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {getAddressText()}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <MapComponent
+              lat={data.address?.mapCoordinates?.lat}
+              lng={data.address?.mapCoordinates?.lng}
+              address={getAddressText()}
+            />
+          </div>
+        );
+      case "details":
+      default:
+        return (
+          <>
+            {data.isFeatures
+              ? renderFeatureValues()
+              : renderTraditionalFeatures()}
+            {!data.isFeatures && renderTraditionalDetails()}
+          </>
+        );
+    }
+  };
+
   return (
     <main className="bg-gray-50 min-h-screen">
       <Navbar />
 
       <div className="container mx-auto max-w-7xl px-4 py-8">
-        <div className="mb-8">
+        <div className="hidden lg:block mb-8">
           <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4 flex-wrap">
             <span>Emlak</span>
             <span>›</span>
@@ -757,86 +804,179 @@ function AdvertDetail({
           </div>
         </div>
 
-        <div className="block lg:hidden mb-6">
-          <div className="flex flex-col gap-6">
-            <div className="bg-linear-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
-              <p className="text-sm opacity-90">Fiyat</p>
-              <p className="text-3xl font-bold mt-1">{data.fee}</p>
-              <p className="text-sm opacity-90 mt-2">{data.steps.second}</p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-20 h-16 bg-white flex items-center justify-center rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <img
-                    src="/logo.png"
-                    alt="Yenigün Emlak"
-                    className="w-full h-full select-none object-contain p-2"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder-logo.png";
-                    }}
-                  />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900">
-                    Yenigün Emlak
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {data.advisor.name + " " + data.advisor.surname}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
-                  <span className="font-mono text-lg text-gray-900 tracking-wide">
-                    {formatPhoneNumber(placeholderPhoneNumber)}
-                  </span>
-                  <button
-                    onClick={() => copyNumber(placeholderPhoneNumber)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-                  >
-                    {copied ? (
-                      <Check className="text-green-500" size={16} />
-                    ) : (
-                      <Copy className="text-gray-600" size={16} />
-                    )}
-                    {copied ? "Kopyalandı" : "Kopyala"}
-                  </button>
-                </div>
-
-                <a
-                  href={`tel:${placeholderPhoneNumber}`}
-                  className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
-                >
-                  <Phone size={16} />
-                  Telefonla Ara
-                </a>
-
-                <a
-                  href={`https://wa.me/90${placeholderPhoneNumber}?text=Merhaba,%20${data.advisor.name}%20${data.advisor.surname},%20${data.title}%20ilanınızla%20ilgileniyorum.`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-3 bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
-                >
-                  <MessageCircle size={16} />
-                  WhatsApp&apos;tan Yaz
-                </a>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <p className="text-xs text-gray-500 text-center">
-                  Bizi tercih ettiğiniz için teşekkürler!
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Ana İçerik */}
           <div className="lg:col-span-2 flex flex-col gap-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Mobil Görünüm */}
+            <div className="block lg:hidden">
+              {/* Fotoğraf Galerisi */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+                <div className="relative">
+                  {shouldShowLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    </div>
+                  )}
+                  <img
+                    src={currentPhoto}
+                    onClick={() =>
+                      hasPhotos && handleClickedPhoto(currentPhoto)
+                    }
+                    onLoad={() => setImageLoading(false)}
+                    onError={handleImageError}
+                    className={`w-full h-64 select-none transition-all duration-300 ${
+                      shouldShowLoading ? "opacity-0" : "opacity-100"
+                    } ${
+                      hasPhotos
+                        ? "cursor-zoom-in hover:scale-105"
+                        : "cursor-default"
+                    } ${
+                      isLowQualityImage(currentPhoto) || !hasPhotos
+                        ? "object-contain"
+                        : "object-contain"
+                    }`}
+                    alt={
+                      hasPhotos
+                        ? `İlan Fotoğrafı ${selectedPhoto + 1}`
+                        : "Yenigün Emlak"
+                    }
+                    loading={hasPhotos ? "lazy" : "eager"}
+                    decoding="async"
+                  />
+
+                  {hasPhotos && safePhotos.length > 1 && (
+                    <>
+                      <button
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all"
+                        onClick={() =>
+                          setSelectedPhoto((p) =>
+                            p === 0 ? safePhotos.length - 1 : p - 1
+                          )
+                        }
+                      >
+                        <ChevronLeft className="text-gray-700" size={12} />
+                      </button>
+                      <button
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all"
+                        onClick={() =>
+                          setSelectedPhoto((p) =>
+                            p === safePhotos.length - 1 ? 0 : p + 1
+                          )
+                        }
+                      >
+                        <ChevronRight className="text-gray-700" size={12} />
+                      </button>
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm">
+                        {selectedPhoto + 1} / {safePhotos.length}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {hasPhotos && safePhotos.length > 1 && (
+                  <div className="p-3 border-t border-gray-100">
+                    <PhotoThumbnailsHorizontal
+                      photos={safePhotos}
+                      selectedPhoto={selectedPhoto}
+                      setSelectedPhoto={setSelectedPhoto}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* İlan Başlığı ve Bilgiler */}
+              <div className="mb-4">
+                <h1 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
+                  {data.title}
+                </h1>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-4">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="text-blue-600" size={14} />
+                    <span>
+                      {data.address.province}, {data.address.district}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="text-blue-600" size={14} />
+                    <span>
+                      {new Date(
+                        data.created.createdTimestamp
+                      ).toLocaleDateString("tr-TR", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <div className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                    İlan No: {data.uid}
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <div className="relative rounded-2xl bg-white p-5 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] ring-1 ring-gray-100">
+                    <div className="mb-1 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
+                          <Tag className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-500">
+                            Fiyat
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {data.steps.second}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-gray-900">
+                          {data.fee}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <div className="flex border-b border-gray-200">
+                    <button
+                      className={`flex-1 py-3 text-center font-medium text-sm border-b-2 transition-colors ${
+                        activeTab === "details"
+                          ? "border-blue-600 text-blue-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700"
+                      }`}
+                      onClick={() => setActiveTab("details")}
+                    >
+                      İlan Detayı
+                    </button>
+                    <button
+                      className={`flex-1 py-3 text-center font-medium text-sm border-b-2 transition-colors ${
+                        activeTab === "description"
+                          ? "border-blue-600 text-blue-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700"
+                      }`}
+                      onClick={() => setActiveTab("description")}
+                    >
+                      Açıklama
+                    </button>
+                    <button
+                      className={`flex-1 py-3 text-center font-medium text-sm border-b-2 transition-colors ${
+                        activeTab === "location"
+                          ? "border-blue-600 text-blue-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700"
+                      }`}
+                      onClick={() => setActiveTab("location")}
+                    >
+                      Konum
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Fotoğraf Galerisi */}
+            <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="relative">
                 {shouldShowLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
@@ -942,63 +1082,58 @@ function AdvertDetail({
 
               {hasPhotos && safePhotos.length > 1 && (
                 <div className="p-4 border-t border-gray-100">
-                  <div className="hidden md:block">
-                    <PhotoThumbnails
-                      photos={safePhotos}
-                      selectedPhoto={selectedPhoto}
-                      setSelectedPhoto={setSelectedPhoto}
-                      visibleCount={8}
-                    />
-                  </div>
-                  <div className="block md:hidden">
-                    <PhotoThumbnails
-                      photos={safePhotos}
-                      selectedPhoto={selectedPhoto}
-                      setSelectedPhoto={setSelectedPhoto}
-                      visibleCount={4}
-                    />
-                  </div>
+                  <PhotoThumbnails
+                    photos={safePhotos}
+                    selectedPhoto={selectedPhoto}
+                    setSelectedPhoto={setSelectedPhoto}
+                    visibleCount={8}
+                  />
                 </div>
               )}
             </div>
 
-            {data.isFeatures
-              ? renderFeatureValues()
-              : renderTraditionalFeatures()}
-
-            {!data.isFeatures && renderTraditionalDetails()}
-
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Açıklama</h2>
-              <div
-                className="prose prose-gray max-w-none text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: data.thoughts }}
-              />
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Konum</h2>
-              <div className="mb-4 p-4 bg-gray-50 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <MapPin className="text-blue-600 mt-0.5 shrink-0" size={16} />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 mb-1">
-                      Tam Adres
-                    </p>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {getAddressText()}
-                    </p>
-                  </div>
-                </div>
+            {/* Desktop Tab Navigation */}
+            <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="flex border-b border-gray-200">
+                <button
+                  className={`flex-1 py-4 text-center font-medium text-base border-b-2 transition-colors ${
+                    activeTab === "details"
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                  onClick={() => setActiveTab("details")}
+                >
+                  İlan Detayı
+                </button>
+                <button
+                  className={`flex-1 py-4 text-center font-medium text-base border-b-2 transition-colors ${
+                    activeTab === "description"
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                  onClick={() => setActiveTab("description")}
+                >
+                  Açıklama
+                </button>
+                <button
+                  className={`flex-1 py-4 text-center font-medium text-base border-b-2 transition-colors ${
+                    activeTab === "location"
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                  onClick={() => setActiveTab("location")}
+                >
+                  Konum
+                </button>
               </div>
-              <MapComponent
-                lat={data.address?.mapCoordinates?.lat}
-                lng={data.address?.mapCoordinates?.lng}
-                address={getAddressText()}
-              />
+              <div className="p-6">{renderContentByTab()}</div>
             </div>
+
+            {/* Mobil İçerik */}
+            <div className="block lg:hidden">{renderContentByTab()}</div>
           </div>
 
+          {/* Sağ Sidebar - Desktop */}
           <div className="hidden lg:block lg:col-span-1">
             <div className="sticky top-8 flex flex-col gap-6">
               <div className="bg-linear-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
@@ -1072,6 +1207,75 @@ function AdvertDetail({
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="block lg:hidden mt-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-14 bg-white flex items-center justify-center rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <img
+                  src="/logo.png"
+                  alt="Yenigün Emlak"
+                  className="w-full h-full select-none object-contain p-2"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder-logo.png";
+                  }}
+                />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-gray-900">
+                  Yenigün Emlak
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {data.advisor.name + " " + data.advisor.surname}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
+                <span className="font-mono text-lg text-gray-900 tracking-wide">
+                  {formatPhoneNumber(placeholderPhoneNumber)}
+                </span>
+                <button
+                  onClick={() => copyNumber(placeholderPhoneNumber)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                >
+                  {copied ? (
+                    <Check className="text-green-500" size={16} />
+                  ) : (
+                    <Copy className="text-gray-600" size={16} />
+                  )}
+                  {copied ? "Kopyalandı" : "Kopyala"}
+                </button>
+              </div>
+
+              <a
+                href={`tel:${placeholderPhoneNumber}`}
+                className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+              >
+                <Phone size={16} />
+                Telefonla Ara
+              </a>
+
+              <a
+                href={`https://wa.me/90${placeholderPhoneNumber}?text=Merhaba,%20${data.advisor.name}%20${data.advisor.surname},%20${data.title}%20ilanınızla%20ilgileniyorum.`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-3 bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+              >
+                <MessageCircle size={16} />
+                WhatsApp&apos;tan Yaz
+              </a>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <p className="text-xs text-gray-500 text-center">
+                Bizi tercih ettiğiniz için teşekkürler!
+              </p>
             </div>
           </div>
         </div>
