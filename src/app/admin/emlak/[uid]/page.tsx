@@ -2,14 +2,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Category, FeatureValues, Subcategory } from "@/app/types/category";
-import PropertyTypeTab from "@/app/components/tabs/ProppertyTypeTabs";
-import ListingTypeTab from "@/app/components/tabs/ListingTypeTab";
-import CategoryTab from "@/app/components/tabs/CategoryTab";
 import BasicInfoTab from "@/app/components/tabs/BasicInfoTab";
 import MediaTab from "@/app/components/tabs/MediaTab";
 import LocationTab from "@/app/components/tabs/LocationTab";
 import DetailsTab from "@/app/components/tabs/DetailsTab";
-import FeaturesTab from "@/app/components/tabs/FeaturesTab";
 import {
   MapPin,
   Home,
