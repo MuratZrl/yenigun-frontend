@@ -22,7 +22,7 @@ import {
   Phone,
   MessageCircle,
 } from "lucide-react";
-import MapComponent from "@/app/components/MapComponnet";
+import PublicGoogleMap from "@/app/components/PublicGoogleMap";
 
 const DetailRow = ({
   label,
@@ -49,16 +49,14 @@ const DetailRow = ({
   return (
     <div className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
       <span
-        className={`text-sm font-medium ${
-          isImportant ? "text-red-600 font-bold" : "text-gray-600"
-        }`}
+        className={`text-sm font-medium ${isImportant ? "text-red-600 font-bold" : "text-gray-600"
+          }`}
       >
         {label}
       </span>
       <span
-        className={`text-sm ${
-          isImportant ? "text-red-600 font-bold" : "text-gray-900 font-semibold"
-        }`}
+        className={`text-sm ${isImportant ? "text-red-600 font-bold" : "text-gray-900 font-semibold"
+          }`}
       >
         {displayValue}
       </span>
@@ -139,11 +137,10 @@ const PhotoThumbnails = ({
                 decoding="async"
               />
               <div
-                className={`absolute inset-0 border-2 transition-all ${
-                  selectedPhoto === actualIndex
-                    ? "border-blue-500"
-                    : "border-transparent group-hover:border-blue-300"
-                }`}
+                className={`absolute inset-0 border-2 transition-all ${selectedPhoto === actualIndex
+                  ? "border-blue-500"
+                  : "border-transparent group-hover:border-blue-300"
+                  }`}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
             </div>
@@ -156,9 +153,8 @@ const PhotoThumbnails = ({
           <button
             onClick={prevPage}
             disabled={currentPage === 0}
-            className={`absolute -left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all ${
-              currentPage === 0 ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className={`absolute -left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all ${currentPage === 0 ? "opacity-50 cursor-not-allowed" : ""
+              }`}
           >
             <ChevronLeft className="text-gray-700 text-sm" size={16} />
           </button>
@@ -166,11 +162,10 @@ const PhotoThumbnails = ({
           <button
             onClick={nextPage}
             disabled={currentPage === totalPages - 1}
-            className={`absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all ${
-              currentPage === totalPages - 1
-                ? "opacity-50 cursor-not-allowed"
-                : ""
-            }`}
+            className={`absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all ${currentPage === totalPages - 1
+              ? "opacity-50 cursor-not-allowed"
+              : ""
+              }`}
           >
             <ChevronRight className="text-gray-700 text-sm" size={16} />
           </button>
@@ -180,9 +175,8 @@ const PhotoThumbnails = ({
               <button
                 key={i}
                 onClick={() => setCurrentPage(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentPage ? "bg-blue-600" : "bg-gray-300"
-                }`}
+                className={`w-2 h-2 rounded-full transition-all ${i === currentPage ? "bg-blue-600" : "bg-gray-300"
+                  }`}
               />
             ))}
           </div>
@@ -271,11 +265,10 @@ const PhotoThumbnailsHorizontal = ({
               decoding="async"
             />
             <div
-              className={`absolute inset-0 border-2 transition-all ${
-                selectedPhoto === index
-                  ? "border-blue-500 border-3"
-                  : "border-transparent group-hover:border-blue-300"
-              }`}
+              className={`absolute inset-0 border-2 transition-all ${selectedPhoto === index
+                ? "border-blue-500 border-3"
+                : "border-transparent group-hover:border-blue-300"
+                }`}
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
 
@@ -322,8 +315,8 @@ async function getAdvertData(
 
     const safePhotos = Array.isArray(data.photos)
       ? data.photos.filter(
-          (photo: any) => typeof photo === "string" && photo.trim() !== ""
-        )
+        (photo: any) => typeof photo === "string" && photo.trim() !== ""
+      )
       : [];
 
     return {
@@ -373,8 +366,8 @@ function AdvertDetail({
 
   const safePhotos = Array.isArray(data?.photos)
     ? data.photos.filter(
-        (photo: any) => typeof photo === "string" && photo.trim() !== ""
-      )
+      (photo: any) => typeof photo === "string" && photo.trim() !== ""
+    )
     : [];
 
   const hasPhotos = safePhotos.length > 0;
@@ -395,9 +388,8 @@ function AdvertDetail({
         price: data.fee || "Fiyat belirtilmemiş",
         image: data.photos?.[0] || null, // İlk fotoğrafı al
         location: data.address
-          ? `${data.address.province || ""}${
-              data.address.district ? ` - ${data.address.district}` : ""
-            }`
+          ? `${data.address.province || ""}${data.address.district ? ` - ${data.address.district}` : ""
+          }`
           : "Lokasyon belirtilmemiş",
       };
 
@@ -848,17 +840,14 @@ function AdvertDetail({
                   onClick={() => hasPhotos && handleClickedPhoto(currentPhoto)}
                   onLoad={() => setImageLoading(false)}
                   onError={handleImageError}
-                  className={`w-full h-96 select-none transition-all duration-300 ${
-                    shouldShowLoading ? "opacity-0" : "opacity-100"
-                  } ${
-                    hasPhotos
+                  className={`w-full h-96 select-none transition-all duration-300 ${shouldShowLoading ? "opacity-0" : "opacity-100"
+                    } ${hasPhotos
                       ? "cursor-zoom-in hover:scale-105"
                       : "cursor-default"
-                  } ${
-                    isLowQualityImage(currentPhoto) || !hasPhotos
+                    } ${isLowQualityImage(currentPhoto) || !hasPhotos
                       ? "object-contain"
                       : "object-contain"
-                  }`}
+                    }`}
                   alt={
                     hasPhotos
                       ? `İlan Fotoğrafı ${selectedPhoto + 1}`
@@ -991,11 +980,22 @@ function AdvertDetail({
                   </div>
                 </div>
               </div>
-              <MapComponent
-                lat={data.address?.mapCoordinates?.lat}
-                lng={data.address?.mapCoordinates?.lng}
-                address={getAddressText()}
-              />
+              <div className="h-96 w-full rounded-xl overflow-hidden mt-4">
+                <PublicGoogleMap
+                  lat={
+                    typeof data.address.mapCoordinates?.lat === "string"
+                      ? parseFloat(data.address.mapCoordinates.lat)
+                      : data.address.mapCoordinates?.lat || 0
+                  }
+                  lng={
+                    typeof data.address.mapCoordinates?.lng === "string"
+                      ? parseFloat(data.address.mapCoordinates.lng)
+                      : data.address.mapCoordinates?.lng || 0
+                  }
+                  province={data.address.province}
+                  district={data.address.district}
+                />
+              </div>
             </div>
           </div>
 
@@ -1168,9 +1168,8 @@ function AdvertDetail({
                   e.stopPropagation();
                   handleClickedPhoto(zoomPhoto.photo);
                 }}
-                className={`max-h-[70vh] max-w-full select-none object-contain transition-transform duration-300 cursor-zoom-out ${
-                  zoomPhoto.level === 2 ? "scale-150" : "scale-100"
-                }`}
+                className={`max-h-[70vh] max-w-full select-none object-contain transition-transform duration-300 cursor-zoom-out ${zoomPhoto.level === 2 ? "scale-150" : "scale-100"
+                  }`}
                 onError={handleImageError}
               />
             </div>

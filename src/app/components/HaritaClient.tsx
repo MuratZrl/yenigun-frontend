@@ -12,6 +12,10 @@ import usePlacesAutocomplete, {
   getGeocode,
   getLatLng,
 } from "use-places-autocomplete";
+import {
+  fetchDistrictFromOverpass,
+  BoundaryCoord,
+} from "@/app/utils/districtBoundary";
 
 const libraries: ("places" | "drawing" | "geometry")[] = [
   "places",
@@ -91,7 +95,7 @@ interface MarkerInfo {
 
 export default function PropertyMap({
   listings = [],
-  boundaryCoords,
+  boundaryCoords: propBoundaryCoords,
   selectedDistrict,
   selectedProvince,
 }: MapProps) {
@@ -103,11 +107,14 @@ export default function PropertyMap({
   const [markers, setMarkers] = useState<MarkerInfo[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<MarkerInfo | null>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [activeBoundaryCoords, setActiveBoundaryCoords] = useState<
+    BoundaryCoord[]
+  >([]);
   const mapRef = React.useRef<google.maps.Map | null>(null);
 
   const boundaryLineOptions = useMemo(() => {
     return {
-      fillOpacity: 0.5,
+      fillOpacity: 0.1,
       strokeColor: "#2563EB",
       strokeOpacity: 1,
       strokeWeight: 3,
@@ -118,6 +125,29 @@ export default function PropertyMap({
       zIndex: 1,
     };
   }, []);
+  useEffect(() => {
+    if (propBoundaryCoords && propBoundaryCoords.length > 0) {
+      setActiveBoundaryCoords(propBoundaryCoords);
+    }
+  }, [propBoundaryCoords]);
+
+  useEffect(() => {
+    const loadBoundary = async () => {
+      if (selectedProvince && selectedDistrict) {
+        const coords = await fetchDistrictFromOverpass(
+          selectedDistrict,
+          selectedProvince
+        );
+        if (coords) {
+          setActiveBoundaryCoords(coords);
+        }
+      } else if (!propBoundaryCoords || propBoundaryCoords.length === 0) {
+        setActiveBoundaryCoords([]);
+      }
+    };
+
+    loadBoundary();
+  }, [selectedProvince, selectedDistrict, propBoundaryCoords]);
 
   useEffect(() => {
     if (listings && listings.length > 0) {
@@ -142,9 +172,8 @@ export default function PropertyMap({
           address: listing.address,
           thoughts: listing.thoughts || "",
           photo: listing.photos?.[0] || "",
-          type: `${listing.steps?.first || ""} ${
-            listing.steps?.second || ""
-          }`.trim(),
+          type: `${listing.steps?.first || ""} ${listing.steps?.second || ""
+            }`.trim(),
           area: listing.details?.netArea || listing.details?.grossArea,
         }));
 
@@ -188,8 +217,8 @@ export default function PropertyMap({
         bounds.extend(marker.position);
       });
 
-      if (boundaryCoords && boundaryCoords.length > 0) {
-        boundaryCoords.forEach((coord) => {
+      if (activeBoundaryCoords && activeBoundaryCoords.length > 0) {
+        activeBoundaryCoords.forEach((coord) => {
           bounds.extend(coord);
         });
       }
@@ -201,7 +230,7 @@ export default function PropertyMap({
         left: 50,
       });
     }
-  }, [markers, boundaryCoords]);
+  }, [markers, activeBoundaryCoords]);
 
   useEffect(() => {
     if (markers.length > 0 && mapRef.current) {
@@ -215,9 +244,9 @@ export default function PropertyMap({
   }, [markers, fitToBounds]);
 
   useEffect(() => {
-    if (boundaryCoords && boundaryCoords.length > 0 && mapRef.current) {
+    if (activeBoundaryCoords && activeBoundaryCoords.length > 0 && mapRef.current) {
       const bounds = new google.maps.LatLngBounds();
-      boundaryCoords.forEach((coord) => {
+      activeBoundaryCoords.forEach((coord) => {
         bounds.extend(coord);
       });
       mapRef.current.fitBounds(bounds, {
@@ -227,7 +256,7 @@ export default function PropertyMap({
         left: 50,
       });
     }
-  }, [boundaryCoords]);
+  }, [activeBoundaryCoords]);
 
   const renderAddress = useCallback((address: Address) => {
     if (!address) return "Adres bilgisi yok";
@@ -238,15 +267,13 @@ export default function PropertyMap({
       const addrObj = fullAddress as any;
       fullAddress =
         addrObj.full_address ||
-        `${addrObj.province || ""}, ${addrObj.district || ""}, ${
-          addrObj.quarter || ""
+        `${addrObj.province || ""}, ${addrObj.district || ""}, ${addrObj.quarter || ""
         }`;
     }
 
     return (
       fullAddress ||
-      `${address.province || ""}, ${address.district || ""}, ${
-        address.quarter || ""
+      `${address.province || ""}, ${address.district || ""}, ${address.quarter || ""
       }`
     );
   }, []);
@@ -271,8 +298,8 @@ export default function PropertyMap({
           options={options}
           onLoad={onMapLoad}
         >
-          {boundaryCoords && boundaryCoords.length > 0 && (
-            <Polygon paths={boundaryCoords} options={boundaryLineOptions} />
+          {activeBoundaryCoords && activeBoundaryCoords.length > 0 && (
+            <Polygon paths={activeBoundaryCoords} options={boundaryLineOptions} />
           )}
 
           {markers.map((marker) => (
