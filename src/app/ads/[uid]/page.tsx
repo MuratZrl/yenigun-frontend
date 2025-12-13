@@ -23,7 +23,7 @@ import {
   MessageCircle,
   Tag,
 } from "lucide-react";
-import MapComponent from "@/app/components/MapComponnet";
+import PublicGoogleMap from "@/app/components/PublicGoogleMap";
 
 const DetailRow = ({
   label,
@@ -734,11 +734,22 @@ function AdvertDetail({
                 </div>
               </div>
             </div>
-            <MapComponent
-              lat={data.address?.mapCoordinates?.lat}
-              lng={data.address?.mapCoordinates?.lng}
-              address={getAddressText()}
-            />
+            <div className="h-96 w-full rounded-xl overflow-hidden mt-4">
+              <PublicGoogleMap
+                lat={
+                  typeof data.address.mapCoordinates?.lat === "string"
+                    ? parseFloat(data.address.mapCoordinates.lat)
+                    : data.address.mapCoordinates?.lat || 0
+                }
+                lng={
+                  typeof data.address.mapCoordinates?.lng === "string"
+                    ? parseFloat(data.address.mapCoordinates.lng)
+                    : data.address.mapCoordinates?.lng || 0
+                }
+                province={data.address.province}
+                district={data.address.district}
+              />
+            </div>
           </div>
         );
       case "details":
@@ -1129,8 +1140,38 @@ function AdvertDetail({
               <div className="p-6">{renderContentByTab()}</div>
             </div>
 
-            {/* Mobil İçerik */}
-            <div className="block lg:hidden">{renderContentByTab()}</div>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Konum</h2>
+              <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <MapPin className="text-blue-600 mt-0.5 shrink-0" size={16} />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 mb-1">
+                      Tam Adres
+                    </p>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      {getAddressText()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="h-96 w-full rounded-xl overflow-hidden mt-4">
+                <PublicGoogleMap
+                  lat={
+                    typeof data.address.mapCoordinates?.lat === "string"
+                      ? parseFloat(data.address.mapCoordinates.lat)
+                      : data.address.mapCoordinates?.lat || 0
+                  }
+                  lng={
+                    typeof data.address.mapCoordinates?.lng === "string"
+                      ? parseFloat(data.address.mapCoordinates.lng)
+                      : data.address.mapCoordinates?.lng || 0
+                  }
+                  province={data.address.province}
+                  district={data.address.district}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Sağ Sidebar - Desktop */}

@@ -4,13 +4,6 @@ import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import "../globals.css";
 
-const sakaryaBoundary = [
-  { lat: 40.8, lng: 30.4 },
-  { lat: 40.9, lng: 30.5 },
-  { lat: 40.85, lng: 30.6 },
-  { lat: 40.75, lng: 30.55 },
-  { lat: 40.7, lng: 30.45 },
-];
 
 const HaritaClient = dynamic(() => import("@/app/components/HaritaClient"), {
   ssr: false,
@@ -156,9 +149,6 @@ export default function HaritaSayfasi() {
           {listings.length > 0 ? (
             <HaritaClient
               listings={listings}
-              boundaryCoords={
-                selectedDistrict === "Hendek" ? sakaryaBoundary : undefined
-              }
               selectedDistrict={selectedDistrict}
               selectedProvince={selectedProvince}
             />
