@@ -22,6 +22,13 @@ const getAbsoluteImageUrl = (url: string): string => {
   return `https://www.yenigunemlak.com/${url}`;
 };
 
+const optimizeImageForWhatsApp = (url: string): string => {
+  if (url.includes("storage.googleapis.com")) {
+    return `${url}?width=1200&height=630&quality=80&format=jpg`;
+  }
+  return url;
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -37,20 +44,48 @@ export async function generateMetadata({
     const data = res.data.data;
 
     if (!data) {
+      const defaultOgImage =
+        "https://storage.googleapis.com/yenigunemlak/default-og.jpg";
+
       return {
         title: "İlan Bulunamadı - Yenigün Emlak",
         description: "İlan bulunamadı veya yayından kaldırılmış.",
+
         openGraph: {
+          type: "website",
+          url: `https://www.yenigunemlak.com/ads/${uid}`,
           title: "İlan Bulunamadı - Yenigün Emlak",
           description: "İlan bulunamadı veya yayından kaldırılmış.",
+          siteName: "Yenigün Emlak",
+          locale: "tr_TR",
           images: [
             {
-              url: "https://storage.googleapis.com/yenigunemlak/default-og.jpg",
+              url: defaultOgImage,
               width: 1200,
               height: 630,
               alt: "Yenigün Emlak",
+              type: "image/jpeg",
             },
           ],
+        },
+
+        twitter: {
+          card: "summary_large_image",
+          title: "İlan Bulunamadı - Yenigün Emlak",
+          description: "İlan bulunamadı veya yayından kaldırılmış.",
+          images: [defaultOgImage],
+        },
+
+        other: {
+          "og:image": defaultOgImage,
+          "og:image:url": defaultOgImage,
+          "og:image:secure_url": defaultOgImage,
+          "og:image:type": "image/jpeg",
+          "og:image:width": "1200",
+          "og:image:height": "630",
+          "og:image:alt": "Yenigün Emlak",
+
+          "og:updated_time": new Date().toISOString(),
         },
       };
     }
@@ -63,6 +98,10 @@ export async function generateMetadata({
       data.photos[0]
     ) {
       ogImage = getAbsoluteImageUrl(data.photos[0]);
+
+      ogImage = optimizeImageForWhatsApp(ogImage);
+
+      console.log("📸 WhatsApp için optimize edilmiş OG Image:", ogImage);
     }
 
     const location = data.address
@@ -81,7 +120,7 @@ export async function generateMetadata({
     console.log("✅ Title:", title);
     console.log("✅ Description:", description);
 
-    return {
+    const metadata: Metadata = {
       metadataBase: new URL("https://www.yenigunemlak.com"),
       title: title,
       description: description,
@@ -93,13 +132,13 @@ export async function generateMetadata({
         data.address?.province || "",
         data.address?.district || "",
         data.title || "",
-      ],
+      ].filter(Boolean),
 
       openGraph: {
         type: "article",
+        url: canonicalUrl,
         title: title,
         description: description,
-        url: canonicalUrl,
         siteName: "Yenigün Emlak",
         locale: "tr_TR",
         images: [
@@ -108,8 +147,15 @@ export async function generateMetadata({
             width: 1200,
             height: 630,
             alt: data.title || "İlan görseli",
+            type: "image/jpeg",
           },
         ],
+        ...(data.createdAt && {
+          publishedTime: new Date(data.createdAt).toISOString(),
+        }),
+        ...(data.updatedAt && {
+          modifiedTime: new Date(data.updatedAt).toISOString(),
+        }),
       },
 
       twitter: {
@@ -118,6 +164,24 @@ export async function generateMetadata({
         description: description,
         images: [ogImage],
         creator: "@yenigunemlak",
+        site: "@yenigunemlak",
+      },
+      other: {
+        "og:image": ogImage,
+        "og:image:url": ogImage,
+        "og:image:secure_url": ogImage,
+        "og:image:type": "image/jpeg",
+        "og:image:width": "1200",
+        "og:image:height": "630",
+        "og:image:alt": data.title || "İlan görseli",
+
+        "og:updated_time": new Date().toISOString(),
+
+        "article:section": "Emlak",
+        "article:tag": ["emlak", "konut", "ev"],
+
+        "whatsapp:image": ogImage,
+        "whatsapp:description": description.substring(0, 100),
       },
 
       alternates: {
@@ -135,33 +199,56 @@ export async function generateMetadata({
           "max-snippet": -1,
         },
       },
+
+      viewport: "width=device-width, initial-scale=1, maximum-scale=1",
     };
+
+    return metadata;
   } catch (error) {
     console.error("❌ Metadata generation error:", error);
+
+    const defaultOgImage =
+      "https://storage.googleapis.com/yenigunemlak/default-og.jpg";
 
     return {
       title: "İlan - Yenigün Emlak",
       description: "Yenigün Emlak - Hayalinizdeki Eve Kavuşun",
+
       openGraph: {
-        title: "İlan - Yenigün Emlak",
-        description: "Yenigün Emlak - Hayalinizdeki Eve Kavuşun",
         type: "website",
         url: "https://www.yenigunemlak.com",
+        title: "İlan - Yenigün Emlak",
+        description: "Yenigün Emlak - Hayalinizdeki Eve Kavuşun",
         siteName: "Yenigün Emlak",
+        locale: "tr_TR",
         images: [
           {
-            url: "https://storage.googleapis.com/yenigunemlak/default-og.jpg",
+            url: defaultOgImage,
             width: 1200,
             height: 630,
             alt: "Yenigün Emlak",
+            type: "image/jpeg",
           },
         ],
       },
+
       twitter: {
         card: "summary_large_image",
         title: "İlan - Yenigün Emlak",
         description: "Yenigün Emlak - Hayalinizdeki Eve Kavuşun",
-        images: ["https://storage.googleapis.com/yenigunemlak/default-og.jpg"],
+        images: [defaultOgImage],
+        creator: "@yenigunemlak",
+      },
+
+      other: {
+        "og:image": defaultOgImage,
+        "og:image:url": defaultOgImage,
+        "og:image:secure_url": defaultOgImage,
+        "og:image:type": "image/jpeg",
+        "og:image:width": "1200",
+        "og:image:height": "630",
+        "og:image:alt": "Yenigün Emlak",
+        "fb:app_id": "YOUR_FACEBOOK_APP_ID",
       },
     };
   }
@@ -223,10 +310,12 @@ export default async function AdvertPage({
     }
 
     return (
-      <AdvertDetailClient
-        data={advertData.data}
-        similarAds={advertData.similarAds}
-      />
+      <>
+        <AdvertDetailClient
+          data={advertData.data}
+          similarAds={advertData.similarAds}
+        />
+      </>
     );
   } catch (error) {
     console.error("❌ Page error:", error);
