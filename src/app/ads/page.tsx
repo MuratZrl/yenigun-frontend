@@ -6,6 +6,7 @@ import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import GoToTop from "@/app/components/GoToTop";
+import { useCategoryContext } from "@/app/context/CategoryContext";
 import {
   RotateCcw,
   Search,
@@ -79,10 +80,11 @@ export default function AdsPage({
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
-  const [selectedSubcategory, setSelectedSubcategory] =
+  const [localSelectedSubcat, setLocalSelectedSubcat] =
     useState<Subcategory | null>(null);
   const [selectedSubSubcategory, setSelectedSubSubcategory] =
     useState<Subcategory | null>(null);
+  const { selectedSubcategory: contextSelectedSubcat } = useCategoryContext();
   const [availableSubcategories, setAvailableSubcategories] = useState<
     Subcategory[]
   >([]);
@@ -107,8 +109,7 @@ export default function AdsPage({
       try {
         setLoadingCategories(true);
         const response = await api.get("/admin/categories");
-        console.log("Kategoriler:", response.data);
-
+        
         if (response.data.success && Array.isArray(response.data.data)) {
           const categoriesData = response.data.data;
           setCategories(categoriesData);
@@ -124,9 +125,48 @@ export default function AdsPage({
   }, []);
 
   useEffect(() => {
-    if (loadingCategories || categories.length === 0) return;
+    if (contextSelectedSubcat) {
+    
+      if (contextSelectedSubcat.path) {
+        const newFilters = {
+          ...filters,
+          type:
+            contextSelectedSubcat.path ||
+            `${contextSelectedSubcat.parentCategoryName} > ${contextSelectedSubcat.name}`,
+        };
+        setFilters(newFilters);
+      }
 
-    console.log("📋 Kategoriler yüklendi, URL'den filtreleri alıyorum...");
+      if (contextSelectedSubcat.features.length > 0) {
+        const initialFeatureFilters: Record<string, any> = {};
+        contextSelectedSubcat.features.forEach((feature: any) => {
+          if (!featureFilters[feature._id]) {
+            if (feature.type === "multi_select") {
+              initialFeatureFilters[feature._id] = [];
+            } else if (feature.type === "boolean") {
+              initialFeatureFilters[feature._id] = false;
+            } else if (feature.type === "range") {
+              initialFeatureFilters[feature._id] = { min: null, max: null };
+            } else if (feature.type === "single_select") {
+              initialFeatureFilters[feature._id] = "";
+            } else {
+              initialFeatureFilters[feature._id] = "";
+            }
+          }
+        });
+
+        setFeatureFilters((prev) => ({
+          ...prev,
+          ...initialFeatureFilters,
+        }));
+ 
+      }
+    }
+  }, [contextSelectedSubcat]);
+
+  useEffect(() => {
+    if (loadingCategories || categories.length === 0) return;
+ 
 
     const initializeFiltersFromURL = async () => {
       if (isInitializingFilters.current) return;
@@ -171,9 +211,7 @@ export default function AdsPage({
               ? sortOrderParam
               : "desc",
         };
-
-        console.log("📝 URL'den alınan filtreler:", newFilters);
-        console.log("🔍 Decoded type param:", decodedTypeParam);
+ 
 
         setFilters(newFilters);
 
@@ -226,8 +264,7 @@ export default function AdsPage({
         );
         setShowUrlDebug(hasFilterParams);
 
-        if (isInitialLoad.current) {
-          console.log("🚀 İlk API isteğini gönderiyorum...");
+        if (isInitialLoad.current) { 
           await fetchSearchResults(
             newFilters,
             pageFromUrl,
@@ -248,14 +285,11 @@ export default function AdsPage({
   const handleCategorySelectionFromURL = async (
     typeParam: string,
     categories: Category[]
-  ) => {
-    console.log("🎯 URL'den kategori seçimi yapılıyor:", typeParam);
+  ) => { 
 
-    const categoryPath = typeParam.split(" > ");
-    console.log("🎯 Parsed category path:", categoryPath);
+    const categoryPath = typeParam.split(" > "); 
 
-    if (categoryPath.length === 0) {
-      console.log("🎯 Kategori path'i boş");
+    if (categoryPath.length === 0) { 
       return;
     }
 
@@ -265,11 +299,10 @@ export default function AdsPage({
 
     const foundCategory = categories.find((cat) => cat.name === firstPart);
     if (!foundCategory) {
-      console.log("❌ Ana kategori bulunamadı:", firstPart);
+     
       return;
     }
-
-    console.log("✅ Ana kategori bulundu:", foundCategory.name);
+ 
     setSelectedCategory(foundCategory);
     setAvailableSubcategories(foundCategory.subcategories || []);
 
@@ -278,9 +311,8 @@ export default function AdsPage({
         (sub) => sub.name === secondPart
       );
 
-      if (foundSubcategory) {
-        console.log("✅ Alt kategori bulundu:", foundSubcategory.name);
-        setSelectedSubcategory(foundSubcategory);
+      if (foundSubcategory) { 
+        setLocalSelectedSubcat(foundSubcategory);
         setAvailableSubSubcategories(foundSubcategory.subcategories || []);
 
         if (thirdPart && foundSubcategory.subcategories) {
@@ -289,10 +321,7 @@ export default function AdsPage({
           );
 
           if (foundSubSubcategory) {
-            console.log(
-              "✅ Alt-alt kategori bulundu:",
-              foundSubSubcategory.name
-            );
+         
             setSelectedSubSubcategory(foundSubSubcategory);
           }
         }
@@ -375,18 +404,44 @@ export default function AdsPage({
     limit: number = 12,
     filters?: any
   ) => {
-    try {
-      console.log("🔍 API isteği gönderiliyor, filtreler:", filters);
+    try { 
+
+      let params: any = {
+        ...filters,
+        page,
+        limit,
+      };
+      if (filters.featureFilters && Array.isArray(filters.featureFilters)) {
+        delete params.featureFilters;
+
+        filters.featureFilters.forEach((filter: any, index: number) => {
+          params[`featureFilters[${index}][featureId]`] = filter.featureId;
+          params[`featureFilters[${index}][value]`] = filter.value;
+        });
+      }
 
       const response = await api.get("/advert/search", {
-        params: {
-          ...filters,
-          page,
-          limit,
+        params,
+        paramsSerializer: (params) => {
+          const items: string[] = [];
+
+          Object.keys(params).forEach((key) => {
+            const value = params[key];
+            if (value !== undefined && value !== null) {
+              if (Array.isArray(value)) {
+                value.forEach((item, index) => {
+                  items.push(`${key}[${index}]=${encodeURIComponent(item)}`);
+                });
+              } else {
+                items.push(`${key}=${encodeURIComponent(value)}`);
+              }
+            }
+          });
+
+          return items.join("&");
         },
       });
-
-      console.log("📥 API yanıtı:", response.data);
+ 
       return response.data;
     } catch (error) {
       console.error("❌ Arama hatası:", error);
@@ -435,33 +490,61 @@ export default function AdsPage({
       apiFilters.search = filterValues.keyword.trim();
     }
 
-    apiFilters.sortBy = filterValues.sortBy;
-    apiFilters.sortOrder = filterValues.sortOrder;
+    apiFilters.sortBy = filterValues.sortBy || "date";
+    apiFilters.sortOrder = filterValues.sortOrder || "desc";
 
-    const currentFeatures = getCurrentFeatures();
-    if (currentFeatures.length > 0) {
-      const featureFiltersArray = Object.entries(currentFeatureFilters)
-        .filter(([featureId, value]) => {
-          if (value === undefined || value === null || value === "")
-            return false;
-          if (typeof value === "number" && value === 0) return false;
-          if (Array.isArray(value) && value.length === 0) return false;
-          if (typeof value === "object" && value !== null) {
-            if (value.min === null && value.max === null) return false;
-            if (value.min === 0 && value.max === 0) return false;
+    const featureFiltersArray = Object.entries(currentFeatureFilters)
+      .filter(([featureId, value]) => {
+        if (value === undefined || value === null || value === "") return false;
+
+        if (typeof value === "number" && value === 0) return false;
+
+        if (Array.isArray(value) && value.length === 0) return false;
+
+        if (typeof value === "object" && value !== null) {
+          if (value.min === null && value.max === null) return false;
+          if (value.min === 0 && value.max === 0) return false;
+        }
+
+        return true;
+      })
+      .map(([featureId, value]) => {
+        let formattedValue: any = value;
+
+        if (Array.isArray(value)) {
+          formattedValue = value.join(",");
+        }
+
+        if (typeof value === "boolean") {
+          formattedValue = value ? "true" : "false";
+        }
+
+        if (
+          typeof value === "object" &&
+          value !== null &&
+          !Array.isArray(value)
+        ) {
+          if (value.min !== null && value.max !== null) {
+            formattedValue = `${value.min}-${value.max}`;
+          } else if (value.min !== null) {
+            formattedValue = `${value.min}`;
+          } else if (value.max !== null) {
+            formattedValue = `${value.max}`;
           }
-          return true;
-        })
-        .map(([featureId, value]) => ({
-          featureId,
-          value,
-        }));
+        }
 
-      if (featureFiltersArray.length > 0) {
-        apiFilters.featureFilters = featureFiltersArray;
-      }
+        return {
+          featureId,
+          value: formattedValue,
+        };
+      });
+
+    if (featureFiltersArray.length > 0) {
+      apiFilters.featureFilters = featureFiltersArray;
+    
     }
 
+ 
     return apiFilters;
   };
 
@@ -472,25 +555,15 @@ export default function AdsPage({
   ) => {
     try {
       setLoading(true);
-      console.log("🔍 Yeni API isteği gönderiliyor, sayfa:", page);
-
+    
       const apiFilters = buildApiFilters(filterValues, currentFeatureFilters);
 
-      console.log("📤 API İSTEĞİ SIRALAMA:", {
-        sortBy: apiFilters.sortBy,
-        sortOrder: apiFilters.sortOrder,
-      });
+     
 
-      console.log("📤 API İSTEĞİ:", {
-        ...apiFilters,
-        page,
-        limit: itemsPerPage,
-      });
-
+    
       const result = await searchAdvertsAPI(page, itemsPerPage, apiFilters);
 
-      console.log("📥 API YANITI:", result);
-
+     
       if (result.success && Array.isArray(result.data)) {
         setData(result.data);
 
@@ -531,58 +604,6 @@ export default function AdsPage({
     [filters, featureFilters, fetchSearchResults, updateURL]
   );
 
-  const getCurrentFeatures = (): Feature[] => {
-    console.log("🔍 getCurrentFeatures çağrıldı:");
-    console.log("   - filters.type:", filters.type);
-
-    if (filters.type === "Hepsi") {
-      console.log("   - Tüm kategoriler seçili, özellik yok");
-      return [];
-    }
-
-    const categoryPath = filters.type.split(" > ");
-    console.log("   - categoryPath:", categoryPath);
-
-    if (categoryPath.length === 0) {
-      return [];
-    }
-
-    const foundCategory = categories.find(
-      (cat) => cat.name === categoryPath[0]
-    );
-    if (!foundCategory) {
-      console.log("   - Kategori bulunamadı:", categoryPath[0]);
-      return [];
-    }
-
-    if (categoryPath.length === 1) {
-      if (
-        foundCategory.subcategories &&
-        foundCategory.subcategories.length > 0
-      ) {
-        const firstSubcategory = foundCategory.subcategories[0];
-        console.log(
-          "   - Varsayılan alt kategori özellikleri:",
-          firstSubcategory.features
-        );
-        return firstSubcategory.features || [];
-      }
-      return [];
-    }
-
-    const foundSubcategory = foundCategory.subcategories?.find(
-      (sub) => sub.name === categoryPath[1]
-    );
-
-    if (!foundSubcategory) {
-      console.log("   - Alt kategori bulunamadı:", categoryPath[1]);
-      return [];
-    }
-
-    console.log("   - Bulunan özellikler:", foundSubcategory.features);
-    return foundSubcategory.features || [];
-  };
-
   const handleFilter = useCallback(async () => {
     setCurrentPage(1);
     await fetchSearchResults(filters, 1, featureFilters);
@@ -602,7 +623,7 @@ export default function AdsPage({
 
     setFilters(clearedFilters);
     setSelectedCategory(null);
-    setSelectedSubcategory(null);
+    setLocalSelectedSubcat(null);
     setSelectedSubSubcategory(null);
     setAvailableSubcategories([]);
     setAvailableSubSubcategories([]);
@@ -727,8 +748,8 @@ export default function AdsPage({
             setFilters={setFilters}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
-            selectedSubcategory={selectedSubcategory}
-            setSelectedSubcategory={setSelectedSubcategory}
+            selectedSubcategory={localSelectedSubcat}
+            setSelectedSubcategory={setLocalSelectedSubcat}
             selectedSubSubcategory={selectedSubSubcategory}
             setSelectedSubSubcategory={setSelectedSubSubcategory}
             categories={categories}
@@ -751,6 +772,9 @@ export default function AdsPage({
             citiesData={turkeyCities}
             handleSortChangeDesktop={handleSortChangeDesktop}
             setCurrentPage={setCurrentPage}
+            contextFeatures={
+              (contextSelectedSubcat?.features || []) as Feature[]
+            }
           />
 
           <div className="flex-1 container mx-auto px-4 py-8">

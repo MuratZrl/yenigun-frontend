@@ -1,7 +1,6 @@
 "use client";
 import { Advert } from "@/app/types/search";
 import React, { useState } from "react";
-import dynamic from "next/dynamic";
 import {
   Search,
   ChevronDown,
@@ -46,33 +45,6 @@ interface FilterValues {
   search: string;
   subcategory: string;
   [key: string]: any;
-}
-
-interface GeoJSONFeature {
-  type: "Feature";
-  properties: {
-    id: number;
-    title: string;
-    price: string;
-    address: string;
-    description: string;
-    details: any;
-    category: string;
-    type: string;
-    subType: string;
-    link: string;
-    photos: string[];
-    advisor?: any;
-  };
-  geometry: {
-    type: "Point";
-    coordinates: [number, number];
-  };
-}
-
-interface GeoJSONFeatureCollection {
-  type: "FeatureCollection";
-  features: GeoJSONFeature[];
 }
 
 const turkeyCities: TurkeyCity[] = JSONDATA.map((city: any) => {

@@ -11,11 +11,15 @@ import {
   Search,
   Calendar,
   User,
+  ArrowUpDown,
+  Clock,
+  DollarSign,
 } from "lucide-react";
 import api from "@/app/lib/api";
 import DynamicSearch from "@/app/components/DynamicSearch";
 import Navbar from "@/app/components/Navbar";
 import Link from "next/link";
+import { useCategoryContext } from "@/app/context/CategoryContext";
 
 interface Category {
   _id: string;
@@ -35,7 +39,7 @@ export default function CategoryDetailPage() {
   const router = useRouter();
   const categoryId = params.id as string;
   const slug = params.slug as string;
-
+  const { setSelectedSubcategory } = useCategoryContext();
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingAds, setLoadingAds] = useState(false);
@@ -49,6 +53,54 @@ export default function CategoryDetailPage() {
   const [itemsPerPage] = useState(12);
   const [searchFilters, setSearchFilters] = useState<any>({});
   const [isMobile, setIsMobile] = useState(false);
+
+  const [sortBy, setSortBy] = useState<string>("date");
+  const [sortOrder, setSortOrder] = useState<string>("desc");
+
+  const findFeaturesInSubcategory = (subcat: Subcategory): any[] => {
+    if (subcat.features && subcat.features.length > 0) {
+      return subcat.features;
+    }
+
+    if (subcat.subcategories && subcat.subcategories.length > 0) {
+      for (const childSubcat of subcat.subcategories) {
+        const childFeatures = findFeaturesInSubcategory(childSubcat);
+        if (childFeatures.length > 0) {
+          return childFeatures;
+        }
+      }
+    }
+
+    return [];
+  };
+
+  const findSubcategoryPath = (
+    category: Category,
+    subcategoryId: string
+  ): string => {
+    const findPath = (
+      subcats: Subcategory[],
+      targetId: string,
+      path: string[] = []
+    ): string[] | null => {
+      for (const subcat of subcats) {
+        const currentPath = [...path, subcat.name];
+
+        if (subcat._id === targetId) {
+          return currentPath;
+        }
+
+        if (subcat.subcategories && subcat.subcategories.length > 0) {
+          const found = findPath(subcat.subcategories, targetId, currentPath);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const path = findPath(category.subcategories, subcategoryId);
+    return path ? path.join(" > ") : "";
+  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -100,6 +152,8 @@ export default function CategoryDetailPage() {
       const params: any = {
         page: currentPage,
         limit: itemsPerPage,
+        sortBy,
+        sortOrder,
         ...filters,
       };
 
@@ -111,10 +165,8 @@ export default function CategoryDetailPage() {
         params.subcategories = selectedSubcategories.join(",");
       }
 
-      console.log("📤 İlan arama parametreleri:", params);
-      const response = await api.get("/advert/search", { params });
-      console.log(response.data);
-
+       const response = await api.get("/advert/search", { params });
+     
       let filteredData = response.data.data || [];
 
       const formattedAdverts = filteredData.map((ad: any) => ({
@@ -146,8 +198,7 @@ export default function CategoryDetailPage() {
       const withCoordinates = formattedAdverts.filter(
         (ad: any) =>
           ad.address?.mapCoordinates?.lat && ad.address?.mapCoordinates?.lng
-      );
-      console.log("📍 Koordinatı olan ilanlar:", withCoordinates.length);
+      ); 
 
       setAdverts(formattedAdverts);
       setTotalItems(
@@ -166,7 +217,14 @@ export default function CategoryDetailPage() {
     if (category) {
       fetchAdverts(searchFilters);
     }
-  }, [category, currentPage, selectedSubcategories, searchFilters]);
+  }, [
+    category,
+    currentPage,
+    selectedSubcategories,
+    searchFilters,
+    sortBy,
+    sortOrder,
+  ]);
 
   const handleSearch = (filters: any) => {
     setSearchFilters(filters);
@@ -178,10 +236,56 @@ export default function CategoryDetailPage() {
     subcategoryName: string
   ) => {
     if (category) {
+      const findSubcategory = (
+        subcats: Subcategory[],
+        targetId: string
+      ): Subcategory | null => {
+        for (const subcat of subcats) {
+          if (subcat._id === targetId) {
+            return subcat;
+          }
+
+          if (subcat.subcategories && subcat.subcategories.length > 0) {
+            const found = findSubcategory(subcat.subcategories, targetId);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      const selectedSubcat = findSubcategory(
+        category.subcategories,
+        subcategoryId
+      );
+
+      if (selectedSubcat) {
+        const features = findFeaturesInSubcategory(selectedSubcat);
+
+        const path = findSubcategoryPath(category, subcategoryId);
+
+        setSelectedSubcategory(
+          category._id,
+          category.name,
+          selectedSubcat._id,
+          selectedSubcat.name,
+          features,
+          path
+        );
+
+      
+      }
+
       const params = new URLSearchParams();
       params.set("type", `${category.name} > ${subcategoryName}`);
+      params.set("subcategoryId", subcategoryId);
       router.push(`/ads?${params.toString()}`);
     }
+  };
+
+  const handleSortChange = (newSortBy: string, newSortOrder: string) => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    setCurrentPage(1);
   };
 
   const hasValidImage = (advert: Advert): boolean => {
@@ -289,18 +393,31 @@ export default function CategoryDetailPage() {
                 maxHeight: "calc(100vh - 8rem)",
                 overflowY: "auto",
               }}
-            >
+            > 
               <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  {category.name}
-                </h1>
+                <div className="flex items-center justify-between mb-2">
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {category.name}
+                  </h1>
+                  <button
+                    onClick={() => {
+                      const params = new URLSearchParams();
+                      params.set("type", category.name);
+                      router.push(`/ads?${params.toString()}`);
+                    }}
+                    className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-medium rounded-lg transition-colors duration-200 flex items-center gap-1 border border-blue-200"
+                  >
+                    <Search className="w-3 h-3" />
+                    Tümü
+                  </button>
+                </div>
                 <p className="text-sm text-gray-600">
                   {totalItems} ilan bulundu
                 </p>
               </div>
 
               {category.subcategories.length > 0 && (
-                <div className="mb-8">
+                <div className="mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-gray-900">
                       Alt Kategoriler
@@ -343,23 +460,101 @@ export default function CategoryDetailPage() {
                   </div>
                 </div>
               )}
-
-              <button
-                onClick={() => {
-                  const params = new URLSearchParams();
-                  params.set("type", category.name);
-                  router.push(`/ads?${params.toString()}`);
-                }}
-                className="w-full py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Tüm İlanları Görüntüle
-              </button>
+ 
+              <div className="hidden md:block mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <ArrowUpDown className="w-4 h-4 text-gray-600" />
+                  <h3 className="font-semibold text-gray-900">Sırala</h3>
+                </div>
+                <div className="space-y-3"> 
+                  <div>
+                    <div className="flex flex-col gap-1.5">
+                      <button
+                        onClick={() => handleSortChange("date", "asc")}
+                        className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
+                          sortBy === "date" && sortOrder === "asc"
+                            ? "bg-blue-50 border-blue-300 text-blue-700"
+                            : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        <span>Eski ilanlar önce</span>
+                        {sortBy === "date" && sortOrder === "asc" && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleSortChange("date", "desc")}
+                        className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
+                          sortBy === "date" && sortOrder === "desc"
+                            ? "bg-blue-50 border-blue-300 text-blue-700"
+                            : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        <span>Yeni ilanlar önce</span>
+                        {sortBy === "date" && sortOrder === "desc" && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+ 
+                  <div>
+                    <div className="flex flex-col gap-1.5">
+                      <button
+                        onClick={() => handleSortChange("price", "asc")}
+                        className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
+                          sortBy === "price" && sortOrder === "asc"
+                            ? "bg-blue-50 border-blue-300 text-blue-700"
+                            : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        <span>Ucuzdan pahalıya</span>
+                        {sortBy === "price" && sortOrder === "asc" && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleSortChange("price", "desc")}
+                        className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
+                          sortBy === "price" && sortOrder === "desc"
+                            ? "bg-blue-50 border-blue-300 text-blue-700"
+                            : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        <span>Pahalıdan ucuza</span>
+                        {sortBy === "price" && sortOrder === "desc" && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
           {!isMobile && (
-            <div className="lg:w-3/4">
+            <div className="lg:w-3/4"> 
+              <div className="hidden md:flex items-center justify-between mb-6 p-4 bg-white rounded-xl shadow-sm">
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">{totalItems}</span> ilan
+                  <span className="mx-2">•</span>
+                  <span className="text-blue-600 font-medium">
+                    {sortBy === "date"
+                      ? sortOrder === "asc"
+                        ? "Eski İlanlar Önce"
+                        : "Yeni İlanlar Önce"
+                      : sortOrder === "asc"
+                      ? "Ucuzdan Pahalıya"
+                      : "Pahalıdan Ucuza"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-500">
+                  <ArrowUpDown className="w-4 h-4" />
+                  <span className="text-sm">Sıralı</span>
+                </div>
+              </div>
+
               <DynamicSearch
                 categoryId={categoryId}
                 categoryName={category.name}
@@ -410,19 +605,13 @@ export default function CategoryDetailPage() {
                                 alt={advert.title || "İlan görseli"}
                                 className="w-full h-full object-cover rounded group-hover:opacity-90 transition-opacity"
                                 onError={(e) => {
-                                  console.log(
-                                    `❌ Görsel yüklenemedi: ${advert.photos[0]}`
-                                  );
+                                 
                                   e.currentTarget.src = logoUrl;
                                   e.currentTarget.alt = "Logo";
                                   e.currentTarget.className =
                                     "w-full h-full object-contain p-2 md:p-3 bg-gray-100 rounded";
                                 }}
-                                onLoad={() =>
-                                  console.log(
-                                    `✅ Görsel yüklendi: ${advert.photos[0]}`
-                                  )
-                                }
+                               
                               />
                             </>
                           ) : (
@@ -441,7 +630,7 @@ export default function CategoryDetailPage() {
                         </div>
                         <div className="flex-1 flex flex-col justify-between py-2 md:py-3 pr-2 md:pr-3 min-w-0">
                           <div className="mb-1">
-                            <h3 className="font-bold text-gray-900 text-xs md:text-base hover:text-blue-600 transition-colors break-words whitespace-normal line-clamp-2">
+                            <h3 className="font-bold text-gray-900 text-xs md:text-base hover:text-blue-600 transition-colors wrap-break-word whitespace-normal line-clamp-2">
                               {advert.title || "İsimsiz İlan"}
                             </h3>
                           </div>

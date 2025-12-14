@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import ClientProviders from "./providers/ClientProviders";
+import { CategoryProvider } from "@/app/context/CategoryContext";
 import "./globals.css";
 
 const inter = Inter({
@@ -9,6 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://yenigunemlak.com"),  
   title: "Yenigün Emlak",
   description: "Yenigün Emlak - Hayalinizdeki Eve Kavuşun",
 };
@@ -21,7 +23,6 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
-        {/* Leaflet CSS'ini CDN'den yükle */}
         <link
           rel="stylesheet"
           href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -30,7 +31,9 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <ClientProviders>{children}</ClientProviders>
+        <ClientProviders>
+          <CategoryProvider> {children}</CategoryProvider>
+        </ClientProviders>
       </body>
     </html>
   );

@@ -236,6 +236,7 @@ interface FilterSidebarProps {
     sortBy: "date" | "price",
     sortOrder: "asc" | "desc"
   ) => Promise<void>;
+  contextFeatures?: Feature[];
 }
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({
@@ -268,6 +269,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onOpenSortMenu,
   handleSortChangeDesktop,
   setCurrentPage,
+  contextFeatures = [],
 }) => {
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
@@ -286,70 +288,74 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [currentFeatures, setCurrentFeatures] = useState<Feature[]>([]);
   const [showSortModal, setShowSortModal] = useState(false);
 
+  useEffect(() => {
+    const loadFeatures = () => {
+      if (contextFeatures.length > 0) {
+        setCurrentFeatures(contextFeatures);
+        return;
+      }
+
+      if (selectedSubSubcategory && selectedSubSubcategory.features) {
+        setCurrentFeatures(selectedSubSubcategory.features);
+        return;
+      }
+
+      if (selectedSubcategory && selectedSubcategory.features) {
+        setCurrentFeatures(selectedSubcategory.features);
+        return;
+      }
+
+      if (selectedCategory && selectedCategory.features) {
+        setCurrentFeatures(selectedCategory.features);
+        return;
+      }
+
+      setCurrentFeatures([]);
+    };
+
+    loadFeatures();
+  }, [
+    selectedCategory?._id,
+    selectedSubcategory?._id,
+    selectedSubSubcategory?._id,
+    JSON.stringify(contextFeatures),
+  ]);
+
+  useEffect(() => {
+    if (currentFeatures.length === 0) return;
+
+    const initialFilters: Record<string, any> = {};
+    currentFeatures.forEach((feature: Feature) => {
+      if (featureFilters[feature._id] === undefined) {
+        if (feature.type === "multi_select") {
+          initialFilters[feature._id] = [];
+        } else if (feature.type === "boolean") {
+          initialFilters[feature._id] = false;
+        } else if (feature.type === "range") {
+          initialFilters[feature._id] = { min: null, max: null };
+        } else if (feature.type === "single_select") {
+          initialFilters[feature._id] = "";
+        } else if (feature.type === "number") {
+          initialFilters[feature._id] = "";
+        } else {
+          initialFilters[feature._id] = "";
+        }
+      }
+    });
+
+    if (Object.keys(initialFilters).length > 0) {
+      setFeatureFilters((prev) => ({
+        ...prev,
+        ...initialFilters,
+      }));
+    }
+  }, [currentFeatures]);
+
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
-  };
-
-  const buildApiFilters = () => {
-    const apiFilters: any = {};
-
-    if (filters.location && filters.location !== "Hepsi") {
-      apiFilters.city = filters.location;
-      if (filters.district && filters.district !== "Hepsi") {
-        apiFilters.district = filters.district;
-      }
-    }
-
-    if (selectedCategory) {
-      apiFilters.category = selectedCategory.name;
-
-      if (selectedSubcategory) {
-        apiFilters.type = selectedSubcategory.name;
-
-        if (selectedSubSubcategory) {
-          apiFilters.subcategory = selectedSubSubcategory.name;
-        }
-      }
-    }
-    if (filters.minPrice && filters.minPrice > 0) {
-      apiFilters.minPrice = filters.minPrice;
-    }
-    if (filters.maxPrice && filters.maxPrice > 0) {
-      apiFilters.maxPrice = filters.maxPrice;
-    }
-
-    if (filters.sortBy && filters.sortOrder) {
-      apiFilters.sortBy = filters.sortBy;
-      apiFilters.sortOrder = filters.sortOrder;
-    }
-
-    if (currentFeatures.length > 0) {
-      const featureFiltersArray = Object.entries(featureFilters)
-        .filter(([_, value]) => {
-          if (value === undefined || value === null) return false;
-          if (typeof value === "string" && value.trim() === "") return false;
-          if (typeof value === "number" && value === 0) return false;
-          if (Array.isArray(value) && value.length === 0) return false;
-          if (typeof value === "object" && value !== null) {
-            if (value.min === null && value.max === null) return false;
-            if (value.min === 0 && value.max === 0) return false;
-          }
-          return true;
-        })
-        .map(([featureId, value]) => ({
-          featureId,
-          value,
-        }));
-
-      if (featureFiltersArray.length > 0) {
-        apiFilters.featureFilters = featureFiltersArray;
-      }
-    }
-
-    return apiFilters;
   };
 
   const sortOptions = [
@@ -463,7 +469,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const handleSubcategorySelect = (subcategory: Subcategory | null) => {
     setSelectedSubcategory(subcategory);
     setSelectedSubSubcategory(null);
-    setFeatureFilters({});
 
     if (subcategory) {
       setAvailableSubSubcategories(subcategory.subcategories || []);
@@ -490,33 +495,41 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         action: action,
       }));
 
-      if (
-        subcategory.name === "Kiralık" &&
-        subcategory.subcategories?.length > 0
-      ) {
-        setCurrentFeatures([]);
-      } else if (subcategory.features && subcategory.features.length > 0) {
+      if (subcategory.features && subcategory.features.length > 0) {
         setCurrentFeatures(subcategory.features);
+
         const initialFilters: Record<string, any> = {};
         subcategory.features.forEach((feature: Feature) => {
-          if (feature.type === "multi_select") {
-            initialFilters[feature._id] = [];
-          } else if (feature.type === "boolean") {
-            initialFilters[feature._id] = false;
-          } else if (feature.type === "range") {
-            initialFilters[feature._id] = { min: null, max: null };
+          if (!featureFilters[feature._id]) {
+            if (feature.type === "multi_select") {
+              initialFilters[feature._id] = [];
+            } else if (feature.type === "boolean") {
+              initialFilters[feature._id] = false;
+            } else if (feature.type === "range") {
+              initialFilters[feature._id] = { min: null, max: null };
+            } else if (feature.type === "single_select") {
+              initialFilters[feature._id] = "";
+            } else if (feature.type === "number") {
+              initialFilters[feature._id] = "";
+            } else {
+              initialFilters[feature._id] = "";
+            }
           }
         });
-        setFeatureFilters(initialFilters);
-      } else {
-        if (
-          selectedCategory?.features &&
-          selectedCategory.features.length > 0
-        ) {
-          setCurrentFeatures(selectedCategory.features);
-        } else {
-          setCurrentFeatures([]);
+
+        if (Object.keys(initialFilters).length > 0) {
+          setFeatureFilters((prev) => ({
+            ...prev,
+            ...initialFilters,
+          }));
         }
+      } else if (
+        selectedCategory?.features &&
+        selectedCategory.features.length > 0
+      ) {
+        setCurrentFeatures(selectedCategory.features);
+      } else {
+        setCurrentFeatures([]);
       }
     } else {
       setAvailableSubSubcategories([]);
@@ -541,7 +554,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   const handleSubSubcategorySelect = (subsubcategory: Subcategory | null) => {
     setSelectedSubSubcategory(subsubcategory);
-    setFeatureFilters({});
 
     if (subsubcategory) {
       const categoryPath =
@@ -567,35 +579,44 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
       if (subsubcategory.features && subsubcategory.features.length > 0) {
         setCurrentFeatures(subsubcategory.features);
+
         const initialFilters: Record<string, any> = {};
         subsubcategory.features.forEach((feature: Feature) => {
-          if (feature.type === "multi_select") {
-            initialFilters[feature._id] = [];
-          } else if (feature.type === "boolean") {
-            initialFilters[feature._id] = false;
-          } else if (feature.type === "range") {
-            initialFilters[feature._id] = { min: null, max: null };
-          } else if (feature.type === "single_select") {
-            initialFilters[feature._id] = "";
-          } else if (feature.type === "number") {
-            initialFilters[feature._id] = "";
+          if (!featureFilters[feature._id]) {
+            if (feature.type === "multi_select") {
+              initialFilters[feature._id] = [];
+            } else if (feature.type === "boolean") {
+              initialFilters[feature._id] = false;
+            } else if (feature.type === "range") {
+              initialFilters[feature._id] = { min: null, max: null };
+            } else if (feature.type === "single_select") {
+              initialFilters[feature._id] = "";
+            } else if (feature.type === "number") {
+              initialFilters[feature._id] = "";
+            } else {
+              initialFilters[feature._id] = "";
+            }
           }
         });
-        setFeatureFilters(initialFilters);
-      } else {
-        if (
-          selectedSubcategory?.features &&
-          selectedSubcategory.features.length > 0
-        ) {
-          setCurrentFeatures(selectedSubcategory.features);
-        } else if (
-          selectedCategory?.features &&
-          selectedCategory.features.length > 0
-        ) {
-          setCurrentFeatures(selectedCategory.features);
-        } else {
-          setCurrentFeatures([]);
+
+        if (Object.keys(initialFilters).length > 0) {
+          setFeatureFilters((prev) => ({
+            ...prev,
+            ...initialFilters,
+          }));
         }
+      } else if (
+        selectedSubcategory?.features &&
+        selectedSubcategory.features.length > 0
+      ) {
+        setCurrentFeatures(selectedSubcategory.features);
+      } else if (
+        selectedCategory?.features &&
+        selectedCategory.features.length > 0
+      ) {
+        setCurrentFeatures(selectedCategory.features);
+      } else {
+        setCurrentFeatures([]);
       }
     } else if (selectedSubcategory) {
       const categoryPath = selectedCategory
@@ -632,20 +653,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       [featureId]: value,
     }));
   };
-
-  useEffect(() => {
-    const loadFeaturesFromUrl = () => {
-      if (selectedSubSubcategory && selectedSubSubcategory.features) {
-        setCurrentFeatures(selectedSubSubcategory.features);
-      } else if (selectedSubcategory && selectedSubcategory.features) {
-        setCurrentFeatures(selectedSubcategory.features);
-      } else if (selectedCategory && selectedCategory.features) {
-        setCurrentFeatures(selectedCategory.features);
-      }
-    };
-
-    loadFeaturesFromUrl();
-  }, [selectedCategory, selectedSubcategory, selectedSubSubcategory]);
 
   const getCategoryDisplayName = () => {
     if (selectedSubSubcategory) {
@@ -1645,7 +1652,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                 )}
               </div>
 
-              {currentFeatures.length > 0 && (
+              {/* {currentFeatures.length > 0 && (
                 <div className="space-y-3 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
                   <button
                     onClick={() => toggleSection("features")}
@@ -1679,7 +1686,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     </div>
                   )}
                 </div>
-              )}
+              )} */}
             </div>
 
             <div className="sticky bottom-0 mt-4">

@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 import React, { useEffect, useRef, useState, use } from "react";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
@@ -79,7 +80,7 @@ const FeatureCard = ({
   if (!value || value === "0" || value === "0 m²") return null;
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
       <div className="text-blue-600 text-lg">{icon}</div>
       <div>
         <p className="text-xs text-gray-500">{label}</p>
@@ -306,7 +307,7 @@ async function getAdvertData(
   try {
     const response = await api.get(`/advert/adverts/${uid}`);
     const data = response.data.data;
-    console.log(data);
+
     if (!data || data.active === false) {
       throw new Error("İlan bulunamadı");
     }
@@ -382,6 +383,64 @@ function AdvertDetail({
   const hasPhotos = safePhotos.length > 0;
   const currentPhoto = hasPhotos ? safePhotos[selectedPhoto] : "/logo.png";
   const shouldShowLoading = hasPhotos && imageLoading;
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const handleTouchStartMain = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMoveMain = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEndMain = () => {
+    if (!touchStart || !touchEnd || !hasPhotos) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      setSelectedPhoto((prev) =>
+        prev === safePhotos.length - 1 ? 0 : prev + 1
+      );
+    }
+
+    if (isRightSwipe) {
+      setSelectedPhoto((prev) =>
+        prev === 0 ? safePhotos.length - 1 : prev - 1
+      );
+    }
+  };
+
+  const handleTouchStartZoom = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMoveZoom = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEndZoom = () => {
+    if (!touchStart || !touchEnd || !hasPhotos) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      goToNextPhoto();
+    }
+
+    if (isRightSwipe) {
+      goToPreviousPhoto();
+    }
+  };
 
   const handleShare = async () => {
     if (!data) return;
@@ -788,7 +847,12 @@ function AdvertDetail({
             <div className="block lg:hidden">
               {/* Fotoğraf Galerisi */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-                <div className="relative">
+                <div
+                  className="relative"
+                  onTouchStart={handleTouchStartMain}
+                  onTouchMove={handleTouchMoveMain}
+                  onTouchEnd={handleTouchEndMain}
+                >
                   {shouldShowLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -1084,30 +1148,30 @@ function AdvertDetail({
             <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="flex border-b border-gray-200">
                 <button
-                  className={`flex-1 py-4 text-center font-medium text-base border-b-2 transition-colors ${
+                  className={`flex-1 py-4 text-center font-semibold text-lg border-b-2 transition-colors ${
                     activeTab === "details"
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-blue-700 text-blue-800 bg-blue-50"
+                      : "border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                   onClick={() => setActiveTab("details")}
                 >
                   İlan Detayı
                 </button>
                 <button
-                  className={`flex-1 py-4 text-center font-medium text-base border-b-2 transition-colors ${
+                  className={`flex-1 py-4 text-center font-semibold text-lg border-b-2 transition-colors ${
                     activeTab === "description"
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-blue-700 text-blue-800 bg-blue-50"
+                      : "border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                   onClick={() => setActiveTab("description")}
                 >
                   Açıklama
                 </button>
                 <button
-                  className={`flex-1 py-4 text-center font-medium text-base border-b-2 transition-colors ${
+                  className={`flex-1 py-4 text-center font-semibold text-lg border-b-2 transition-colors ${
                     activeTab === "location"
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-blue-700 text-blue-800 bg-blue-50"
+                      : "border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                   onClick={() => setActiveTab("location")}
                 >
@@ -1313,12 +1377,15 @@ function AdvertDetail({
 
       {zoomPhoto.show && (
         <div
-          className=" pt-20 fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm"
+          className="pt-20 fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm"
           onClick={() => setZoomPhoto({ show: false, photo: "", level: 1 })}
         >
           <div
             className="relative w-full h-full flex flex-col items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStartZoom}
+            onTouchMove={handleTouchMoveZoom}
+            onTouchEnd={handleTouchEndZoom}
           >
             <button
               className="absolute top-4 right-4 z-50 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-3 backdrop-blur-sm"

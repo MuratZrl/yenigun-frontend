@@ -51,7 +51,7 @@ const SimilarAdCard = ({ ad }: { ad: SimilarAd }) => {
       className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300"
     >
       <Link href={`/ads/${ad.uid}`} className="block">
-        <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+        <div className="relative aspect-4/3 overflow-hidden bg-gray-100">
           {imageLoading && imageSrc !== "/logo.png" && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -95,7 +95,7 @@ const SimilarAdCard = ({ ad }: { ad: SimilarAd }) => {
           </h3>
 
           <div className="flex items-center gap-1 text-gray-600 mb-3">
-            <MapPin className="text-blue-600 flex-shrink-0" size={16} />
+            <MapPin className="text-blue-600 shrink-0" size={16} />
             <span className="text-xs truncate">
               {ad.address.district}, {ad.address.province}
             </span>
