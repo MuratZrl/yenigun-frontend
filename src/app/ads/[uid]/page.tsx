@@ -6,20 +6,22 @@ import AdvertDetailClient from "./AdvertDetailClient";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const getAbsoluteImageUrl = (url: string): string => {
-  if (!url || url.trim() === "") {
+const getAbsoluteImageUrl = (url: any): string => {
+  const urlString = String(url || "");
+
+  if (!urlString || urlString.trim() === "") {
     return "https://storage.googleapis.com/yenigunemlak/default-og.jpg";
   }
 
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
+  if (urlString.startsWith("http://") || urlString.startsWith("https://")) {
+    return urlString;
   }
 
-  if (url.startsWith("/")) {
-    return `https://www.yenigunemlak.com${url}`;
+  if (urlString.startsWith("/")) {
+    return `https://www.yenigunemlak.com${urlString}`;
   }
 
-  return `https://www.yenigunemlak.com/${url}`;
+  return `https://www.yenigunemlak.com/${urlString}`;
 };
 
 const optimizeImageForWhatsApp = (url: string): string => {

@@ -9,7 +9,6 @@ import {
   Bed,
   Bath,
   Square,
-  ChevronRight,
 } from "lucide-react";
 import { motion, Variants } from "framer-motion";
 import Link from "next/link";
@@ -106,15 +105,6 @@ const Highlights = ({ data }: HighlightProps) => {
           </span>
           <div className="w-8 md:w-12 h-0.5 bg-linear-to-l from-transparent to-blue-500"></div>
         </div>
-
-        {/* <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900"
-        >
-          Fırsatları Kaçırmayın
-        </motion.h2> */}
 
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -216,7 +206,6 @@ const Highlights = ({ data }: HighlightProps) => {
             ))}
           </div>
 
-          {/* DESKTOP GÖRÜNÜM - Grid kart formatı */}
           <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
             {visibleData.map((item: any, index: number) => (
               <motion.div
@@ -246,7 +235,6 @@ const Highlights = ({ data }: HighlightProps) => {
 
                   <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                  {/* Öne Çıkan Badge */}
                   {item.isHighlight && (
                     <div className="absolute top-3 left-3">
                       <div className="flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-linear-to-r from-orange-500 to-red-500 text-white font-semibold text-xs shadow-lg">
@@ -256,14 +244,12 @@ const Highlights = ({ data }: HighlightProps) => {
                     </div>
                   )}
 
-                  {/* Fiyat */}
                   <div className="absolute bottom-3 left-3 right-3">
                     <div className="py-2 px-4 rounded-lg bg-white/95 backdrop-blur-sm font-bold text-gray-900 text-base md:text-lg shadow-lg">
                       {item.fee}
                     </div>
                   </div>
 
-                  {/* Link Kopyala Butonu */}
                   <div className="absolute top-3 right-3">
                     <motion.button
                       whileHover={{ scale: 1.1 }}
@@ -287,12 +273,10 @@ const Highlights = ({ data }: HighlightProps) => {
 
                 {/* İçerik Alanı */}
                 <div className="p-4 md:p-5 flex-1 flex flex-col">
-                  {/* Başlık */}
                   <h3 className="font-bold text-base md:text-lg text-gray-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors duration-200 min-h-14">
                     {item.title}
                   </h3>
 
-                  {/* Konum */}
                   <div className="flex items-center gap-2 text-gray-600 mb-3 md:mb-4">
                     <MapPin className="text-orange-500 shrink-0" size={16} />
                     <span className="text-xs md:text-sm font-medium truncate">
@@ -348,7 +332,6 @@ const Highlights = ({ data }: HighlightProps) => {
                     </div>
                   )}
 
-                  {/* Kategori ve Tip */}
                   <div className="flex items-center justify-between mb-3 md:mb-4">
                     <span className="text-xs font-semibold text-gray-700 bg-blue-50 px-3 py-1.5 rounded-full">
                       {item.steps?.second || "Konut"}
@@ -358,7 +341,6 @@ const Highlights = ({ data }: HighlightProps) => {
                     </span>
                   </div>
 
-                  {/* Açıklama (kısa) */}
                   {item.thoughts && (
                     <p
                       className="text-gray-600 text-xs md:text-sm leading-relaxed line-clamp-2 mb-3 md:mb-4 flex-1"

@@ -1285,7 +1285,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       ) : (
         /* DESKTOP GÖRÜNÜM */
         <div className="hidden md:block w-80 bg-white border-r border-gray-200 h-[calc(100vh-5rem)] sticky top-20">
-          <div className="h-[calc(100vh-10rem)] overflow-y-auto pb-20 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]">
+          <div className="h-[calc(100vh-5rem)] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]">
             <div className="p-4 space-y-4">
               {/* SIRALAMA BÖLÜMÜ - DESKTOP */}
               <div className="space-y-3 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
@@ -1689,15 +1689,20 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
               )} */}
             </div>
 
-            <div className="sticky bottom-0 mt-4">
-              <div className="p-4 bg-linear-to-t from-white via-white to-transparent">
-                <button
-                  onClick={handleFilter}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold text-base transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
-                >
-                  Filtrele
-                </button>
-              </div>
+            <div className="mt-4 mb-4 flex flex-col items-center">
+              <button
+                onClick={handleFilter}
+                className="w-4/5 bg-linear-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+              >
+                {totalItems > 0 ? `Filtrele (${totalItems})` : "Filtrele"}
+              </button>
+
+              <button
+                onClick={clearFilters}
+                className="w-4/5 mt-2 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
+              >
+                Temizle
+              </button>
             </div>
           </div>
         </div>

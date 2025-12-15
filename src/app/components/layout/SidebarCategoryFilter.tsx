@@ -196,7 +196,7 @@ const CategorySidebar = ({ selectedCategoryId }: CategorySidebarProps) => {
                   : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
               }`}
             >
-              <Grid className="w-5 h-5" />
+              <Grid className="w-3 h-3" />
             </div>
             <div className="text-left">
               <span className="font-semibold block">Tüm Kategoriler</span>
@@ -221,15 +221,15 @@ const CategorySidebar = ({ selectedCategoryId }: CategorySidebarProps) => {
               <button
                 key={category.id}
                 onClick={() => handleCategoryClick(category.id, category.name)}
-                className={`w-full flex items-center justify-between p-3 text-left rounded-xl transition-all duration-200 group ${
+                className={`w-full flex items-center justify-between p-1.5 text-left rounded-lg transition-all duration-200 group ${
                   isSelected
-                    ? "bg-blue-50 text-blue-700 ring-2 ring-blue-500 ring-opacity-50"
-                    : "bg-gray-50 hover:bg-gray-100 text-gray-900 hover:shadow-sm"
+                    ? "bg-blue-50 text-blue-700 ring-1 ring-blue-500 ring-opacity-50 text-xs"
+                    : "bg-gray-50 hover:bg-gray-100 text-gray-900 hover:shadow-sm text-xs"
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <div
-                    className={`p-2 rounded-lg transition-colors ${
+                    className={`p-1 rounded-md transition-colors ${
                       isSelected
                         ? "bg-blue-100 text-blue-600"
                         : "bg-gray-100 text-gray-600 group-hover:bg-gray-200"
@@ -238,11 +238,13 @@ const CategorySidebar = ({ selectedCategoryId }: CategorySidebarProps) => {
                     {category.icon}
                   </div>
                   <div className="text-left">
-                    <span className="font-semibold block">{category.name}</span>
+                    <span className="font-semibold block text-xs">
+                      {category.name}
+                    </span>
                   </div>
                 </div>
                 <ChevronRight
-                  className={`w-4 h-4 transition-transform ${
+                  className={`w-3 h-3 transition-transform ${
                     isSelected ? "text-blue-500" : "text-gray-400"
                   }`}
                 />

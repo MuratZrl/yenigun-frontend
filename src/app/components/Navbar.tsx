@@ -41,6 +41,7 @@ const Navbar = () => {
   const [activeHref, setActiveHref] = useState<string>("");
   const [isMobile, setIsMobile] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   useEffect(() => {
     const authenticateUser = async () => {
@@ -97,16 +98,34 @@ const Navbar = () => {
     }
   };
 
-  const handleSearchButtonClick = () => {
+  const handleMobileSearch = () => {
     if (searchQuery.trim()) {
       window.location.href = `/ads?q=${encodeURIComponent(searchQuery)}`;
     } else {
       window.location.href = `/ads`;
     }
+    setShowMobileSearch(false);
   };
+
+  const handleSearchButtonClick = () => {
+    if (!isMobile) {
+      if (searchQuery.trim()) {
+        window.location.href = `/ads?q=${encodeURIComponent(searchQuery)}`;
+      } else {
+        window.location.href = `/ads`;
+      }
+    } else {
+      setShowMobileSearch(!showMobileSearch);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      handleSearch(e as any);
+      if (isMobile) {
+        handleMobileSearch();
+      } else {
+        handleSearch(e as any);
+      }
     }
   };
 
@@ -126,7 +145,7 @@ const Navbar = () => {
         <div>
           <div className="fixed top-0 left-0 right-0 h-24 bg-gray-900 z-998"></div>
           <motion.nav
-            className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-500 ${
+            className={`fixed top-0 left-0 right-0 z-999 transition-all duration-500 ${
               scrolled
                 ? "bg-transparent backdrop-blur-xl py-3"
                 : "bg-transparent backdrop-blur-lg py-5"
@@ -162,7 +181,7 @@ const Navbar = () => {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
                       <button
                         type="submit"
-                        className="absolute right-1.5 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded text-xs font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+                        className="absolute right-1.5 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded text-xs font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
                       >
                         Ara
                       </button>
@@ -212,7 +231,7 @@ const Navbar = () => {
                             className="w-8 h-8 rounded-full border-2 border-white/30"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-900 to-gray-900 flex items-center justify-center text-white font-semibold shadow-lg">
+                          <div className="w-8 h-8 rounded-full bg-linear-to-r from-blue-900 to-gray-900 flex items-center justify-center text-white font-semibold shadow-lg">
                             <span className="text-sm">
                               {user.name.charAt(0)}
                               {user.surname.charAt(0)}
@@ -265,7 +284,7 @@ const Navbar = () => {
                       onClick={() => {
                         window.location.href = "/login";
                       }}
-                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 border border-white/20"
+                      className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 border border-white/20"
                       whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -282,9 +301,9 @@ const Navbar = () => {
 
       {isMobile && (
         <>
-          <div className="fixed top-0 left-0 right-0 h-20 bg-gray-900 z-[998]"></div>
+          <div className="fixed top-0 left-0 right-0 h-20 bg-gray-900 z-998"></div>
           <motion.nav
-            className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-500 ${
+            className={`fixed top-0 left-0 right-0 z-999 transition-all duration-500 ${
               scrolled
                 ? "bg-transparent backdrop-blur-xl py-3"
                 : "bg-transparent backdrop-blur-lg py-4"
@@ -317,7 +336,7 @@ const Navbar = () => {
                           className="w-8 h-8 rounded-full border-2 border-white/30"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-900 to-gray-900 flex items-center justify-center text-white text-xs font-semibold">
+                        <div className="w-8 h-8 rounded-full bg-linear-to-r from-blue-900 to-gray-900 flex items-center justify-center text-white text-xs font-semibold">
                           <span>
                             {user.name.charAt(0)}
                             {user.surname.charAt(0)}
@@ -330,7 +349,7 @@ const Navbar = () => {
                       onClick={() => {
                         window.location.href = "/login";
                       }}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium text-sm border border-white/20"
+                      className="px-4 py-2 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium text-sm border border-white/20"
                     >
                       Giriş
                     </button>
@@ -351,7 +370,7 @@ const Navbar = () => {
               </div>
 
               <AnimatePresence>
-                {false && (
+                {showMobileSearch && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
@@ -365,9 +384,16 @@ const Navbar = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyPress={handleKeyPress}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 pl-12"
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 pl-12"
+                        autoFocus
                       />
-                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <button
+                        type="submit"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1.5 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded text-xs font-medium hover:from-blue-600 hover:to-purple-700 transition-colors duration-300"
+                      >
+                        Ara
+                      </button>
                     </form>
                   </motion.div>
                 )}
@@ -379,7 +405,7 @@ const Navbar = () => {
             {isOpen && (
               <>
                 <motion.div
-                  className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-[998]"
+                  className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-998"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -387,7 +413,7 @@ const Navbar = () => {
                 />
 
                 <motion.div
-                  className="fixed top-0 right-0 h-full w-80 bg-gray-900/95 backdrop-blur-xl shadow-2xl z-[999] border-l border-white/20"
+                  className="fixed top-0 right-0 h-full w-80 bg-gray-900/95 backdrop-blur-xl shadow-2xl z-999 border-l border-white/20"
                   initial={{ x: "100%" }}
                   animate={{ x: 0 }}
                   exit={{ x: "100%" }}
@@ -404,26 +430,6 @@ const Navbar = () => {
                       >
                         <X className="w-6 h-6" />
                       </button>
-                    </div>
-
-                    <div className="mb-6">
-                      <form onSubmit={handleSearch} className="relative">
-                        <input
-                          type="text"
-                          placeholder="İlanlarda ara..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 pl-12"
-                        />
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
-                        <button
-                          type="submit"
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded text-xs font-medium"
-                        >
-                          Ara
-                        </button>
-                      </form>
                     </div>
 
                     <nav className="flex-1">
@@ -458,7 +464,7 @@ const Navbar = () => {
                               className="w-10 h-10 rounded-full border-2 border-white/30"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-900 to-gray-900 flex items-center justify-center text-white font-semibold">
+                            <div className="w-10 h-10 rounded-full bg-linear-to-r from-blue-900 to-gray-900 flex items-center justify-center text-white font-semibold">
                               <span className="text-sm">
                                 {user.name.charAt(0)}
                                 {user.surname.charAt(0)}

@@ -109,7 +109,7 @@ export default function AdsPage({
       try {
         setLoadingCategories(true);
         const response = await api.get("/admin/categories");
-        
+
         if (response.data.success && Array.isArray(response.data.data)) {
           const categoriesData = response.data.data;
           setCategories(categoriesData);
@@ -126,7 +126,6 @@ export default function AdsPage({
 
   useEffect(() => {
     if (contextSelectedSubcat) {
-    
       if (contextSelectedSubcat.path) {
         const newFilters = {
           ...filters,
@@ -159,14 +158,12 @@ export default function AdsPage({
           ...prev,
           ...initialFeatureFilters,
         }));
- 
       }
     }
   }, [contextSelectedSubcat]);
 
   useEffect(() => {
     if (loadingCategories || categories.length === 0) return;
- 
 
     const initializeFiltersFromURL = async () => {
       if (isInitializingFilters.current) return;
@@ -211,7 +208,6 @@ export default function AdsPage({
               ? sortOrderParam
               : "desc",
         };
- 
 
         setFilters(newFilters);
 
@@ -264,7 +260,7 @@ export default function AdsPage({
         );
         setShowUrlDebug(hasFilterParams);
 
-        if (isInitialLoad.current) { 
+        if (isInitialLoad.current) {
           await fetchSearchResults(
             newFilters,
             pageFromUrl,
@@ -285,11 +281,10 @@ export default function AdsPage({
   const handleCategorySelectionFromURL = async (
     typeParam: string,
     categories: Category[]
-  ) => { 
+  ) => {
+    const categoryPath = typeParam.split(" > ");
 
-    const categoryPath = typeParam.split(" > "); 
-
-    if (categoryPath.length === 0) { 
+    if (categoryPath.length === 0) {
       return;
     }
 
@@ -299,10 +294,9 @@ export default function AdsPage({
 
     const foundCategory = categories.find((cat) => cat.name === firstPart);
     if (!foundCategory) {
-     
       return;
     }
- 
+
     setSelectedCategory(foundCategory);
     setAvailableSubcategories(foundCategory.subcategories || []);
 
@@ -311,7 +305,7 @@ export default function AdsPage({
         (sub) => sub.name === secondPart
       );
 
-      if (foundSubcategory) { 
+      if (foundSubcategory) {
         setLocalSelectedSubcat(foundSubcategory);
         setAvailableSubSubcategories(foundSubcategory.subcategories || []);
 
@@ -321,7 +315,6 @@ export default function AdsPage({
           );
 
           if (foundSubSubcategory) {
-         
             setSelectedSubSubcategory(foundSubSubcategory);
           }
         }
@@ -404,8 +397,7 @@ export default function AdsPage({
     limit: number = 12,
     filters?: any
   ) => {
-    try { 
-
+    try {
       let params: any = {
         ...filters,
         page,
@@ -441,7 +433,7 @@ export default function AdsPage({
           return items.join("&");
         },
       });
- 
+
       return response.data;
     } catch (error) {
       console.error("❌ Arama hatası:", error);
@@ -541,10 +533,8 @@ export default function AdsPage({
 
     if (featureFiltersArray.length > 0) {
       apiFilters.featureFilters = featureFiltersArray;
-    
     }
 
- 
     return apiFilters;
   };
 
@@ -555,15 +545,11 @@ export default function AdsPage({
   ) => {
     try {
       setLoading(true);
-    
+
       const apiFilters = buildApiFilters(filterValues, currentFeatureFilters);
 
-     
-
-    
       const result = await searchAdvertsAPI(page, itemsPerPage, apiFilters);
 
-     
       if (result.success && Array.isArray(result.data)) {
         setData(result.data);
 
@@ -888,11 +874,11 @@ export default function AdsPage({
                         </div>
 
                         <div className="text-right shrink-0 pl-1">
-                          <div className="text-xs md:text-xl font-bold text-gray-900 whitespace-nowrap">
+                          <div className="text-xs md:text-xl font-bold text-blue-800 whitespace-nowrap">
                             {ad.fee ? (
                               <>{ad.fee}</>
                             ) : (
-                              <span className="text-gray-500 text-[10px] md:text-sm block">
+                              <span className="text-blue-800 text-[10px] md:text-sm block">
                                 Fiyat Yok
                               </span>
                             )}

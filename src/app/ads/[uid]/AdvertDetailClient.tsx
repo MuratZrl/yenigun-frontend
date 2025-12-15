@@ -554,8 +554,8 @@ export default function AdvertDetailClient({
     };
 
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">
           İlan Özellikleri
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -579,8 +579,11 @@ export default function AdvertDetailClient({
 
   const renderTraditionalFeatures = () => {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Özellikler</h2>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+        {" "}
+        <h2 className="text-lg font-bold text-gray-900 mb-3">
+          Özellikler
+        </h2>{" "}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <FeatureCard
             icon={featureIcons.area}
@@ -889,7 +892,7 @@ export default function AdvertDetailClient({
               </div>
 
               {/* İlan Başlığı ve Bilgiler */}
-              <div className="mb-4">
+              <div className="mb-2">
                 <h1 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
                   {data.title}
                 </h1>
@@ -942,7 +945,7 @@ export default function AdvertDetailClient({
                   </div>
                 </div>
 
-                <div className="mb-8">
+                <div className="mb-5">
                   <div className="flex bg-white rounded-2xl shadow-sm border border-gray-200 p-1 mb-6">
                     <button
                       className={`flex-1 py-4 px-2 text-center font-semibold text-sm md:text-base rounded-xl transition-all duration-300 ${
@@ -1268,7 +1271,8 @@ export default function AdvertDetailClient({
           </div>
         </div>
 
-        <div className="block lg:hidden mt-8">
+        {/* Sağ Sidebar - Mobil */}
+        <div className="block lg:hidden mt-4">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-14 bg-white flex items-center justify-center rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -1293,13 +1297,13 @@ export default function AdvertDetailClient({
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
-                <span className="font-mono text-lg text-gray-900 tracking-wide">
+              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl">
+                <span className="font-mono text-sm text-gray-900 tracking-wide">
                   {formatPhoneNumber(placeholderPhoneNumber)}
                 </span>
                 <button
                   onClick={() => copyNumber(placeholderPhoneNumber)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs"
                 >
                   {copied ? (
                     <Check className="text-green-500" size={16} />
@@ -1312,7 +1316,7 @@ export default function AdvertDetailClient({
 
               <a
                 href={`tel:${placeholderPhoneNumber}`}
-                className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+                className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
               >
                 <Phone size={16} />
                 Telefonla Ara
@@ -1322,7 +1326,7 @@ export default function AdvertDetailClient({
                 href={`https://wa.me/90${placeholderPhoneNumber}?text=Merhaba,%20${data.advisor.name}%20${data.advisor.surname},%20${data.title}%20ilanınızla%20ilgileniyorum.`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-3 bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+                className="w-full flex items-center justify-center gap-3 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
               >
                 <MessageCircle size={16} />
                 WhatsApp&apos;tan Yaz
