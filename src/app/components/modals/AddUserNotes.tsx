@@ -1,23 +1,14 @@
 import React, { useEffect, useState } from "react";
-import JSONDATA from "../../data.json";
-import { Poppins } from "next/font/google";
 import { toast } from "react-toastify";
-import axios from "axios";
 import Select from "react-select";
 import { X, Plus, ArrowLeft, Trash2 } from "lucide-react";
 import api from "@/app/lib/api";
-
-const PoppinsFont = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "600"],
-});
 
 const AdUserNotes = ({ data, setOpen, cookies }: any) => {
   const [customers, setCustomers] = useState<any>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [note, setNote] = useState("");
   const [noteList, setNoteList] = useState<any>([]);
-  const [selectedNote, setSelectedNote] = useState<any>(null);
   const [mode, setMode] = useState(0);
 
   const handleClose = () => {
@@ -27,62 +18,60 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
   useEffect(() => {
     if (!data.isOpen) return;
 
-    setNoteList(data.ad.userNotes);
+    setNoteList(data.ad?.userNotes || []);
 
     api
       .get("/admin/customers")
       .then((res) => {
-        console.log(res.data.data);
-        setCustomers(res.data.data);
+        setCustomers(res.data.data || []);
       })
       .catch((err) => {
         toast.error("Bir hata oluştu.");
       });
-  }, [data.isOpen]);
+  }, [data.isOpen, data.ad?.userNotes]);
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
     const user = customers.find((item: any) => item.uid === selectedCustomer);
     const adUid = data.ad.uid;
 
+    if (!user) {
+      toast.error("Kullanıcı bulunamadı.");
+      return;
+    }
+
+    const newNote = {
+      user: {
+        name: `${user.name || ""} ${user.surname || ""}`.trim(),
+        surname: user.surname || "",
+        email: user.mail?.mail || "",
+        address: user.fullAddress || "",
+        phone: user.phones?.[0]?.number || "",
+        phones: user.phones || [],
+      },
+      note: note,
+    };
+
+    const updatedNotes = [...noteList, newNote];
+
     api
       .post("/admin/update-user-notes", {
         uid: adUid.toString(),
-        userNotes: [
-          ...data.ad.userNotes,
-          {
-            user: {
-              name: user.name + " " + user.surname,
-              email: user.mail.mail,
-              address: user.fullAddress,
-              phone: user.phones[0].number,
-            },
-            note: note,
-          },
-        ],
+        userNotes: updatedNotes,
       })
       .then((res) => {
-        console.log(res.data);
         toast.success("Not Başarıyla eklendi.");
         setMode(0);
         setSelectedCustomer(null);
         setNote("");
-        setNoteList([
-          ...noteList,
-          {
-            user: {
-              name: user.name + " " + user.surname,
-              email: user.mail.mail,
-              address: user.fullAddress,
-              phone: user.phones[0].number,
-            },
-            note: note,
-          },
-        ]);
+        setNoteList(updatedNotes);
+
+        setTimeout(() => {}, 100);
       })
       .catch((err) => {
-        console.log(err);
-        toast.error("Bir hata oluştu.");
+        toast.error(
+          "Bir hata oluştu: " + (err.response?.data?.message || err.message)
+        );
       });
   };
 
@@ -96,12 +85,10 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
         userNotes: userNotes,
       })
       .then((res) => {
-        console.log(res.data);
         toast.success("Not Başarıyla Silindi.");
         setNoteList(userNotes);
       })
       .catch((err) => {
-        console.log(err);
         toast.error("Bir hata oluştu.");
       });
   };
@@ -119,6 +106,9 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
                   Bu ilan için kullanıcı notlarını yönetin
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Toplam Not: {noteList.length}
                 </p>
               </div>
 
@@ -162,9 +152,9 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
                   <Select
                     options={customers.map((item: any) => ({
                       value: item.uid,
-                      label: `${item.name} ${item.surname} (${
-                        item.phones[0]?.number || "Telefon yok"
-                      })`,
+                      label: `${item.name || ""} ${item.surname || ""} (${
+                        item.phones?.[0]?.number || "Telefon yok"
+                      }) - ${item.mail?.mail || "Email yok"}`,
                     }))}
                     value={
                       selectedCustomer
@@ -173,21 +163,21 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
                             label: `${
                               customers.find(
                                 (item: any) => item.uid === selectedCustomer
-                              )?.name
+                              )?.name || ""
                             } ${
                               customers.find(
                                 (item: any) => item.uid === selectedCustomer
-                              )?.surname
+                              )?.surname || ""
                             } (${
                               customers.find(
                                 (item: any) => item.uid === selectedCustomer
-                              )?.phones[0]?.number || "Telefon yok"
+                              )?.phones?.[0]?.number || "Telefon yok"
                             })`,
                           }
                         : null
                     }
                     onChange={(e: any) => {
-                      console.log(e);
+                      console.log("Selected customer:", e);
                       setSelectedCustomer(e?.value || null);
                     }}
                     placeholder="Bir kullanıcı seçin..."
@@ -255,15 +245,17 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <h4 className="font-semibold text-gray-800">
-                            {item.user.name} {item.user.surname}
+                            {item.user?.name || "İsimsiz"}
                           </h4>
                           <div className="flex flex-wrap gap-2 mt-1">
-                            <span className="text-sm text-gray-600">
-                              {item.user.email}
-                            </span>
-                            {item.user.phones?.[0]?.number && (
+                            {item.user?.email && (
+                              <span className="text-sm text-gray-600">
+                                {item.user.email}
+                              </span>
+                            )}
+                            {item.user?.phone && (
                               <span className="text-sm bg-gray-100 px-2 py-0.5 rounded">
-                                {item.user.phones[0].number}
+                                {item.user.phone}
                               </span>
                             )}
                           </div>

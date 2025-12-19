@@ -22,6 +22,7 @@ import {
   Mail,
   Plus,
   AlertTriangle,
+  StickyNote,
 } from "lucide-react";
 import UserFilterModal from "@/app/components/modals/UserFilterModals";
 const PoppinsFont = Poppins({
@@ -61,12 +62,12 @@ const UserTableRow = ({
               <Image
                 width={44}
                 height={44}
-                className="w-11 h-11 object-cover rounded-xl flex-shrink-0 shadow-sm"
+                className="w-11 h-11 object-cover rounded-xl shrink-0 shadow-sm"
                 alt={`${user.name} ${user.surname}`}
                 src={user.profilePicture}
               />
             ) : (
-              <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-semibold text-lg flex-shrink-0 shadow-sm">
+              <div className="w-11 h-11 bg-linear-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-semibold text-lg shrink-0 shadow-sm">
                 {user.name[0]}
               </div>
             )}
@@ -86,7 +87,7 @@ const UserTableRow = ({
             {user.phones.map((phone: any, index: number) => (
               <div key={index} className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <Phone size={12} className="text-gray-400 flex-shrink-0" />
+                  <Phone size={12} className="text-gray-400 shrink-0" />
                   <span className="text-gray-700 text-sm font-medium truncate">
                     {phone.number ? formatPhoneNumber(phone.number) : "Yok"}
                   </span>
@@ -185,7 +186,7 @@ const UserTableRow = ({
       </tr>
 
       {isExpanded && (
-        <tr className="bg-gradient-to-r from-blue-50/50 to-purple-50/50">
+        <tr className="bg-linear-to-r from-blue-50/50 to-purple-50/50">
           <td colSpan={5} className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="space-y-3">
@@ -310,12 +311,12 @@ const UserCard = ({
               <Image
                 width={48}
                 height={48}
-                className="w-12 h-12 object-cover rounded-full flex-shrink-0"
+                className="w-12 h-12 object-cover rounded-full shrink-0"
                 alt={`${user.name} ${user.surname}`}
                 src={user.profilePicture}
               />
             ) : (
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
+              <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg shrink-0">
                 {user.name[0]}
               </div>
             )}
@@ -387,9 +388,8 @@ const UserCard = ({
           ))}
         </div>
 
-        {/* Address */}
         <div className="flex items-start gap-2 text-sm text-gray-600">
-          <MapPin size={14} className="mt-0.5 flex-shrink-0" />
+          <MapPin size={14} className="mt-0.5 shrink-0" />
           <span className="line-clamp-2">{user.fulladdress}</span>
         </div>
       </div>
@@ -489,6 +489,7 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [noteSearchLoading, setNoteSearchLoading] = useState(false);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
@@ -499,6 +500,12 @@ const Users = () => {
     total: 0,
     apiPage: 1,
     apiLimit: 25,
+  });
+
+  const [noteSearch, setNoteSearch] = useState({
+    text: "",
+    active: false,
+    loading: false,
   });
 
   const [newUser, setNewUser] = useState({
@@ -685,6 +692,61 @@ const Users = () => {
     }));
   };
 
+  const searchByNote = async (searchText: string) => {
+    if (!searchText.trim()) {
+      setNoteSearch({ text: "", active: false, loading: false });
+      setFilteredUsers(allUsers);
+      setPagination((prev) => ({
+        ...prev,
+        page: 0,
+        total: allUsers.length,
+      }));
+      return;
+    }
+
+    try {
+      setNoteSearch({ text: searchText, active: true, loading: true });
+      setLoading(true);
+
+      const response = await api.get(
+        `/admin/customers/note-search?note=${encodeURIComponent(
+          searchText
+        )}&page=1&limit=100`
+      );
+
+      if (response.data.success) {
+        const searchResults = response.data.data || [];
+        setFilteredUsers(searchResults);
+        setPagination((prev) => ({
+          ...prev,
+          page: 0,
+          total: searchResults.length,
+        }));
+        toast.success(`${searchResults.length} müşteri bulundu`);
+      } else {
+        toast.error("Not araması sırasında bir hata oluştu");
+      }
+    } catch (error: any) {
+      console.error("Not arama hatası:", error);
+      toast.error(
+        error.response?.data?.message || "Not araması sırasında bir hata oluştu"
+      );
+    } finally {
+      setNoteSearch((prev) => ({ ...prev, loading: false }));
+      setLoading(false);
+    }
+  };
+
+  const clearNoteSearch = () => {
+    setNoteSearch({ text: "", active: false, loading: false });
+    setFilteredUsers(allUsers);
+    setPagination((prev) => ({
+      ...prev,
+      page: 0,
+      total: allUsers.length,
+    }));
+  };
+
   const handleCleanFilters = () => {
     setFilteredValues({
       fullname: "",
@@ -701,7 +763,11 @@ const Users = () => {
       district: "",
       quarter: "",
     });
-    setFilteredUsers(allUsers);
+    if (noteSearch.active) {
+      clearNoteSearch();
+    } else {
+      setFilteredUsers(allUsers);
+    }
   };
 
   const handleConfirmDelete = () => {
@@ -727,6 +793,10 @@ const Users = () => {
     }
 
     setOpenFilter(false);
+
+    if (noteSearch.active) {
+      clearNoteSearch();
+    }
 
     const hasActiveFilters =
       filteredValues.fullname ||
@@ -883,13 +953,16 @@ const Users = () => {
         <div className="pt-5 pl-5 pr-5 mb-6 lg:mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl lg:text-3xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                 Müşteri Yönetimi
               </h1>
+              <p className="text-gray-600 text-sm mt-1">
+                Müşterileri yönetin, filtreleyin ve notlarında arama yapın
+              </p>
             </div>
 
             <button
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 group font-semibold text-sm lg:text-base w-full lg:w-auto justify-center"
+              className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 group font-semibold text-sm lg:text-base w-full lg:w-auto justify-center"
               onClick={() => setOpen(true)}
             >
               <Plus
@@ -903,7 +976,7 @@ const Users = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="bg-white rounded-xl shadow-sm border p-4 lg:p-6">
-            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between mb-4">
               <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <div className="relative flex-1">
                   <Search
@@ -913,7 +986,7 @@ const Users = () => {
                   <input
                     type="text"
                     placeholder="İsim, soyisim veya email ile ara..."
-                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-custom-orange focus:border-transparent text-sm sm:text-base"
+                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     value={filteredValues.fullname || ""}
                     onChange={(e) =>
                       setFilteredValues({
@@ -945,11 +1018,67 @@ const Users = () => {
               </div>
             </div>
 
+            <div className="border-t pt-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <StickyNote
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={20}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Müşteri notlarında ara..."
+                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                    value={noteSearch.text}
+                    onChange={(e) =>
+                      setNoteSearch((prev) => ({
+                        ...prev,
+                        text: e.target.value,
+                      }))
+                    }
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        searchByNote(noteSearch.text);
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => searchByNote(noteSearch.text)}
+                    disabled={noteSearch.loading}
+                    className="flex items-center justify-center gap-2 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2.5 sm:py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none text-sm sm:text-base"
+                  >
+                    {noteSearch.loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Aranıyor...</span>
+                      </>
+                    ) : (
+                      <>
+                        <StickyNote size={16} className="sm:size-4" />
+                        <span>Notlarda Ara</span>
+                      </>
+                    )}
+                  </button>
+
+                  {noteSearch.active && (
+                    <button
+                      onClick={clearNoteSearch}
+                      className="flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2.5 sm:py-3 rounded-lg font-medium transition-colors duration-200 flex-1 sm:flex-none text-sm sm:text-base"
+                    >
+                      <span>Not Aramayı Temizle</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
             {filteredUsers.length < allUsers.length && (
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
                 <AlertTriangle
                   size={18}
-                  className="text-yellow-600 mt-0.5 flex-shrink-0"
+                  className="text-yellow-600 mt-0.5 shrink-0"
                 />
                 <div className="flex-1">
                   <p className="text-yellow-800 text-sm">
@@ -993,7 +1122,7 @@ const Users = () => {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gradient-to-r from-gray-50 to-blue-50/30 border-b border-gray-200">
+                      <thead className="bg-linear-to-r from-gray-50 to-blue-50/30 border-b border-gray-200">
                         <tr>
                           <th className="p-4 pl-6 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Kullanıcı Bilgisi
