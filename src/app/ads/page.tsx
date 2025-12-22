@@ -871,10 +871,21 @@ export default function AdsPage({
                               !ad.address?.quarter &&
                               "Lokasyon yok"}
                           </p>
+                          {ad.created?.createdTimestamp && (
+                            <div className="text-[10px] md:text-[12px] text-gray-900 whitespace-nowrap">
+                              {new Date(
+                                ad.created.createdTimestamp
+                              ).toLocaleDateString("tr-TR", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              })}
+                            </div>
+                          )}
                         </div>
 
-                        <div className="text-right shrink-0 pl-1">
-                          <div className="text-xs md:text-xl font-bold text-blue-800 whitespace-nowrap">
+                        <div className="text-right shrink-0 pl-1 flex flex-col items-end">
+                          <div className="text-xs md:text-xl font-bold text-blue-800 whitespace-nowrap mb-0.5">
                             {ad.fee ? (
                               <>{ad.fee}</>
                             ) : (

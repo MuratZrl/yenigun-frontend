@@ -84,6 +84,7 @@ export interface SimilarAd {
   steps: Steps;
   created: Created;
 }
+
 export interface Advert {
   uid: string;
   active: boolean;
