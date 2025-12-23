@@ -22,8 +22,10 @@ import {
   Phone,
   MessageCircle,
   Tag,
+  FileText,
 } from "lucide-react";
 import PublicGoogleMap from "@/app/components/PublicGoogleMap";
+import MarkdownRenderer from "@/app/components/MarkdownRenderer";
 
 const DetailRow = ({
   label,
@@ -690,11 +692,18 @@ export default function AdvertDetailClient({
       case "description":
         return (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Açıklama</h2>
-            <div
-              className="prose prose-gray max-w-none text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: data.thoughts }}
-            />
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Açıklama</h2>
+
+            {data.thoughts ? (
+              <div className="prose prose-gray max-w-none">
+                <MarkdownRenderer content={data.thoughts} />
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg">Açıklama bulunmuyor</p>
+              </div>
+            )}
           </div>
         );
       case "location":

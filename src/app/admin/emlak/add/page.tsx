@@ -4,13 +4,10 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Category, FeatureValues, Subcategory } from "@/app/types/category";
-import PropertyTypeTab from "@/app/components/tabs/ProppertyTypeTabs";
-import ListingTypeTab from "@/app/components/tabs/ListingTypeTab";
 import CombinedCategoryTab from "@/app/components/tabs/CategoriesTab";
 import BasicInfoTab from "@/app/components/tabs/BasicInfoTab";
 import MediaTab from "@/app/components/tabs/MediaTab";
 import LocationTab from "@/app/components/tabs/LocationTab";
-import DetailsTab from "@/app/components/tabs/DetailsTab";
 import FeaturesTab from "@/app/components/tabs/FeaturesTab";
 import OtherInfoTab from "@/app/components/tabs/OtherInfoTab";
 import {

@@ -3,7 +3,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { FileText, DollarSign } from "lucide-react";
 import { FormData } from "@/app/types/property";
-import Editor from "@/app/components/CkEditor";
+import RichTextEditor from "@/app/components/RichTextEditor";
 import SimpleInput from "@/app/components/ui/SimpleInput";
 import SimpleSelect from "@/app/components/ui/SimpleSelect";
 import SimpleTextarea from "@/app/components/ui/SimpleTextarea";
@@ -61,7 +61,11 @@ export default function BasicInfoTab({
             <label className="block text-sm font-medium text-gray-900 mb-2">
               Açıklama
             </label>
-            <Editor content={content} setContent={setContent} />
+            <RichTextEditor
+              content={content}
+              setContent={setContent}
+              placeholder="İlan açıklamasını detaylı bir şekilde yazın..."
+            />
           </div>
         </div>
 
@@ -87,13 +91,20 @@ export default function BasicInfoTab({
             />
           </div>
 
-          <SimpleTextarea
-            label="Admin Notu"
-            value={fourthStep.adminNote}
-            onChange={onAdminNoteChange}
-            placeholder="Admin notu yazın..."
-            rows={4}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              Admin Notu
+            </label>
+            <SimpleTextarea
+              value={fourthStep.adminNote}
+              onChange={onAdminNoteChange}
+              placeholder="Sadece adminlerin görebileceği notlar yazın..."
+              rows={4}
+            />
+            <p className="text-sm text-gray-500 mt-2">
+              Bu not sadece admin panelinde görüntülenecektir.
+            </p>
+          </div>
         </div>
       </div>
     </motion.div>

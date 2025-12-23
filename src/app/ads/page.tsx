@@ -434,6 +434,8 @@ export default function AdsPage({
         },
       });
 
+      console.log("✅ Arama başarılı:", response.data);
+
       return response.data;
     } catch (error) {
       console.error("❌ Arama hatası:", error);
@@ -854,6 +856,51 @@ export default function AdsPage({
                           <span className="text-[10px] md:text-xs text-gray-600 bg-gray-100 px-1.5 md:px-2 py-0.5 rounded">
                             {ad.steps.second}
                           </span>
+                        )}
+                      </div>
+
+                      <div className="mb-1 flex flex-wrap gap-2">
+                        {/* Metrekare bilgisi   */}
+                        {ad.details?.netArea && (
+                          <span className="text-[10px] md:text-xs text-gray-700   px-1 py-0.5   ">
+                            {ad.details.netArea} m²
+                          </span>
+                        )}
+
+                        {/* Oda sayısı bilgisi*/}
+                        {ad.details?.roomCount && (
+                          <span className="text-[10px] md:text-xs text-gray-700   px-1 py-0.5  ">
+                            {ad.details.roomCount} Oda
+                          </span>
+                        )}
+
+                        {/* Eğer ilanda özellikler aktifse (isFeatures true) ve featureValues dizisi varsa, belirli özellikleri göster */}
+                        {ad.isFeatures && ad.featureValues && (
+                          <>
+                            {(() => {
+                              const donumFeature = ad.featureValues.find(
+                                (f) =>
+                                  f.featureId === "6931851fc9f133554f0adc75"
+                              );
+                              return donumFeature?.value ? (
+                                <span className="text-[10px] md:text-xs text-gray-700   px-1 py-0.5  ">
+                                  {donumFeature.value} Dönüm
+                                </span>
+                              ) : null;
+                            })()}
+
+                            {(() => {
+                              const roomCountFeature = ad.featureValues.find(
+                                (f) =>
+                                  f.featureId === "693a974dfc353e4edee38799"
+                              );
+                              return roomCountFeature?.value ? (
+                                <span className="text-[10px] md:text-xs text-gray-700   px-1 py-0.5  ">
+                                  {roomCountFeature.value} Oda
+                                </span>
+                              ) : null;
+                            })()}
+                          </>
                         )}
                       </div>
 

@@ -110,6 +110,11 @@ export interface Advert {
   created?: {
     createdTimestamp: number;
   };
+    isFeatures?: boolean; 
+  featureValues?: FeatureValue[];  
+  thoughts?: string;
+  categoryId?: string;
+  subcategoryId?: string;
 }
 
 export interface FilterState {
