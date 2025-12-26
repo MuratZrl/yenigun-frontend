@@ -50,6 +50,7 @@ import EditPropertyTab from "@/app/components/tabs/EditPropertyTab";
 import EditListingTypeTab from "@/app/components/tabs/EditListingTypeTab ";
 import EditCategoryTab from "@/app/components/tabs/EditCategoryTab";
 import EditFeaturesTab from "@/app/components/tabs/EditFeaturesTab";
+import Customer from "@/app/types/customers";
 
 const SimpleInput = React.memo(
   ({
@@ -544,13 +545,45 @@ export default function EditE() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const customersResponse = await api.get("/admin/customers");
-        setCustomers(customersResponse.data.data || customersResponse.data);
+        const fetchAllCustomers = async (): Promise<Customer[]> => {
+          let allCustomers: Customer[] = [];
+          let currentPage = 1;
+          const limit = 100;
 
-        const advisorsResponse = await api.get("/admin/users");
-        setAdvisors(advisorsResponse.data.data || advisorsResponse.data);
+          while (true) {
+            const response = await api.get(
+              `/admin/customers?page=${currentPage}&limit=${limit}`
+            );
+            const customersData: Customer[] =
+              response.data.data || response.data;
+
+            if (!customersData || customersData.length === 0) {
+              break;
+            }
+
+            allCustomers = [...allCustomers, ...customersData];
+            currentPage++;
+
+            if (customersData.length < limit) {
+              break;
+            }
+          }
+
+          return allCustomers;
+        };
+
+        const [allCustomers] = await Promise.all([fetchAllCustomers()]);
+
+        setCustomers(allCustomers);
       } catch (error: any) {
-        toast.error("Bir hata oluştu. Lütfen sayfayı yenileyin.");
+        if (error.response?.status === 401) {
+          toast.error("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
+          setTimeout(() => {
+            window.location.href = "/admin/emlak";
+          }, 2000);
+        } else {
+          toast.error("Bir hata oluştu. Lütfen sayfayı yenileyin.");
+        }
       }
     };
 

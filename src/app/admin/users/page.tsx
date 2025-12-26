@@ -3,12 +3,9 @@
 import React, { useState, useEffect } from "react";
 import CreateUserModal from "@/app/components/modals/CreateUsersModal";
 import { Poppins } from "next/font/google";
-import {
-  ChevronLeft,
-  ChevronRight,
+import { 
   Filter,
-  Search,
-  AlertCircle,
+  Search, 
   List,
   Info,
   Edit,

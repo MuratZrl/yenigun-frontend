@@ -9,6 +9,7 @@ import SimpleSelect from "@/app/components/ui/SimpleSelect";
 import QuestionToggle from "@/app/components/ui/QuestionToggle";
 import Customer from "@/app/types/customers";
 import Advisor from "@/app/types/advisor";
+import { useMemo } from "react";
 
 interface OtherInfoTabProps {
   fourthStep: FormData;
@@ -80,6 +81,23 @@ export default function OtherInfoTab({
     };
   };
 
+  const customerOptions = useMemo(
+    () =>
+      customers.map((c: Customer) => ({
+        value: c.uid?.toString() || "",
+        label: `${c.name} ${c.surname} - ${
+          c.phones?.[0]?.number || "Telefon yok"
+        }`,
+      })),
+    [customers]
+  );
+
+  const selectedCustomer = useMemo(() => {
+    return (
+      customerOptions.find((opt) => opt.value === fourthStep.customer) || null
+    );
+  }, [customerOptions, fourthStep.customer]);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -97,24 +115,13 @@ export default function OtherInfoTab({
             <label className="block text-sm font-medium text-gray-900">
               Müşteri
             </label>
+
             <Select
-              options={[
-                { value: "", label: "Müşteri Seçin" },
-                ...customers.map((c: Customer) => ({
-                  value: c.uid?.toString() || "",
-                  label: `${c.name} ${c.surname} - ${
-                    c.phones[0]?.number || "Telefon yok"
-                  }`,
-                })),
-              ]}
-              value={getSelectedCustomer()}
-              onChange={(selectedOption) => {
-                console.log("🔍 Selected customer option:", selectedOption);
-                const customerValue = selectedOption?.value || "";
-                console.log("🔍 Setting customer to:", customerValue);
-                onCustomerChange(customerValue);
-              }}
+              options={customerOptions}
+              value={selectedCustomer}
+              onChange={(option) => onCustomerChange(option?.value || "")}
               placeholder="Müşteri seçin"
+              isSearchable
               menuPortalTarget={
                 typeof document !== "undefined" ? document.body : null
               }
@@ -124,20 +131,13 @@ export default function OtherInfoTab({
                   border: "1px solid #D1D5DB",
                   borderRadius: "0.5rem",
                   padding: "0.25rem",
-                  backgroundColor: "white",
                   minHeight: "48px",
                 }),
-                menu: (base) => ({
+                menuPortal: (base) => ({
                   ...base,
-                  backgroundColor: "white",
                   zIndex: 9999,
                 }),
-                menuList: (base) => ({
-                  ...base,
-                  backgroundColor: "white",
-                  padding: "0.5rem",
-                }),
-                menuPortal: (base) => ({
+                menu: (base) => ({
                   ...base,
                   zIndex: 9999,
                 }),
@@ -145,17 +145,11 @@ export default function OtherInfoTab({
                   ...base,
                   backgroundColor: state.isFocused ? "#f3f4f6" : "white",
                   color: "#374151",
-                  "&:hover": {
-                    backgroundColor: "#f3f4f6",
-                  },
-                }),
-                singleValue: (base) => ({
-                  ...base,
-                  color: "#374151",
+                  cursor: "pointer",
                 }),
                 placeholder: (base) => ({
                   ...base,
-                  color: "#6B7280",
+                  color: "#9CA3AF",
                 }),
               }}
             />
