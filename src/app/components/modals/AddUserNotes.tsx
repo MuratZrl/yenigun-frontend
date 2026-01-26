@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import Select from "react-select";
 import { X, Plus, ArrowLeft, Trash2 } from "lucide-react";
@@ -15,19 +15,64 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
     setOpen(false);
   };
 
+  const fetchAllCustomers = async () => {
+    const all: any[] = [];
+    let page = 1;
+    const limit = 100;
+    let hasMore = true;
+
+    while (hasMore) {
+      const res = await api.get("/admin/customers", {
+        params: { page, limit },
+      });
+
+      const items =
+        res.data?.data ??
+        res.data?.items ??
+        res.data?.customers ??
+        (Array.isArray(res.data) ? res.data : []);
+
+      if (Array.isArray(items) && items.length > 0) {
+        all.push(...items);
+        page += 1;
+
+        if (items.length < limit) hasMore = false;
+      } else {
+        hasMore = false;
+      }
+
+      if (page > 200) hasMore = false;
+    }
+
+    const uniq = Array.from(new Map(all.map((c) => [c.uid, c])).values());
+    return uniq;
+  };
+
   useEffect(() => {
     if (!data.isOpen) return;
 
     setNoteList(data.ad?.userNotes || []);
 
-    api
-      .get("/admin/customers")
-      .then((res) => {
-        setCustomers(res.data.data || []);
-      })
-      .catch((err) => {
-        toast.error("Bir hata oluştu.");
-      });
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const t = toast.loading("Müşteriler yükleniyor...");
+        const allCustomers = await fetchAllCustomers();
+
+        if (!cancelled) {
+          setCustomers(allCustomers);
+        }
+
+        toast.dismiss(t);
+      } catch (err) {
+        toast.error("Müşteriler yüklenemedi.");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [data.isOpen, data.ad?.userNotes]);
 
   const handleSubmit = (e: any) => {
@@ -70,7 +115,7 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
       })
       .catch((err) => {
         toast.error(
-          "Bir hata oluştu: " + (err.response?.data?.message || err.message)
+          "Bir hata oluştu: " + (err.response?.data?.message || err.message),
         );
       });
   };
@@ -92,6 +137,28 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
         toast.error("Bir hata oluştu.");
       });
   };
+
+  const customerOptions = useMemo(() => {
+    return customers.map((item: any) => ({
+      value: item.uid,
+      label: `${item.name || ""} ${item.surname || ""} (${
+        item.phones?.[0]?.number || "Telefon yok"
+      }) - ${item.mail?.mail || "Email yok"}`,
+    }));
+  }, [customers]);
+
+  const selectedOption = useMemo(() => {
+    if (!selectedCustomer) return null;
+    const c = customers.find((x: any) => x.uid === selectedCustomer);
+    if (!c) return null;
+
+    return {
+      value: c.uid,
+      label: `${c.name || ""} ${c.surname || ""} (${
+        c.phones?.[0]?.number || "Telefon yok"
+      }) - ${c.mail?.mail || "Email yok"}`,
+    };
+  }, [selectedCustomer, customers]);
 
   return (
     <div>
@@ -122,7 +189,6 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
               </button>
             </div>
 
-            {/* Mod değiştirme butonu - header'ın altında */}
             <div className="flex justify-end mb-6">
               {mode === 0 ? (
                 <button
@@ -133,13 +199,7 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
                   <span className="font-medium">Yeni Not Ekle</span>
                 </button>
               ) : (
-                <button
-                  onClick={() => setMode(0)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 border border-gray-300"
-                >
-                  <ArrowLeft size={20} />
-                  <span className="font-medium">Notlara Geri Dön</span>
-                </button>
+                <button onClick={() => setMode(0)}></button>
               )}
             </div>
 
@@ -150,55 +210,12 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
                     Kullanıcı Seçin
                   </label>
                   <Select
-                    options={customers.map((item: any) => ({
-                      value: item.uid,
-                      label: `${item.name || ""} ${item.surname || ""} (${
-                        item.phones?.[0]?.number || "Telefon yok"
-                      }) - ${item.mail?.mail || "Email yok"}`,
-                    }))}
-                    value={
-                      selectedCustomer
-                        ? {
-                            value: selectedCustomer,
-                            label: `${
-                              customers.find(
-                                (item: any) => item.uid === selectedCustomer
-                              )?.name || ""
-                            } ${
-                              customers.find(
-                                (item: any) => item.uid === selectedCustomer
-                              )?.surname || ""
-                            } (${
-                              customers.find(
-                                (item: any) => item.uid === selectedCustomer
-                              )?.phones?.[0]?.number || "Telefon yok"
-                            })`,
-                          }
-                        : null
-                    }
-                    onChange={(e: any) => {
-                      console.log("Selected customer:", e);
-                      setSelectedCustomer(e?.value || null);
-                    }}
+                    options={customerOptions}
+                    value={selectedOption}
+                    onChange={(e: any) => setSelectedCustomer(e?.value || null)}
                     placeholder="Bir kullanıcı seçin..."
                     isClearable
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        border: "1px solid #D1D5DB",
-                        borderRadius: "0.5rem",
-                        padding: "0.5rem 0.25rem",
-                        minHeight: "44px",
-                        "&:hover": {
-                          borderColor: "#9CA3AF",
-                        },
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        zIndex: 9999,
-                      }),
-                    }}
-                    className="text-sm"
+                    isSearchable
                   />
                 </div>
 

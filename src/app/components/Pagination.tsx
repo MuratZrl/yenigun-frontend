@@ -65,15 +65,15 @@ export const Pagination = ({
             page < 3
               ? i
               : page > totalPages - 3
-              ? totalPages - 5 + i
-              : page - 2 + i;
+                ? totalPages - 5 + i
+                : page - 2 + i;
           return (
             <button
               key={i}
               onClick={() => handleChangePage(pageNumber)}
               className={`w-10 h-10 rounded-lg border transition-all duration-200 font-medium ${
                 page === pageNumber
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-lg"
+                  ? "bg-linear-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-lg"
                   : "border-gray-300 text-gray-700 hover:bg-gray-50"
               }`}
             >

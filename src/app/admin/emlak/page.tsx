@@ -101,7 +101,7 @@ const Emlak = () => {
   };
 
   const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLSelectElement>
+    event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
@@ -136,6 +136,53 @@ const Emlak = () => {
     }
 
     setPage(0);
+  };
+
+  const handleSingleAdFetch = async () => {
+    const raw = (filters.uid || "").trim();
+    if (!raw) return;
+
+    const uidNumber = Number(raw);
+
+    if (!Number.isFinite(uidNumber) || uidNumber <= 0) {
+      toast.error("Lütfen geçerli bir ilan ID (sayı) girin.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await api.get(`/admin/adverts/${uidNumber}`);
+
+      const payload = response.data?.data ?? response.data;
+
+      const singleAd = payload?.advert ?? payload;
+
+      if (singleAd && (singleAd.uid || singleAd.uid === uidNumber)) {
+        if (singleAd.active === false) {
+          toast.info("Bu ilan pasif durumda.");
+        }
+
+        setData([singleAd]);
+        setPage(0);
+        toast.success("İlan bulundu!");
+      } else {
+        toast.error("İlan bulunamadı");
+        setData([]);
+      }
+    } catch (error: any) {
+      console.error("Tek ilan getirme hatası:", error);
+
+      const msg =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "İlan yüklenirken hata oluştu";
+
+      toast.error(msg);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const startIndex = page * rowsPerPage;
@@ -184,7 +231,7 @@ const Emlak = () => {
         while (hasMorePages) {
           try {
             const response = await api.get(
-              `/admin/adverts?sortBy=created&page=${currentPage}&limit=${limit}`
+              `/admin/adverts?sortBy=created&page=${currentPage}&limit=${limit}`,
             );
 
             console.log("API Response:", response.data);
@@ -250,7 +297,7 @@ const Emlak = () => {
               const aC = a.created.createdTimestamp;
               const bC = b.created.createdTimestamp;
               return bC - aC;
-            })
+            }),
         );
         setDeleteConfirm({ open: false, ad: null });
       })
@@ -287,7 +334,7 @@ const Emlak = () => {
             const aC = a.created.createdTimestamp;
             const bC = b.created.createdTimestamp;
             return bC - aC;
-          })
+          }),
         );
         setDefaultData(lastV);
       })
@@ -432,11 +479,11 @@ const Emlak = () => {
         toast.error(
           `API hatası: ${error.response.status} - ${
             error.response.data?.message || "Bilinmeyen hata"
-          }`
+          }`,
         );
       } else if (error.request) {
         toast.error(
-          "Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edin."
+          "Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edin.",
         );
       } else {
         toast.error("Filtreleme sırasında bir hata oluştu");
@@ -447,33 +494,8 @@ const Emlak = () => {
           const aC = a.created?.createdTimestamp || 0;
           const bC = b.created?.createdTimestamp || 0;
           return bC - aC;
-        })
+        }),
       );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSingleAdFetch = async () => {
-    if (!filters.uid) return;
-
-    try {
-      setLoading(true);
-      const response = await api.get(`/advert/adverts/${filters.uid}`);
-
-      if (response.data.success && response.data.data) {
-        const singleAd = response.data.data;
-        setData([singleAd]);
-        setPage(0);
-        toast.success("İlan bulundu!");
-      } else {
-        toast.error("İlan bulunamadı");
-        setData([]);
-      }
-    } catch (error) {
-      console.error("Tek ilan getirme hatası:", error);
-      toast.error("İlan yüklenirken hata oluştu");
-      setData([]);
     } finally {
       setLoading(false);
     }
@@ -484,7 +506,7 @@ const Emlak = () => {
       ad?.photos &&
       Array.isArray(ad.photos) &&
       ad.photos.some(
-        (photo: any) => typeof photo === "string" && photo.trim() !== ""
+        (photo: any) => typeof photo === "string" && photo.trim() !== "",
       )
     );
   };
@@ -493,7 +515,7 @@ const Emlak = () => {
     if (!ad?.photos || !Array.isArray(ad.photos)) return null;
 
     const validPhoto = ad.photos.find(
-      (photo: any) => typeof photo === "string" && photo.trim() !== ""
+      (photo: any) => typeof photo === "string" && photo.trim() !== "",
     );
 
     return validPhoto || null;
@@ -568,14 +590,17 @@ const Emlak = () => {
                 }
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    handleFilter();
+                    handleSingleAdFetch();
                   }
                 }}
               />
             </div>
             <div className="flex gap-2">
               <button
-                onClick={handleFilter}
+                onClick={() => {
+                  if ((filters.uid || "").trim()) handleSingleAdFetch();
+                  else handleFilter();
+                }}
                 disabled={loading}
                 className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-600 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors font-medium disabled:opacity-70 disabled:cursor-not-allowed"
               >
@@ -591,6 +616,7 @@ const Emlak = () => {
                   </>
                 )}
               </button>
+
               <button
                 onClick={() => setOpenFilter(true)}
                 className="border border-gray-300 hover:border-custom-orange text-gray-700 hover:text-custom-orange px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors font-medium"
@@ -651,7 +677,7 @@ const Emlak = () => {
                 } catch (error) {
                   console.error(
                     `❌ Error rendering address for ad ${ad.uid}:`,
-                    error
+                    error,
                   );
                   return "Adres render hatası";
                 }
@@ -681,7 +707,7 @@ const Emlak = () => {
                 } catch (error) {
                   console.error(
                     `❌ Error rendering location for ad ${ad.uid}:`,
-                    error
+                    error,
                   );
                   return "Konum render hatası";
                 }
@@ -956,7 +982,7 @@ const Emlak = () => {
                 const aC = a.created?.createdTimestamp || 0;
                 const bC = b.created?.createdTimestamp || 0;
                 return bC - aC;
-              })
+              }),
             );
             setPage(0);
           }}

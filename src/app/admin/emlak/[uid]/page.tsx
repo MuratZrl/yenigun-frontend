@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Category, FeatureValues, Subcategory } from "@/app/types/category";
 import BasicInfoTab from "@/app/components/tabs/BasicInfoTab";
-import MediaTab from "@/app/components/tabs/MediaTab";
+import MediaTab from "@/app/components/tabs/EditMediaTab";
 import LocationTab from "@/app/components/tabs/LocationTab";
 import DetailsTab from "@/app/components/tabs/DetailsTab";
 import {
@@ -41,6 +41,9 @@ import {
   StepState,
   ImageItem,
   SelectionItem,
+  MediaItem,
+  isLocal,
+  isRemote,
 } from "@/app/types/property";
 import api from "@/app/lib/api";
 import AdminLayout from "@/app/components/layout/AdminLayout";
@@ -85,7 +88,7 @@ const SimpleInput = React.memo(
         </label>
       </div>
     );
-  }
+  },
 );
 
 SimpleInput.displayName = "SimpleInput";
@@ -115,7 +118,7 @@ const SimpleTextarea = React.memo(
         </label>
       </div>
     );
-  }
+  },
 );
 
 SimpleTextarea.displayName = "SimpleTextarea";
@@ -154,7 +157,7 @@ const SimpleSelect = React.memo(
         </div>
       </div>
     );
-  }
+  },
 );
 
 SimpleSelect.displayName = "SimpleSelect";
@@ -179,7 +182,7 @@ const FeatureToggle = React.memo(
         />
       </button>
     </div>
-  )
+  ),
 );
 
 FeatureToggle.displayName = "FeatureToggle";
@@ -204,7 +207,7 @@ const QuestionToggle = React.memo(
         />
       </button>
     </div>
-  )
+  ),
 );
 
 QuestionToggle.displayName = "QuestionToggle";
@@ -217,7 +220,7 @@ const turkeyCities = JSONDATA.map((city: any) => {
         district: district.name,
         quarters: district.districts.reduce((acc: any, district: any) => {
           const quarterNames = district.quarters.map(
-            (quarter: any) => quarter.name
+            (quarter: any) => quarter.name,
           );
           return acc.concat(quarterNames);
         }, []),
@@ -228,7 +231,7 @@ const turkeyCities = JSONDATA.map((city: any) => {
 
 const createSelectionItem = (
   value: string,
-  selections: string[]
+  selections: string[],
 ): SelectionItem => ({
   value,
   selections,
@@ -261,14 +264,15 @@ export default function EditE() {
   const [isActiveAd, setIsActiveAd] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
+    null,
   );
   const [selectedSubcategory, setSelectedSubcategory] =
     useState<Subcategory | null>(null);
   const [featureValues, setFeatureValues] = useState<FeatureValues>({});
   const [scrollPosition, setScrollPosition] = useState(0);
   const tabContainerRef = useRef<HTMLDivElement>(null);
-
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [removedRemote, setRemovedRemote] = useState<string[]>([]);
   const [firstStep, setFirstStep] = useState<StepState>({
     selected: { isSelect: false, value: "", id: "" },
   });
@@ -309,6 +313,7 @@ export default function EditE() {
       setIsLoading(true);
 
       const response = await api.get(`admin/adverts/${advertUid}`);
+      console.log("ilan", response.data);
       let advertData;
       if (response.data && response.data.data) {
         advertData = response.data.data;
@@ -410,7 +415,7 @@ export default function EditE() {
           advertData.contract?.date || advertData.contractDate || "",
         contract_time: createSelectionItem(
           advertData.contract?.time || advertData.contractTime || "",
-          contractTimes
+          contractTimes,
         ),
         advisor:
           advertData.advisor?.uid?.toString() ||
@@ -418,7 +423,7 @@ export default function EditE() {
           "",
         advisor_profile: createSelectionItem(
           advertData.advisor?.peopleCanSeeProfile ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
         eids: {
           no: advertData.eidsNo || advertData.eids?.no || "",
@@ -427,7 +432,7 @@ export default function EditE() {
         },
         key: createSelectionItem(
           advertData.whoseKey || "Yenigün Emlak",
-          keyOptions
+          keyOptions,
         ),
         adminNote: advertData.adminNote || "",
         price: {
@@ -447,15 +452,15 @@ export default function EditE() {
           advertData.details?.buildingAge || advertData.buildingAge || 0,
         elevator: createSelectionItem(
           advertData.details?.elevator ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
         inSite: createSelectionItem(
           advertData.details?.inSite ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
         whichSide: createSelectionItem(
           advertData.details?.whichSide || advertData.whichSide || "",
-          directionOptions
+          directionOptions,
         ),
         acre: advertData.details?.acre
           ? parseInt(advertData.details.acre)
@@ -466,58 +471,72 @@ export default function EditE() {
           advertData.details?.totalFloor || advertData.totalFloor || 0,
         balcony: createSelectionItem(
           advertData.details?.balcony ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
         balconyCount:
           advertData.details?.balconyCount || advertData.balconyCount || 0,
         isFurnished: createSelectionItem(
           advertData.details?.furniture ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
         heating: createSelectionItem(
           advertData.details?.heating || advertData.heating || "",
-          heatingOptions
+          heatingOptions,
         ),
         deedStatus: createSelectionItem(
           advertData.details?.deed || advertData.deedStatus || "",
-          deedStatusOptions
+          deedStatusOptions,
         ),
         zoningStatus: createSelectionItem(
           advertData.details?.zoningStatus || advertData.zoningStatus || "",
-          zoningStatusOptions
+          zoningStatusOptions,
         ),
         agenda_emlak: createSelectionItem(
           advertData.questions?.agendaEmlak ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
         homepage_emlak: createSelectionItem(
           advertData.questions?.homepageEmlak ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
         new_emlak: createSelectionItem(
           advertData.questions?.new_emlak ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
         chance_emlak: createSelectionItem(
           advertData.questions?.chance_emlak ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
         special_emlak: createSelectionItem(
           advertData.questions?.special_emlak ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
         onweb_emlak: createSelectionItem(
           advertData.questions?.onweb_emlak ? "Evet" : "Hayır",
-          yesNoOptions
+          yesNoOptions,
         ),
       });
 
       setContent(advertData.thoughts || "");
       setIsActiveAd(advertData.active !== false);
 
+      const photos: string[] =
+        (Array.isArray(advertData.photos) ? advertData.photos : []) ||
+        (Array.isArray(advertData.images) ? advertData.images : []);
+
+      setMediaItems(
+        photos.map((url, i) => ({
+          id: `remote-${i}-${url}`,
+          kind: "remote",
+          url,
+        })),
+      );
+
+      if (advertData.video) setExistingVideo(advertData.video);
+
       if (advertData.images) {
         setExistingImages(
-          Array.isArray(advertData.images) ? advertData.images : []
+          Array.isArray(advertData.images) ? advertData.images : [],
         );
       }
 
@@ -552,7 +571,7 @@ export default function EditE() {
 
           while (true) {
             const response = await api.get(
-              `/admin/customers?page=${currentPage}&limit=${limit}`
+              `/admin/customers?page=${currentPage}&limit=${limit}`,
             );
             const customersData: Customer[] =
               response.data.data || response.data;
@@ -636,20 +655,36 @@ export default function EditE() {
   const tabs = getTabs();
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedImages = Array.from(event.target.files || []);
-    const currentLength = images.length;
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
 
-    if (selectedImages.length + images.length > 35) {
-      alert("En fazla 35 resim seçebilirsiniz.");
-      return;
-    }
+    setMediaItems((prev) => {
+      const currentCount = prev.length;
+      const newOnes: MediaItem[] = files.map((file, idx) => ({
+        id: `local-${Date.now()}-${idx}`,
+        kind: "local",
+        file,
+      }));
 
-    const newImages = selectedImages.map((image, index) => ({
-      id: (currentLength + index + 1).toString(),
-      src: image as File,
-    }));
+      if (currentCount + newOnes.length > 35) {
+        toast.error("En fazla 35 resim seçebilirsiniz.");
+        return prev;
+      }
 
-    setImages((prev) => [...prev, ...newImages]);
+      return [...prev, ...newOnes];
+    });
+
+    event.target.value = "";
+  };
+
+  const removeMediaItem = (id: string) => {
+    setMediaItems((prev) => {
+      const target = prev.find((x) => x.id === id);
+      if (target?.kind === "remote") {
+        setRemovedRemote((r) => [...r, target.url]);
+      }
+      return prev.filter((x) => x.id !== id);
+    });
   };
 
   const handleRemoveImage = (id: string) => {
@@ -671,7 +706,7 @@ export default function EditE() {
     const numericInput = input.replace(/\D/g, "");
     const m2 = `${numericInput.slice(
       numericInput.length > 3 ? numericInput.length - 3 : 0,
-      numericInput.length
+      numericInput.length,
     )} m²`;
     const acre =
       numericInput.length >= 4
@@ -706,14 +741,14 @@ export default function EditE() {
         },
       }));
     },
-    []
+    [],
   );
 
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("title", e.target.value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handlePriceValueChange = useCallback(
@@ -725,126 +760,126 @@ export default function EditE() {
         updateNestedFourthStep("price", "value", formattedValue);
       }
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handlePriceTypeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       updateNestedFourthStep("price", "type", e.target.value);
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handleAdminNoteChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       updateFourthStep("adminNote", e.target.value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleProvinceChange = useCallback(
     (value: any) => {
       updateFourthStep("province", value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleDistrictChange = useCallback(
     (value: any) => {
       updateFourthStep("district", value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleQuarterChange = useCallback(
     (value: any) => {
       updateFourthStep("quarter", value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleAddressChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("address", e.target.value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleParselChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("parsel", e.target.value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleRoomCountChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("roomCount", e.target.value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleFloorChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("floor", Number(e.target.value));
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleTotalFloorChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("totalFloor", Number(e.target.value));
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleBuildingAgeChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("buildingAge", Number(e.target.value));
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleNetAreaChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("netArea", Number(e.target.value));
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleGrossAreaChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("grossArea", Number(e.target.value));
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleBalconyCountChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("balconyCount", Number(e.target.value));
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleAcreChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       handleChangeAcre(e.target.value);
     },
-    []
+    [],
   );
 
   const handleCustomerChange = useCallback(
     (value: any) => {
       updateFourthStep("customer", value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleAdvisorChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       updateFourthStep("advisor", e.target.value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleContractNoChange = useCallback(
@@ -854,187 +889,187 @@ export default function EditE() {
         updateFourthStep("contract_no", e.target.value);
       }
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleContractDateChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFourthStep("contract_date", e.target.value);
     },
-    [updateFourthStep]
+    [updateFourthStep],
   );
 
   const handleContractTimeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       updateNestedFourthStep("contract_time", "value", e.target.value);
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handleEidsValueChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       updateNestedFourthStep("eids", "value", e.target.value);
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handleEidsNoChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateNestedFourthStep("eids", "no", e.target.value);
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handleEidsDateChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateNestedFourthStep("eids", "date", e.target.value);
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handleKeyChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       updateNestedFourthStep("key", "value", e.target.value);
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handleHeatingChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       updateNestedFourthStep("heating", "value", e.target.value);
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handleDeedStatusChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       updateNestedFourthStep("deedStatus", "value", e.target.value);
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handleWhichSideChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       updateNestedFourthStep("whichSide", "value", e.target.value);
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handleZoningStatusChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       updateNestedFourthStep("zoningStatus", "value", e.target.value);
     },
-    [updateNestedFourthStep]
+    [updateNestedFourthStep],
   );
 
   const handleElevatorToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "elevator",
-        createSelectionItem(value, fourthStep.elevator.selections)
+        createSelectionItem(value, fourthStep.elevator.selections),
       );
     },
-    [updateFourthStep, fourthStep.elevator]
+    [updateFourthStep, fourthStep.elevator],
   );
 
   const handleInSiteToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "inSite",
-        createSelectionItem(value, fourthStep.inSite.selections)
+        createSelectionItem(value, fourthStep.inSite.selections),
       );
     },
-    [updateFourthStep, fourthStep.inSite]
+    [updateFourthStep, fourthStep.inSite],
   );
 
   const handleBalconyToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "balcony",
-        createSelectionItem(value, fourthStep.balcony.selections)
+        createSelectionItem(value, fourthStep.balcony.selections),
       );
     },
-    [updateFourthStep, fourthStep.balcony]
+    [updateFourthStep, fourthStep.balcony],
   );
 
   const handleIsFurnishedToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "isFurnished",
-        createSelectionItem(value, fourthStep.isFurnished.selections)
+        createSelectionItem(value, fourthStep.isFurnished.selections),
       );
     },
-    [updateFourthStep, fourthStep.isFurnished]
+    [updateFourthStep, fourthStep.isFurnished],
   );
 
   const handleAdvisorProfileToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "advisor_profile",
-        createSelectionItem(value, fourthStep.advisor_profile.selections)
+        createSelectionItem(value, fourthStep.advisor_profile.selections),
       );
     },
-    [updateFourthStep, fourthStep.advisor_profile]
+    [updateFourthStep, fourthStep.advisor_profile],
   );
 
   const handleAgendaEmlakToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "agenda_emlak",
-        createSelectionItem(value, fourthStep.agenda_emlak.selections)
+        createSelectionItem(value, fourthStep.agenda_emlak.selections),
       );
     },
-    [updateFourthStep, fourthStep.agenda_emlak]
+    [updateFourthStep, fourthStep.agenda_emlak],
   );
 
   const handleHomepageEmlakToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "homepage_emlak",
-        createSelectionItem(value, fourthStep.homepage_emlak.selections)
+        createSelectionItem(value, fourthStep.homepage_emlak.selections),
       );
     },
-    [updateFourthStep, fourthStep.homepage_emlak]
+    [updateFourthStep, fourthStep.homepage_emlak],
   );
 
   const handleNewEmlakToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "new_emlak",
-        createSelectionItem(value, fourthStep.new_emlak.selections)
+        createSelectionItem(value, fourthStep.new_emlak.selections),
       );
     },
-    [updateFourthStep, fourthStep.new_emlak]
+    [updateFourthStep, fourthStep.new_emlak],
   );
 
   const handleChanceEmlakToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "chance_emlak",
-        createSelectionItem(value, fourthStep.chance_emlak.selections)
+        createSelectionItem(value, fourthStep.chance_emlak.selections),
       );
     },
-    [updateFourthStep, fourthStep.chance_emlak]
+    [updateFourthStep, fourthStep.chance_emlak],
   );
 
   const handleSpecialEmlakToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "special_emlak",
-        createSelectionItem(value, fourthStep.special_emlak.selections)
+        createSelectionItem(value, fourthStep.special_emlak.selections),
       );
     },
-    [updateFourthStep, fourthStep.special_emlak]
+    [updateFourthStep, fourthStep.special_emlak],
   );
 
   const handleOnwebEmlakToggle = useCallback(
     (value: string) => {
       updateFourthStep(
         "onweb_emlak",
-        createSelectionItem(value, fourthStep.onweb_emlak.selections)
+        createSelectionItem(value, fourthStep.onweb_emlak.selections),
       );
     },
-    [updateFourthStep, fourthStep.onweb_emlak]
+    [updateFourthStep, fourthStep.onweb_emlak],
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1072,7 +1107,7 @@ export default function EditE() {
       const featureValuesArray = Object.entries(featureValues)
         .filter(
           ([featureId, value]) =>
-            value !== undefined && value !== null && value !== ""
+            value !== undefined && value !== null && value !== "",
         )
         .map(([featureId, value]) => ({
           featureId: featureId,
@@ -1164,7 +1199,7 @@ export default function EditE() {
         toast.error(
           `Hata: ${err.response.status} - ${
             err.response.data?.message || "Bilinmeyen hata"
-          }`
+          }`,
         );
       }
     } finally {
@@ -1175,132 +1210,68 @@ export default function EditE() {
   const handleFileUpdates = async () => {
     let uploadSuccess = true;
 
+    const localFiles = mediaItems.filter(isLocal).map((x) => x.file);
+
     console.log("🔍 handleFileUpdates çağrıldı");
-    console.log("Images array:", images);
-    console.log("Images length:", images.length);
+    console.log("Local files:", localFiles.length);
 
-    images.forEach((image: any, index: number) => {
-      console.log(`Resim ${index}:`, {
-        src: image.src,
-        isFile: image.src instanceof File,
-        name: image.src?.name,
-        type: image.src?.type,
-        size: image.src?.size,
-      });
-    });
-
-    if (images && images.length > 0) {
+    if (localFiles.length > 0) {
       try {
         const imageToast = toast.loading("İlan Resimleri Güncelleniyor...");
         const formData = new FormData();
 
-        console.log("Advert UID:", advertUid);
         formData.append("uid", advertUid);
 
-        let validImageCount = 0;
-        images.forEach((image: any) => {
-          if (image.src && image.src instanceof File) {
-            formData.append("images", image.src);
-            validImageCount++;
-            console.log(`✅ Resim eklendi: ${image.src.name}`);
-          } else {
-            console.log(`❌ Geçersiz resim:`, image);
-          }
+        localFiles.forEach((file) => {
+          formData.append("images", file);
+          console.log("✅ Resim eklendi:", file.name);
         });
 
-        console.log(`Toplam ${validImageCount} geçerli resim dosyası eklendi`);
+        const order = mediaItems.map((it) =>
+          isRemote(it) ? it.url : `local:${it.id}`,
+        );
+        formData.append("order", JSON.stringify(order));
 
-        console.log("📦 FormData içeriği:");
-        for (let [key, value] of formData.entries()) {
-          if (value instanceof File) {
-            console.log(`${key}:`, {
-              name: value.name,
-              type: value.type,
-              size: value.size,
-            });
-          } else {
-            console.log(`${key}:`, value);
-          }
-        }
-
-        if (validImageCount === 0) {
-          console.log("⚠️ Yüklenecek geçerli resim dosyası yok");
-          toast.dismiss(imageToast);
-          return uploadSuccess;
-        }
-
-        console.log("🚀 API isteği gönderiliyor: /admin/update-advert-images");
+        formData.append("removedRemote", JSON.stringify(removedRemote));
 
         const response = await api.post(
           "/admin/update-advert-images",
           formData,
           {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-            onUploadProgress: (progressEvent) => {
-              const percentCompleted = Math.round(
-                (progressEvent.loaded * 100) / (progressEvent.total || 1)
-              );
-              console.log(`📤 Yükleme ilerlemesi: ${percentCompleted}%`);
-            },
-          }
+            headers: { "Content-Type": "multipart/form-data" },
+          },
         );
 
         console.log("✅ API yanıtı:", response.data);
         toast.dismiss(imageToast);
         toast.success("✅ Resimler başarıyla güncellendi!");
       } catch (error: any) {
-        console.error("❌ Resim yükleme hatası:", {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          config: {
-            url: error.config?.url,
-            method: error.config?.method,
-            headers: error.config?.headers,
-          },
-        });
-
+        console.error("❌ Resim yükleme hatası:", error);
         uploadSuccess = false;
         toast.warning("İlan güncellendi ancak resimler yüklenemedi");
       }
     } else {
-      console.log("⚠️ Resim array'i boş veya tanımsız");
+      console.log("⚠️ Yüklenecek yeni (local) resim yok");
     }
+
     if (videoFile && videoFile instanceof File) {
       try {
-        console.log("🎥 Video dosyası:", {
-          name: videoFile.name,
-          type: videoFile.type,
-          size: videoFile.size,
-        });
-
         const videoToast = toast.loading("İlan Videosu Güncelleniyor...");
         const videoForm = new FormData();
         videoForm.append("uid", advertUid);
         videoForm.append("video", videoFile);
 
-        console.log("🚀 Video API isteği gönderiliyor...");
-
         await api.post("/admin/update-advert-video", videoForm, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         });
 
         toast.dismiss(videoToast);
         toast.success("✅ Video başarıyla güncellendi!");
       } catch (error: any) {
-        console.error(
-          "❌ Video yükleme hatası:",
-          error.response?.data || error.message
-        );
+        console.error("❌ Video yükleme hatası:", error);
         uploadSuccess = false;
         toast.warning("İlan güncellendi ancak video yüklenemedi");
       }
-    } else {
-      console.log("⚠️ Video dosyası yok veya geçerli değil");
     }
 
     return uploadSuccess;
@@ -1328,15 +1299,11 @@ export default function EditE() {
       case "Medya":
         return (
           <MediaTab
-            images={images}
-            setImages={setImages}
-            videoFile={videoFile}
-            setVideoFile={setVideoFile}
-            reOrderImages={reOrderImages}
-            setReOrderImages={setReOrderImages}
-            onImageChange={handleImageChange}
-            onVideoChange={handleVideoChange}
-            onRemoveImage={handleRemoveImage}
+            mediaItems={mediaItems}
+            setMediaItems={setMediaItems}
+            onPickImages={handleImageChange}
+            onRemove={removeMediaItem}
+            max={35}
           />
         );
       case "Konum":
@@ -1466,7 +1433,6 @@ export default function EditE() {
         style={{ fontFamily: "'Nunito Sans', sans-serif" }}
       >
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1501,7 +1467,6 @@ export default function EditE() {
 
           <form onSubmit={(e) => e.preventDefault()}>
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              {/* Progress Bar */}
               <div className="bg-gray-100 h-1.5 w-full">
                 <motion.div
                   className="h-full bg-blue-500"
@@ -1512,7 +1477,6 @@ export default function EditE() {
               </div>
 
               <div className="p-4 lg:p-6">
-                {/* Enhanced Tab Navigation */}
                 <div className="border-b border-gray-200 pb-4 mb-6">
                   <div className="relative">
                     <div
@@ -1574,12 +1538,10 @@ export default function EditE() {
                   </div>
                 </div>
 
-                {/* Tab Content */}
                 <div className="min-h-[400px] lg:min-h-[500px] max-h-[60vh] overflow-y-auto scrollbar-hide">
                   {renderTabContent()}
                 </div>
 
-                {/* Navigation Buttons */}
                 <motion.div
                   className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 pt-4 border-t border-gray-200"
                   initial={{ opacity: 0 }}

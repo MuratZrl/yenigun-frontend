@@ -56,6 +56,18 @@ export interface Category {
   updatedAt?: string;
   __v?: number;
 }
+
+export type MediaItem =
+  | { id: string; kind: "remote"; url: string }     
+  | { id: string; kind: "local"; file: File };       
+
+export const isLocal = (m: MediaItem): m is { id: string; kind: "local"; file: File } =>
+  m.kind === "local";
+
+export const isRemote = ( item: MediaItem,
+): item is { id: string; kind: "remote"; url: string } => item.kind === "remote";
+
+
  
 export interface FormData {
   title: string;
