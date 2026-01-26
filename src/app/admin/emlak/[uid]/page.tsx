@@ -241,6 +241,7 @@ const baseTabs = [
   { id: 1, label: "Temel Bilgiler", icon: Settings },
   { id: 2, label: "Medya", icon: Camera },
   { id: 3, label: "Konum", icon: MapPin },
+  { id: 4, label: "Detaylar", icon: Users },
   { id: 4, label: "Özellikler", icon: Star },
   { id: 5, label: "Diğer", icon: Users },
 ];

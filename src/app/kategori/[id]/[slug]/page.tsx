@@ -12,8 +12,6 @@ import {
   Calendar,
   User,
   ArrowUpDown,
-  Clock,
-  DollarSign,
 } from "lucide-react";
 import api from "@/app/lib/api";
 import DynamicSearch from "@/app/components/DynamicSearch";
@@ -47,7 +45,7 @@ export default function CategoryDetailPage() {
   const [adverts, setAdverts] = useState<Advert[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>(
-    []
+    [],
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
@@ -76,12 +74,12 @@ export default function CategoryDetailPage() {
 
   const findSubcategoryPath = (
     category: Category,
-    subcategoryId: string
+    subcategoryId: string,
   ): string => {
     const findPath = (
       subcats: Subcategory[],
       targetId: string,
-      path: string[] = []
+      path: string[] = [],
     ): string[] | null => {
       for (const subcat of subcats) {
         const currentPath = [...path, subcat.name];
@@ -122,7 +120,7 @@ export default function CategoryDetailPage() {
         if (response.data && response.data.success) {
           const categories = response.data.data;
           const foundCategory = categories.find(
-            (cat: Category) => cat._id === categoryId
+            (cat: Category) => cat._id === categoryId,
           );
 
           if (foundCategory) {
@@ -165,8 +163,8 @@ export default function CategoryDetailPage() {
         params.subcategories = selectedSubcategories.join(",");
       }
 
-       const response = await api.get("/advert/search", { params });
-     
+      const response = await api.get("/advert/search", { params });
+
       let filteredData = response.data.data || [];
 
       const formattedAdverts = filteredData.map((ad: any) => ({
@@ -197,12 +195,12 @@ export default function CategoryDetailPage() {
 
       const withCoordinates = formattedAdverts.filter(
         (ad: any) =>
-          ad.address?.mapCoordinates?.lat && ad.address?.mapCoordinates?.lng
-      ); 
+          ad.address?.mapCoordinates?.lat && ad.address?.mapCoordinates?.lng,
+      );
 
       setAdverts(formattedAdverts);
       setTotalItems(
-        response.data.pagination?.totalItems || formattedAdverts.length
+        response.data.pagination?.totalItems || formattedAdverts.length,
       );
     } catch (error: any) {
       console.error("❌ İlanlar yüklenirken hata:", error);
@@ -233,12 +231,12 @@ export default function CategoryDetailPage() {
 
   const handleSubcategoryClickWithFilter = (
     subcategoryId: string,
-    subcategoryName: string
+    subcategoryName: string,
   ) => {
     if (category) {
       const findSubcategory = (
         subcats: Subcategory[],
-        targetId: string
+        targetId: string,
       ): Subcategory | null => {
         for (const subcat of subcats) {
           if (subcat._id === targetId) {
@@ -255,7 +253,7 @@ export default function CategoryDetailPage() {
 
       const selectedSubcat = findSubcategory(
         category.subcategories,
-        subcategoryId
+        subcategoryId,
       );
 
       if (selectedSubcat) {
@@ -269,10 +267,8 @@ export default function CategoryDetailPage() {
           selectedSubcat._id,
           selectedSubcat.name,
           features,
-          path
+          path,
         );
-
-      
       }
 
       const params = new URLSearchParams();
@@ -393,7 +389,7 @@ export default function CategoryDetailPage() {
                 maxHeight: "calc(100vh - 8rem)",
                 overflowY: "auto",
               }}
-            > 
+            >
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-2">
                   <h1 className="text-2xl font-bold text-gray-900">
@@ -433,7 +429,7 @@ export default function CategoryDetailPage() {
                         onClick={() =>
                           handleSubcategoryClickWithFilter(
                             subcat._id,
-                            subcat.name
+                            subcat.name,
                           )
                         }
                         className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition-all duration-200 group"
@@ -460,13 +456,13 @@ export default function CategoryDetailPage() {
                   </div>
                 </div>
               )}
- 
+
               <div className="hidden md:block mb-6">
                 <div className="flex items-center gap-2 mb-3">
                   <ArrowUpDown className="w-4 h-4 text-gray-600" />
                   <h3 className="font-semibold text-gray-900">Sırala</h3>
                 </div>
-                <div className="space-y-3"> 
+                <div className="space-y-3">
                   <div>
                     <div className="flex flex-col gap-1.5">
                       <button
@@ -497,7 +493,7 @@ export default function CategoryDetailPage() {
                       </button>
                     </div>
                   </div>
- 
+
                   <div>
                     <div className="flex flex-col gap-1.5">
                       <button
@@ -534,7 +530,7 @@ export default function CategoryDetailPage() {
           </div>
 
           {!isMobile && (
-            <div className="lg:w-3/4"> 
+            <div className="lg:w-3/4">
               <div className="hidden md:flex items-center justify-between mb-6 p-4 bg-white rounded-xl shadow-sm">
                 <div className="text-sm text-gray-600">
                   <span className="font-medium">{totalItems}</span> ilan
@@ -545,8 +541,8 @@ export default function CategoryDetailPage() {
                         ? "Eski İlanlar Önce"
                         : "Yeni İlanlar Önce"
                       : sortOrder === "asc"
-                      ? "Ucuzdan Pahalıya"
-                      : "Pahalıdan Ucuza"}
+                        ? "Ucuzdan Pahalıya"
+                        : "Pahalıdan Ucuza"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-500">
@@ -605,13 +601,11 @@ export default function CategoryDetailPage() {
                                 alt={advert.title || "İlan görseli"}
                                 className="w-full h-full object-cover rounded group-hover:opacity-90 transition-opacity"
                                 onError={(e) => {
-                                 
                                   e.currentTarget.src = logoUrl;
                                   e.currentTarget.alt = "Logo";
                                   e.currentTarget.className =
                                     "w-full h-full object-contain p-2 md:p-3 bg-gray-100 rounded";
                                 }}
-                               
                               />
                             </>
                           ) : (
@@ -697,7 +691,7 @@ export default function CategoryDetailPage() {
                                   <Calendar className="w-3 h-3 mr-1" />
                                   <span>
                                     {formatDate(
-                                      advert.created?.createdTimestamp
+                                      advert.created?.createdTimestamp,
                                     )}
                                   </span>
                                 </div>
@@ -759,7 +753,7 @@ export default function CategoryDetailPage() {
 
                         {Array.from(
                           { length: Math.ceil(totalItems / itemsPerPage) },
-                          (_, i) => i + 1
+                          (_, i) => i + 1,
                         )
                           .slice(Math.max(0, currentPage - 3), currentPage + 2)
                           .map((pageNum) => (

@@ -41,7 +41,7 @@ const Highlights = ({ data }: HighlightProps) => {
   };
 
   const filteredData = data.filter(
-    (item: any) => item.photos && item.photos.length > 0
+    (item: any) => item.photos && item.photos.length > 0,
   );
 
   const loadMore = () => {
@@ -136,7 +136,7 @@ const Highlights = ({ data }: HighlightProps) => {
                   {item.photos && item.photos.length > 0 ? (
                     <img
                       src={item.photos.find(
-                        (photo: any) => typeof photo === "string"
+                        (photo: any) => typeof photo === "string",
                       )}
                       alt={item.title || "İlan görseli"}
                       className="w-full h-full object-cover rounded group-hover:opacity-90 transition-opacity"
@@ -227,7 +227,7 @@ const Highlights = ({ data }: HighlightProps) => {
                     variants={imageVariants}
                     whileHover="hover"
                     src={item.photos.find(
-                      (photo: any) => typeof photo === "string"
+                      (photo: any) => typeof photo === "string",
                     )}
                     alt={item.title}
                     className="w-full h-full object-cover"
@@ -277,11 +277,35 @@ const Highlights = ({ data }: HighlightProps) => {
                     {item.title}
                   </h3>
 
-                  <div className="flex items-center gap-2 text-gray-600 mb-3 md:mb-4">
-                    <MapPin className="text-orange-500 shrink-0" size={16} />
-                    <span className="text-xs md:text-sm font-medium truncate">
-                      {item.address.province} / {item.address.district}
-                    </span>
+                  <div className="flex items-center justify-between text-gray-600 mb-3 md:mb-4 gap-2">
+                    {/* Sol: Konum */}
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <MapPin className="text-orange-500 shrink-0" size={16} />
+                      <span className="text-xs md:text-sm font-medium truncate">
+                        {item.address?.province} / {item.address?.district}
+                      </span>
+                    </div>
+
+                    {/* Sağ: m² */}
+                    {(() => {
+                      const raw = item?.details?.acre;
+
+                      if (raw === false || raw === null || raw === undefined)
+                        return null;
+
+                      const num =
+                        typeof raw === "number"
+                          ? raw
+                          : Number(String(raw).replace(/[^\d]/g, ""));
+
+                      if (!Number.isFinite(num) || num <= 0) return null;
+
+                      return (
+                        <span className="text-[10px] md:text-xs text-gray-700 whitespace-nowrap shrink-0 ml-auto">
+                          {num} m²
+                        </span>
+                      );
+                    })()}
                   </div>
 
                   {(item.features?.bedrooms ||

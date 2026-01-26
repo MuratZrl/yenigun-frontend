@@ -26,7 +26,7 @@ export default function Home() {
     api
       .get("/advert/adverts?page=1&limit=6")
       .then((response) => {
-        console.log(response.data.data);
+        console.log("adasasa", response.data.data);
         setData(response.data.data);
       })
       .catch((error) => {

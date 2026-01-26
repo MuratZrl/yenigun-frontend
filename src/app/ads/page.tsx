@@ -38,7 +38,7 @@ const turkeyCities = JSONDATA.map((city: any) => {
         district: district.name,
         quarters: district.districts.reduce((acc: any, district: any) => {
           const quarterNames = district.quarters.map(
-            (quarter: any) => quarter.name
+            (quarter: any) => quarter.name,
           );
           return acc.concat(quarterNames);
         }, []),
@@ -78,7 +78,7 @@ export default function AdsPage({
   const [totalItems, setTotalItems] = useState(0);
 
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
+    null,
   );
   const [localSelectedSubcat, setLocalSelectedSubcat] =
     useState<Subcategory | null>(null);
@@ -100,7 +100,7 @@ export default function AdsPage({
   const isInitializingFilters = useRef(false);
 
   const [activeUrlParams, setActiveUrlParams] = useState<Record<string, any>>(
-    {}
+    {},
   );
   const [showUrlDebug, setShowUrlDebug] = useState(false);
 
@@ -256,7 +256,7 @@ export default function AdsPage({
         setActiveUrlParams(urlParams);
 
         const hasFilterParams = Object.keys(urlParams).some(
-          (key) => !["page"].includes(key)
+          (key) => !["page"].includes(key),
         );
         setShowUrlDebug(hasFilterParams);
 
@@ -264,7 +264,7 @@ export default function AdsPage({
           await fetchSearchResults(
             newFilters,
             pageFromUrl,
-            featureFiltersFromUrl
+            featureFiltersFromUrl,
           );
           isInitialLoad.current = false;
         }
@@ -280,7 +280,7 @@ export default function AdsPage({
 
   const handleCategorySelectionFromURL = async (
     typeParam: string,
-    categories: Category[]
+    categories: Category[],
   ) => {
     const categoryPath = typeParam.split(" > ");
 
@@ -302,7 +302,7 @@ export default function AdsPage({
 
     if (secondPart && foundCategory.subcategories) {
       const foundSubcategory = foundCategory.subcategories.find(
-        (sub) => sub.name === secondPart
+        (sub) => sub.name === secondPart,
       );
 
       if (foundSubcategory) {
@@ -311,7 +311,7 @@ export default function AdsPage({
 
         if (thirdPart && foundSubcategory.subcategories) {
           const foundSubSubcategory = foundSubcategory.subcategories.find(
-            (subsub) => subsub.name === thirdPart
+            (subsub) => subsub.name === thirdPart,
           );
 
           if (foundSubSubcategory) {
@@ -330,7 +330,7 @@ export default function AdsPage({
     (
       filters: FilterState,
       page: number,
-      featureFilters: Record<string, any>
+      featureFilters: Record<string, any>,
     ) => {
       const params = new URLSearchParams();
 
@@ -371,13 +371,13 @@ export default function AdsPage({
       setActiveUrlParams(urlParams);
 
       const hasFilterParams = Object.keys(urlParams).some(
-        (key) => !["page"].includes(key)
+        (key) => !["page"].includes(key),
       );
       setShowUrlDebug(hasFilterParams);
 
       router.replace(newUrl, { scroll: false });
     },
-    [router]
+    [router],
   );
 
   useEffect(() => {
@@ -395,7 +395,7 @@ export default function AdsPage({
   const searchAdvertsAPI = async (
     page: number = 1,
     limit: number = 12,
-    filters?: any
+    filters?: any,
   ) => {
     try {
       let params: any = {
@@ -445,7 +445,7 @@ export default function AdsPage({
 
   const buildApiFilters = (
     filterValues: FilterState,
-    currentFeatureFilters: Record<string, any> = {}
+    currentFeatureFilters: Record<string, any> = {},
   ) => {
     const apiFilters: any = {};
 
@@ -543,7 +543,7 @@ export default function AdsPage({
   const fetchSearchResults = async (
     filterValues: FilterState,
     page: number = 1,
-    currentFeatureFilters: Record<string, any> = {}
+    currentFeatureFilters: Record<string, any> = {},
   ) => {
     try {
       setLoading(true);
@@ -589,7 +589,7 @@ export default function AdsPage({
 
       updateURL(newFilters, 1, featureFilters);
     },
-    [filters, featureFilters, fetchSearchResults, updateURL]
+    [filters, featureFilters, fetchSearchResults, updateURL],
   );
 
   const handleFilter = useCallback(async () => {
@@ -651,7 +651,7 @@ export default function AdsPage({
 
       let startPage = Math.max(
         1,
-        currentPage - Math.floor(maxVisiblePages / 2)
+        currentPage - Math.floor(maxVisiblePages / 2),
       );
       let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
@@ -818,7 +818,7 @@ export default function AdsPage({
                       {hasValidImage(ad) ? (
                         <img
                           src={ad.photos?.find(
-                            (photo: any) => typeof photo === "string"
+                            (photo: any) => typeof photo === "string",
                           )}
                           alt={ad.title || "İlan görseli"}
                           className="w-full h-full object-cover rounded group-hover:opacity-90 transition-opacity"
@@ -875,24 +875,62 @@ export default function AdsPage({
                         )}
 
                         {/* Eğer ilanda özellikler aktifse (isFeatures true) ve featureValues dizisi varsa, belirli özellikleri göster */}
-                        {ad.isFeatures && ad.featureValues && (
+                        {ad.isFeatures && Array.isArray(ad.featureValues) && (
                           <>
                             {(() => {
                               const donumFeature = ad.featureValues.find(
                                 (f) =>
-                                  f.featureId === "6931851fc9f133554f0adc75"
+                                  f.featureId === "6931851fc9f133554f0adc75",
                               );
-                              return donumFeature?.value ? (
-                                <span className="text-[10px] md:text-xs text-gray-700   px-1 py-0.5  ">
-                                  {donumFeature.value} Dönüm
+
+                              const m2Feature = ad.featureValues.find(
+                                (f) =>
+                                  f.featureId === "6968858ccd76859b79ca9451",
+                              );
+
+                              const donumVal =
+                                donumFeature?.value !== undefined &&
+                                donumFeature?.value !== null &&
+                                String(donumFeature.value).trim() !== "" &&
+                                String(donumFeature.value) !== "0"
+                                  ? donumFeature.value
+                                  : null;
+
+                              const m2Val =
+                                m2Feature?.value !== undefined &&
+                                m2Feature?.value !== null &&
+                                String(m2Feature.value).trim() !== "" &&
+                                String(m2Feature.value) !== "0"
+                                  ? m2Feature.value
+                                  : null;
+
+                              if (donumVal) {
+                                return (
+                                  <span className="text-[10px] md:text-xs text-gray-700 px-1 py-0.5">
+                                    {donumVal} Dönüm
+                                  </span>
+                                );
+                              }
+
+                              if (m2Val) {
+                                return (
+                                  <span className="text-[10px] md:text-xs text-gray-700 px-1 py-0.5">
+                                    {m2Val} m²
+                                  </span>
+                                );
+                              }
+
+                              return (
+                                <span className="text-[10px] md:text-xs text-gray-400 px-1 py-0.5">
+                                  - m²
                                 </span>
-                              ) : null;
+                              );
                             })()}
 
                             {(() => {
                               const roomCountFeature = ad.featureValues.find(
                                 (f) =>
-                                  f.featureId === "693a974dfc353e4edee38799"
+                                  f.featureId === "693a974dfc353e4edee38799",
                               );
                               return roomCountFeature?.value ? (
                                 <span className="text-[10px] md:text-xs text-gray-700   px-1 py-0.5  ">
@@ -921,7 +959,7 @@ export default function AdsPage({
                           {ad.created?.createdTimestamp && (
                             <div className="text-[10px] md:text-[12px] text-gray-900 whitespace-nowrap">
                               {new Date(
-                                ad.created.createdTimestamp
+                                ad.created.createdTimestamp,
                               ).toLocaleDateString("tr-TR", {
                                 day: "2-digit",
                                 month: "2-digit",
@@ -1018,7 +1056,7 @@ export default function AdsPage({
                       fetchSearchResults(
                         newFilters,
                         currentPage,
-                        featureFilters
+                        featureFilters,
                       );
 
                       updateURL(newFilters, currentPage, featureFilters);
