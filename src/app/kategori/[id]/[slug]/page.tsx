@@ -1,7 +1,7 @@
 "use client";
 
-import { Advert, Advisor, AdvertDetails, Steps } from "@/app/types/search";
-import React, { useState, useEffect } from "react";
+import { Advert } from "@/app/types/search";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Loader2,
@@ -32,18 +32,117 @@ interface Subcategory {
   subcategories?: Subcategory[];
 }
 
+/** -------------------------
+ * Helpers
+ * ------------------------- */
+
+/**
+ * details.acre normalize:
+ * - "1935 m² m²" -> "1935 m²"
+ * - "1935 m2" -> "1935 m²"
+ * - "0", "0 m2", "0 m²" -> null
+ * - birim yoksa ekler: "1935" -> "1935 m²"
+ */
+const normalizeAreaText = (raw: any): string | null => {
+  if (raw == null || raw === false) return null;
+
+  let t = String(raw).trim();
+  if (!t) return null;
+
+  const lower = t.toLowerCase();
+  if (lower === "false") return null;
+
+  t = t.replace(/㎡/g, "m²").replace(/m2/gi, "m²");
+
+  t = t.replace(/(m²)(\s*m²)+/gi, "m²");
+
+  t = t.replace(/\s+/g, " ").trim();
+
+  if (!/m²/i.test(t)) t = `${t} m²`;
+
+  const normalizedForZero = t
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace("m²", "m2");
+
+  if (normalizedForZero === "0" || normalizedForZero === "0m2") return null;
+
+  const num = Number(t.match(/\d+(\.\d+)?/)?.[0] ?? "0");
+  if (!num || num === 0) return null;
+
+  return t;
+};
+
+// ✅ Feature ID’ler (alan)
+const GROSS_M2_FEATURE_ID = "69679f63cd76859b79ca8aa4"; // m² (Brüt)
+const NET_M2_FEATURE_ID = "69679f97cd76859b79ca8ac6"; // m² (Net)
+const ALT_M2_FEATURE_ID = "6968858ccd76859b79ca9451"; // eski/alternatif m²
+const DONUM_FEATURE_ID = "6931851fc9f133554f0adc75"; // dönüm
+
+const isValidM2 = (v: any) =>
+  v !== undefined &&
+  v !== null &&
+  String(v).trim() !== "" &&
+  String(v).trim() !== "0";
+
+const getM2Text = (ad: any) => {
+  if (!ad?.isFeatures || !Array.isArray(ad?.featureValues)) return "";
+
+  const gross = ad.featureValues.find(
+    (f: any) => f.featureId === GROSS_M2_FEATURE_ID,
+  );
+  const net = ad.featureValues.find(
+    (f: any) => f.featureId === NET_M2_FEATURE_ID,
+  );
+  const alt = ad.featureValues.find(
+    (f: any) => f.featureId === ALT_M2_FEATURE_ID,
+  );
+  const donum = ad.featureValues.find(
+    (f: any) => f.featureId === DONUM_FEATURE_ID,
+  );
+
+  const grossVal = isValidM2(gross?.value) ? String(gross.value) : "";
+  const netVal = isValidM2(net?.value) ? String(net.value) : "";
+  const altVal = isValidM2(alt?.value) ? String(alt.value) : "";
+  const donumVal = isValidM2(donum?.value) ? String(donum.value) : "";
+
+  // Öncelik: Brüt+Net > Brüt > Net > Alt m² > Dönüm
+  if (grossVal && netVal) return `${grossVal} m² (Brüt) • ${netVal} m² (Net)`;
+  if (grossVal) return `${grossVal} m² (Brüt)`;
+  if (netVal) return `${netVal} m² (Net)`;
+  if (altVal) return `${altVal} m²`;
+  if (donumVal) return `${donumVal} Dönüm`;
+
+  return "";
+};
+
+const isValidNumber = (v: any) => typeof v === "number" && isFinite(v) && v > 0;
+
+const formatDate = (timestamp?: number) => {
+  if (!timestamp) return "Tarih yok";
+  const date = new Date(timestamp);
+  return date.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
 export default function CategoryDetailPage() {
   const params = useParams();
   const router = useRouter();
   const categoryId = params.id as string;
   const slug = params.slug as string;
   const { setSelectedSubcategory } = useCategoryContext();
+
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingAds, setLoadingAds] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [adverts, setAdverts] = useState<Advert[]>([]);
   const [totalItems, setTotalItems] = useState(0);
+
   const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>(
     [],
   );
@@ -56,19 +155,14 @@ export default function CategoryDetailPage() {
   const [sortOrder, setSortOrder] = useState<string>("desc");
 
   const findFeaturesInSubcategory = (subcat: Subcategory): any[] => {
-    if (subcat.features && subcat.features.length > 0) {
-      return subcat.features;
-    }
+    if (subcat.features && subcat.features.length > 0) return subcat.features;
 
     if (subcat.subcategories && subcat.subcategories.length > 0) {
       for (const childSubcat of subcat.subcategories) {
         const childFeatures = findFeaturesInSubcategory(childSubcat);
-        if (childFeatures.length > 0) {
-          return childFeatures;
-        }
+        if (childFeatures.length > 0) return childFeatures;
       }
     }
-
     return [];
   };
 
@@ -84,9 +178,7 @@ export default function CategoryDetailPage() {
       for (const subcat of subcats) {
         const currentPath = [...path, subcat.name];
 
-        if (subcat._id === targetId) {
-          return currentPath;
-        }
+        if (subcat._id === targetId) return currentPath;
 
         if (subcat.subcategories && subcat.subcategories.length > 0) {
           const found = findPath(subcat.subcategories, targetId, currentPath);
@@ -101,13 +193,9 @@ export default function CategoryDetailPage() {
   };
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
-
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
@@ -123,11 +211,8 @@ export default function CategoryDetailPage() {
             (cat: Category) => cat._id === categoryId,
           );
 
-          if (foundCategory) {
-            setCategory(foundCategory);
-          } else {
-            setError("Kategori bulunamadı");
-          }
+          if (foundCategory) setCategory(foundCategory);
+          else setError("Kategori bulunamadı");
         } else {
           throw new Error("API yanıtı beklenen formatta değil");
         }
@@ -139,82 +224,89 @@ export default function CategoryDetailPage() {
       }
     };
 
-    if (categoryId) {
-      fetchCategoryDetails();
-    }
+    if (categoryId) fetchCategoryDetails();
   }, [categoryId]);
 
-  const fetchAdverts = async (filters: any = {}) => {
-    try {
-      setLoadingAds(true);
-      const params: any = {
-        page: currentPage,
-        limit: itemsPerPage,
-        sortBy,
-        sortOrder,
-        ...filters,
-      };
+  const fetchAdverts = useCallback(
+    async (filters: any = {}) => {
+      try {
+        setLoadingAds(true);
 
-      if (category) {
-        params.category = category.name;
+        const reqParams: any = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy,
+          sortOrder,
+          ...filters,
+        };
+
+        if (category) reqParams.category = category.name;
+        if (selectedSubcategories.length > 0) {
+          reqParams.subcategories = selectedSubcategories.join(",");
+        }
+
+        const response = await api.get("/advert/search", { params: reqParams });
+        const filteredData = response.data.data || [];
+
+        const formattedAdverts = filteredData.map((ad: any) => ({
+          uid: ad.uid,
+          title: ad.title || "İsimsiz İlan",
+          fee: ad.fee || "Fiyat Belirtilmemiş",
+          address: {
+            ...ad.address,
+            full_address: ad.address?.full_address || "Adres bilgisi yok",
+            province: ad.address?.province || "",
+            district: ad.address?.district || "",
+            quarter: ad.address?.quarter || "",
+            mapCoordinates: ad.address?.mapCoordinates
+              ? {
+                  lat: ad.address.mapCoordinates.lat,
+                  lng: ad.address.mapCoordinates.lng,
+                }
+              : undefined,
+          },
+          photos: ad.photos || [],
+          thoughts: ad.thoughts || "",
+          created: ad.created || { createdTimestamp: Date.now() },
+          advisor: ad.advisor,
+          details: ad.details,
+          isNew: ad.isNew || false,
+          steps: ad.steps,
+
+          isFeatures: ad.isFeatures,
+          featureValues: ad.featureValues,
+        }));
+
+        setAdverts(formattedAdverts);
+        setTotalItems(
+          response.data.pagination?.totalItems || formattedAdverts.length,
+        );
+      } catch (error: any) {
+        console.error("❌ İlanlar yüklenirken hata:", error);
+        setAdverts([]);
+        setTotalItems(0);
+      } finally {
+        setLoadingAds(false);
       }
-
-      if (selectedSubcategories.length > 0) {
-        params.subcategories = selectedSubcategories.join(",");
-      }
-
-      const response = await api.get("/advert/search", { params });
-
-      let filteredData = response.data.data || [];
-
-      const formattedAdverts = filteredData.map((ad: any) => ({
-        uid: ad.uid,
-        title: ad.title || "İsimsiz İlan",
-        fee: ad.fee || "Fiyat Belirtilmemiş",
-        address: {
-          ...ad.address,
-          full_address: ad.address?.full_address || "Adres bilgisi yok",
-          province: ad.address?.province || "",
-          district: ad.address?.district || "",
-          quarter: ad.address?.quarter || "",
-          mapCoordinates: ad.address?.mapCoordinates
-            ? {
-                lat: ad.address.mapCoordinates.lat,
-                lng: ad.address.mapCoordinates.lng,
-              }
-            : undefined,
-        },
-        photos: ad.photos || [],
-        thoughts: ad.thoughts || "",
-        created: ad.created || { createdTimestamp: Date.now() },
-        advisor: ad.advisor,
-        details: ad.details,
-        isNew: ad.isNew || false,
-        steps: ad.steps,
-      }));
-
-      const withCoordinates = formattedAdverts.filter(
-        (ad: any) =>
-          ad.address?.mapCoordinates?.lat && ad.address?.mapCoordinates?.lng,
-      );
-
-      setAdverts(formattedAdverts);
-      setTotalItems(
-        response.data.pagination?.totalItems || formattedAdverts.length,
-      );
-    } catch (error: any) {
-      console.error("❌ İlanlar yüklenirken hata:", error);
-      setAdverts([]);
-      setTotalItems(0);
-    } finally {
-      setLoadingAds(false);
-    }
-  };
+    },
+    [
+      category,
+      currentPage,
+      itemsPerPage,
+      sortBy,
+      sortOrder,
+      selectedSubcategories,
+    ],
+  );
 
   useEffect(() => {
-    if (category) {
-      fetchAdverts(searchFilters);
+    if (adverts && adverts.length > 0) {
+      console.log("📦 Sayfada gösterilen adverts:", adverts);
     }
+  }, [adverts]);
+
+  useEffect(() => {
+    if (category) fetchAdverts(searchFilters);
   }, [
     category,
     currentPage,
@@ -222,6 +314,7 @@ export default function CategoryDetailPage() {
     searchFilters,
     sortBy,
     sortOrder,
+    fetchAdverts,
   ]);
 
   const handleSearch = (filters: any) => {
@@ -233,49 +326,46 @@ export default function CategoryDetailPage() {
     subcategoryId: string,
     subcategoryName: string,
   ) => {
-    if (category) {
-      const findSubcategory = (
-        subcats: Subcategory[],
-        targetId: string,
-      ): Subcategory | null => {
-        for (const subcat of subcats) {
-          if (subcat._id === targetId) {
-            return subcat;
-          }
+    if (!category) return;
 
-          if (subcat.subcategories && subcat.subcategories.length > 0) {
-            const found = findSubcategory(subcat.subcategories, targetId);
-            if (found) return found;
-          }
+    const findSubcategory = (
+      subcats: Subcategory[],
+      targetId: string,
+    ): Subcategory | null => {
+      for (const subcat of subcats) {
+        if (subcat._id === targetId) return subcat;
+
+        if (subcat.subcategories && subcat.subcategories.length > 0) {
+          const found = findSubcategory(subcat.subcategories, targetId);
+          if (found) return found;
         }
-        return null;
-      };
-
-      const selectedSubcat = findSubcategory(
-        category.subcategories,
-        subcategoryId,
-      );
-
-      if (selectedSubcat) {
-        const features = findFeaturesInSubcategory(selectedSubcat);
-
-        const path = findSubcategoryPath(category, subcategoryId);
-
-        setSelectedSubcategory(
-          category._id,
-          category.name,
-          selectedSubcat._id,
-          selectedSubcat.name,
-          features,
-          path,
-        );
       }
+      return null;
+    };
 
-      const params = new URLSearchParams();
-      params.set("type", `${category.name} > ${subcategoryName}`);
-      params.set("subcategoryId", subcategoryId);
-      router.push(`/ads?${params.toString()}`);
+    const selectedSubcat = findSubcategory(
+      category.subcategories,
+      subcategoryId,
+    );
+
+    if (selectedSubcat) {
+      const features = findFeaturesInSubcategory(selectedSubcat);
+      const path = findSubcategoryPath(category, subcategoryId);
+
+      setSelectedSubcategory(
+        category._id,
+        category.name,
+        selectedSubcat._id,
+        selectedSubcat.name,
+        features,
+        path,
+      );
     }
+
+    const urlParams = new URLSearchParams();
+    urlParams.set("type", `${category.name} > ${subcategoryName}`);
+    urlParams.set("subcategoryId", subcategoryId);
+    router.push(`/ads?${urlParams.toString()}`);
   };
 
   const handleSortChange = (newSortBy: string, newSortOrder: string) => {
@@ -285,15 +375,12 @@ export default function CategoryDetailPage() {
   };
 
   const hasValidImage = (advert: Advert): boolean => {
-    if (!advert.photos || !Array.isArray(advert.photos)) {
-      return false;
-    }
+    const photos: any = (advert as any).photos;
+    if (!photos || !Array.isArray(photos)) return false;
 
-    const firstPhoto = advert.photos[0];
-
-    if (typeof firstPhoto !== "string" || firstPhoto.trim() === "") {
+    const firstPhoto = photos[0];
+    if (typeof firstPhoto !== "string" || firstPhoto.trim() === "")
       return false;
-    }
 
     try {
       new URL(firstPhoto);
@@ -308,16 +395,6 @@ export default function CategoryDetailPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const formatDate = (timestamp?: number) => {
-    if (!timestamp) return "Tarih yok";
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("tr-TR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
   };
 
   if (loading) {
@@ -352,7 +429,7 @@ export default function CategoryDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="pt-5 bg-white shadow-sm"></div>
+      <div className="pt-5 bg-white shadow-sm" />
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
@@ -380,6 +457,7 @@ export default function CategoryDetailPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left */}
           <div className="lg:w-1/4">
             <div
               className="bg-white rounded-2xl shadow-lg p-6"
@@ -397,9 +475,9 @@ export default function CategoryDetailPage() {
                   </h1>
                   <button
                     onClick={() => {
-                      const params = new URLSearchParams();
-                      params.set("type", category.name);
-                      router.push(`/ads?${params.toString()}`);
+                      const p = new URLSearchParams();
+                      p.set("type", category.name);
+                      router.push(`/ads?${p.toString()}`);
                     }}
                     className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-medium rounded-lg transition-colors duration-200 flex items-center gap-1 border border-blue-200"
                   >
@@ -422,6 +500,7 @@ export default function CategoryDetailPage() {
                       {category.subcategories.length}
                     </span>
                   </div>
+
                   <div className="space-y-2">
                     {category.subcategories.map((subcat) => (
                       <button
@@ -457,78 +536,79 @@ export default function CategoryDetailPage() {
                 </div>
               )}
 
+              {/* Sort */}
               <div className="hidden md:block mb-6">
                 <div className="flex items-center gap-2 mb-3">
                   <ArrowUpDown className="w-4 h-4 text-gray-600" />
                   <h3 className="font-semibold text-gray-900">Sırala</h3>
                 </div>
+
                 <div className="space-y-3">
-                  <div>
-                    <div className="flex flex-col gap-1.5">
-                      <button
-                        onClick={() => handleSortChange("date", "asc")}
-                        className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
-                          sortBy === "date" && sortOrder === "asc"
-                            ? "bg-blue-50 border-blue-300 text-blue-700"
-                            : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
-                        }`}
-                      >
-                        <span>Eski ilanlar önce</span>
-                        {sortBy === "date" && sortOrder === "asc" && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleSortChange("date", "desc")}
-                        className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
-                          sortBy === "date" && sortOrder === "desc"
-                            ? "bg-blue-50 border-blue-300 text-blue-700"
-                            : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
-                        }`}
-                      >
-                        <span>Yeni ilanlar önce</span>
-                        {sortBy === "date" && sortOrder === "desc" && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        )}
-                      </button>
-                    </div>
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      onClick={() => handleSortChange("date", "asc")}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
+                        sortBy === "date" && sortOrder === "asc"
+                          ? "bg-blue-50 border-blue-300 text-blue-700"
+                          : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      <span>Eski ilanlar önce</span>
+                      {sortBy === "date" && sortOrder === "asc" && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => handleSortChange("date", "desc")}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
+                        sortBy === "date" && sortOrder === "desc"
+                          ? "bg-blue-50 border-blue-300 text-blue-700"
+                          : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      <span>Yeni ilanlar önce</span>
+                      {sortBy === "date" && sortOrder === "desc" && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                      )}
+                    </button>
                   </div>
 
-                  <div>
-                    <div className="flex flex-col gap-1.5">
-                      <button
-                        onClick={() => handleSortChange("price", "asc")}
-                        className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
-                          sortBy === "price" && sortOrder === "asc"
-                            ? "bg-blue-50 border-blue-300 text-blue-700"
-                            : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
-                        }`}
-                      >
-                        <span>Ucuzdan pahalıya</span>
-                        {sortBy === "price" && sortOrder === "asc" && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleSortChange("price", "desc")}
-                        className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
-                          sortBy === "price" && sortOrder === "desc"
-                            ? "bg-blue-50 border-blue-300 text-blue-700"
-                            : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
-                        }`}
-                      >
-                        <span>Pahalıdan ucuza</span>
-                        {sortBy === "price" && sortOrder === "desc" && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        )}
-                      </button>
-                    </div>
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      onClick={() => handleSortChange("price", "asc")}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
+                        sortBy === "price" && sortOrder === "asc"
+                          ? "bg-blue-50 border-blue-300 text-blue-700"
+                          : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      <span>Ucuzdan pahalıya</span>
+                      {sortBy === "price" && sortOrder === "asc" && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => handleSortChange("price", "desc")}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors flex items-center justify-between ${
+                        sortBy === "price" && sortOrder === "desc"
+                          ? "bg-blue-50 border-blue-300 text-blue-700"
+                          : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      <span>Pahalıdan ucuza</span>
+                      {sortBy === "price" && sortOrder === "desc" && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Right */}
           {!isMobile && (
             <div className="lg:w-3/4">
               <div className="hidden md:flex items-center justify-between mb-6 p-4 bg-white rounded-xl shadow-sm">
@@ -575,9 +655,9 @@ export default function CategoryDetailPage() {
                   </p>
                   <button
                     onClick={() => {
-                      const params = new URLSearchParams();
-                      params.set("type", category.name);
-                      router.push(`/ads?${params.toString()}`);
+                      const p = new URLSearchParams();
+                      p.set("type", category.name);
+                      router.push(`/ads?${p.toString()}`);
                     }}
                     className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                   >
@@ -587,157 +667,192 @@ export default function CategoryDetailPage() {
               ) : (
                 <>
                   <div className="space-y-2 pt-3">
-                    {adverts.map((advert) => (
-                      <Link
-                        href={`/ads/${advert.uid}`}
-                        key={advert.uid}
-                        className="flex relative bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 overflow-hidden group"
-                      >
-                        <div className="w-20 h-20 md:w-36 md:h-36 shrink-0 relative m-2 md:m-3">
-                          {hasValidImage(advert) ? (
-                            <>
-                              <img
-                                src={advert.photos[0]}
-                                alt={advert.title || "İlan görseli"}
-                                className="w-full h-full object-cover rounded group-hover:opacity-90 transition-opacity"
-                                onError={(e) => {
-                                  e.currentTarget.src = logoUrl;
-                                  e.currentTarget.alt = "Logo";
-                                  e.currentTarget.className =
-                                    "w-full h-full object-contain p-2 md:p-3 bg-gray-100 rounded";
-                                }}
-                              />
-                            </>
-                          ) : (
-                            <div className="flex items-center justify-center bg-gray-100 w-full h-full rounded">
-                              <img
-                                src={logoUrl}
-                                alt="Logo"
-                                className="object-contain h-8 md:h-12 opacity-70"
-                                onError={(e) => {
-                                  e.currentTarget.src =
-                                    "https://via.placeholder.com/150x150?text=Logo";
-                                }}
-                              />
+                    {/* ✅ Desktop header */}
+                    <div className="hidden md:grid grid-cols-[120px_1fr_140px_110px_160px_160px] gap-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                      <div className="px-4 py-3 text-xs font-semibold text-gray-600">
+                        Görsel
+                      </div>
+                      <div className="px-4 py-3 text-xs font-semibold text-gray-600">
+                        İlan
+                      </div>
+                      <div className="px-4 py-3 text-xs font-semibold text-gray-600 text-center">
+                        m²
+                      </div>
+
+                      <div className="px-4 py-3 text-xs font-semibold text-gray-600 text-center">
+                        Konum
+                      </div>
+                      <div className="px-4 py-3 text-xs font-semibold text-gray-600 text-right">
+                        Fiyat
+                      </div>
+                    </div>
+
+                    {adverts.map((advert: any, index: number) => {
+                      const m2Text = getM2Text(advert);
+                      const room =
+                        advert?.details?.roomCount ||
+                        advert?.featureValues?.find((f: any) =>
+                          f?.name?.toLowerCase().includes("oda"),
+                        )?.value ||
+                        "";
+
+                      const locationText = advert?.address?.province
+                        ? `${advert.address.province}${advert.address?.district ? ` / ${advert.address.district}` : ""}`
+                        : "Lokasyon yok";
+
+                      return (
+                        <Link
+                          href={`/ads/${advert.uid}`}
+                          key={advert.uid || index}
+                          className="group block"
+                        >
+                          {/* ✅ Desktop row (table like) */}
+                          <div className="hidden md:grid grid-cols-[120px_1fr_140px_110px_160px_160px] items-center bg-white border border-gray-200 rounded-xl overflow-hidden hover:bg-gray-50 transition-colors">
+                            {/* Görsel */}
+                            <div className="p-3">
+                              <div className="w-[110px] h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                                {hasValidImage(advert) ? (
+                                  <img
+                                    src={advert.photos[0]}
+                                    alt={advert.title || "İlan görseli"}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.src = logoUrl;
+                                      e.currentTarget.className =
+                                        "w-full h-full object-contain p-2";
+                                    }}
+                                  />
+                                ) : (
+                                  <img
+                                    src={logoUrl}
+                                    alt="Logo"
+                                    className="w-full h-full object-contain p-2 opacity-70"
+                                  />
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        <div className="flex-1 flex flex-col justify-between py-2 md:py-3 pr-2 md:pr-3 min-w-0">
-                          <div className="mb-1">
-                            <h3 className="font-bold text-gray-900 text-xs md:text-base hover:text-blue-600 transition-colors wrap-break-word whitespace-normal line-clamp-2">
-                              {advert.title || "İsimsiz İlan"}
-                            </h3>
+
+                            {/* İlan */}
+                            <div className="px-4 py-3 min-w-0">
+                              <div className="text-[13px] font-semibold text-blue-700 group-hover:underline line-clamp-2">
+                                {advert.title || "İsimsiz İlan"}
+                              </div>
+                              <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                                {advert.steps?.second && (
+                                  <span className="bg-gray-100 px-2 py-0.5 rounded">
+                                    {advert.steps.second}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {formatDate(advert.created?.createdTimestamp)}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* m² */}
+                            <div className="px-4 py-3 text-center text-sm text-gray-800">
+                              {m2Text || "-"}
+                            </div>
+
+                            {/* Konum */}
+                            <div className="px-4 py-3 text-center text-sm text-gray-700 truncate">
+                              {locationText}
+                            </div>
+
+                            {/* Fiyat */}
+                            <div className="px-4 py-3 text-right">
+                              <div className="text-base font-bold text-gray-900 whitespace-nowrap">
+                                {advert.fee || "Fiyat Belirtilmemiş"}
+                              </div>
+                              {advert.advisor && (
+                                <div className="mt-1 text-xs text-gray-500 flex items-center justify-end gap-1">
+                                  <User className="w-3 h-3" />
+                                  <span className="truncate max-w-[140px]">
+                                    {advert.advisor.name}{" "}
+                                    {advert.advisor.surname}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="mb-1">
-                            {advert.steps?.second && (
-                              <span className="text-[10px] md:text-xs text-gray-600 bg-gray-100 px-1.5 md:px-2 py-0.5 rounded">
-                                {advert.steps.second}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="hidden md:grid md:grid-cols-3 gap-2 mb-2">
-                            {advert.details?.netArea && (
-                              <div className="text-center">
-                                <div className="text-gray-500 text-xs">
-                                  Net Alan
-                                </div>
-                                <div className="font-semibold text-gray-900 text-sm">
-                                  {advert.details.netArea} m²
-                                </div>
+                          {/* ✅ Mobile card */}
+                          <div className="md:hidden bg-white border border-gray-200 rounded-xl overflow-hidden hover:bg-gray-50 transition-colors">
+                            <div className="flex gap-3 p-3">
+                              {/* img */}
+                              <div className="w-24 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+                                {hasValidImage(advert) ? (
+                                  <img
+                                    src={advert.photos[0]}
+                                    alt={advert.title || "İlan görseli"}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.src = logoUrl;
+                                      e.currentTarget.className =
+                                        "w-full h-full object-contain p-2";
+                                    }}
+                                  />
+                                ) : (
+                                  <img
+                                    src={logoUrl}
+                                    alt="Logo"
+                                    className="w-full h-full object-contain p-2 opacity-70"
+                                  />
+                                )}
                               </div>
-                            )}
 
-                            {advert.details?.grossArea && (
-                              <div className="text-center">
-                                <div className="text-gray-500 text-xs">
-                                  Brüt Alan
+                              {/* content */}
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[13px] font-semibold text-blue-700 line-clamp-2">
+                                  {advert.title || "İsimsiz İlan"}
                                 </div>
-                                <div className="font-semibold text-gray-900 text-sm">
-                                  {advert.details.grossArea} m²
-                                </div>
-                              </div>
-                            )}
 
-                            {advert.details?.buildingAge && (
-                              <div className="text-center">
-                                <div className="text-gray-500 text-xs">
-                                  Bina Yaşı
+                                <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-gray-600">
+                                  {advert.steps?.second && (
+                                    <span className="bg-gray-100 px-2 py-0.5 rounded">
+                                      {advert.steps.second}
+                                    </span>
+                                  )}
+                                  <span className="px-2 py-0.5 rounded bg-gray-100">
+                                    {m2Text || "-"}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded bg-gray-100">
+                                    {room || "-"} Oda
+                                  </span>
                                 </div>
-                                <div className="font-semibold text-gray-900 text-sm">
-                                  {advert.details.buildingAge} Yıl
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex justify-between items-center mt-auto">
-                            <div className="text-[10px] md:text-sm text-gray-600 truncate pr-1 min-w-0">
-                              <p className="truncate hidden md:block">
-                                {advert.address?.province &&
-                                  `${advert.address.province}`}
-                                {advert.address?.district &&
-                                  ` - ${advert.address.district}`}
-                                {advert.address?.quarter &&
-                                  `, ${advert.address.quarter}`}
-                                {!advert.address?.province &&
-                                  !advert.address?.district &&
-                                  !advert.address?.quarter &&
-                                  "Lokasyon yok"}
-                              </p>
 
-                              <div className="md:hidden flex flex-col gap-0.5">
-                                <div className="flex items-center">
-                                  <Calendar className="w-3 h-3 mr-1" />
-                                  <span>
+                                <div className="mt-2 flex items-center justify-between">
+                                  <div className="text-xs text-gray-600 truncate max-w-[55%]">
+                                    {locationText}
+                                  </div>
+                                  <div className="text-sm font-bold text-gray-900 whitespace-nowrap">
+                                    {advert.fee || "Fiyat Yok"}
+                                  </div>
+                                </div>
+
+                                <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
                                     {formatDate(
                                       advert.created?.createdTimestamp,
                                     )}
                                   </span>
-                                </div>
-                                {advert.advisor && (
-                                  <div className="flex items-center">
-                                    <User className="w-3 h-3 mr-1" />
-                                    <span className="truncate">
+
+                                  {advert.advisor && (
+                                    <span className="flex items-center gap-1 truncate max-w-[45%]">
+                                      <User className="w-3 h-3" />
                                       {advert.advisor.name}{" "}
                                       {advert.advisor.surname}
                                     </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0 pl-1">
-                              <div className="text-xs md:text-xl font-bold text-gray-900 whitespace-nowrap">
-                                {advert.fee ? (
-                                  <>{advert.fee}</>
-                                ) : (
-                                  <span className="text-gray-500 text-[10px] md:text-sm block">
-                                    Fiyat Belirtilmemiş
-                                  </span>
-                                )}
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-
-                          <div className="hidden md:flex items-center gap-4 text-gray-500 text-xs mt-1">
-                            <div className="flex items-center">
-                              <Calendar className="w-3 h-3 mr-1" />
-                              <span>
-                                {formatDate(advert.created?.createdTimestamp)}
-                              </span>
-                            </div>
-                            {advert.advisor && (
-                              <div className="flex items-center">
-                                <User className="w-3 h-3 mr-1" />
-                                <span>
-                                  {advert.advisor.name} {advert.advisor.surname}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
+                        </Link>
+                      );
+                    })}
                   </div>
 
                   {totalItems > itemsPerPage && (

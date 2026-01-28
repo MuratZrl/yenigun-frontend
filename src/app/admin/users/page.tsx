@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react";
 import CreateUserModal from "@/app/components/modals/CreateUsersModal";
 import { Poppins } from "next/font/google";
-import { 
+import {
   Filter,
-  Search, 
+  Search,
   List,
   Info,
   Edit,
@@ -119,10 +119,10 @@ const UserTableRow = ({
                 user.status === "Mülk Sahibi"
                   ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                   : user.status === "Satınalan"
-                  ? "bg-blue-100 text-blue-700 border border-blue-200"
-                  : user.status === "Kiralayan"
-                  ? "bg-amber-100 text-amber-700 border border-amber-200"
-                  : "bg-purple-100 text-purple-700 border border-purple-200"
+                    ? "bg-blue-100 text-blue-700 border border-blue-200"
+                    : user.status === "Kiralayan"
+                      ? "bg-amber-100 text-amber-700 border border-amber-200"
+                      : "bg-purple-100 text-purple-700 border border-purple-200"
               }`}
             >
               {user.status}
@@ -352,10 +352,10 @@ const UserCard = ({
                 user.status === "Mülk Sahibi"
                   ? "bg-green-100 text-green-800"
                   : user.status === "Satınalan"
-                  ? "bg-blue-100 text-blue-800"
-                  : user.status === "Kiralayan"
-                  ? "bg-orange-100 text-orange-800"
-                  : "bg-purple-100 text-purple-800"
+                    ? "bg-blue-100 text-blue-800"
+                    : user.status === "Kiralayan"
+                      ? "bg-orange-100 text-orange-800"
+                      : "bg-purple-100 text-purple-800"
               }`}
             >
               {user.status}
@@ -561,63 +561,53 @@ const Users = () => {
     user: null,
   }) as any;
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const token = cookies.token;
-      if (!token) {
-        router.push("/login");
-        return false;
-      }
-      setAuthChecked(true);
-      return true;
-    };
-
-    checkAuth();
-  }, [cookies.token, router]);
-
   const fetchAllCustomers = async () => {
     try {
-      if (!cookies.token) {
-        router.push("/login");
-        return;
-      }
-
       setLoading(true);
 
       let allData: any[] = [];
       let page = 1;
       let hasMore = true;
 
+      let lastFirstUid: any = null;
+
       while (hasMore) {
         const response = await api.get(
-          `/admin/customers?page=${page}&limit=100&sortBy=created&sortOrder=desc`
+          `/admin/customers?page=${page}&limit=100&sortBy=created&sortOrder=desc`,
         );
 
-        if (response.data.success && response.data.data.length > 0) {
-          allData = [...allData, ...response.data.data];
+        const list = response.data?.data || [];
+        const firstUid = list?.[0]?.uid ?? null;
+
+        if (page > 1 && firstUid && firstUid === lastFirstUid) {
+          console.warn(
+            "Pagination çalışmıyor: aynı sayfa tekrar geldi. Break.",
+          );
+          break;
+        }
+        lastFirstUid = firstUid;
+
+        if (response.data?.success && list.length > 0) {
+          allData = allData.concat(list);
           page++;
 
-          if (response.data.data.length < 100) {
-            hasMore = false;
-          }
+          if (list.length < 100) hasMore = false;
         } else {
           hasMore = false;
         }
+
+        if (page > 200) {
+          console.warn("Güvenlik break: 200 sayfa üstü.");
+          break;
+        }
       }
 
-      console.log("Toplam veri çekildi:", allData.length);
       setAllUsers(allData);
       setFilteredUsers(allData);
-
-      setPagination((prev) => ({
-        ...prev,
-        total: allData.length,
-      }));
+      setPagination((prev) => ({ ...prev, total: allData.length }));
     } catch (error: any) {
       console.error("Müşteri getirme hatası:", error);
-      if (error.response?.status === 401) {
-        router.push("/login");
-      }
+      if (error.response?.status === 401) router.push("/login");
       toast.error("Müşteriler yüklenirken bir hata oluştu");
     } finally {
       setLoading(false);
@@ -625,10 +615,8 @@ const Users = () => {
   };
 
   useEffect(() => {
-    if (authChecked && cookies.token) {
-      fetchAllCustomers();
-    }
-  }, [authChecked, cookies.token]);
+    fetchAllCustomers();
+  }, []);
 
   useEffect(() => {
     const startIndex = pagination.page * pagination.rowsPerPage;
@@ -679,7 +667,7 @@ const Users = () => {
   };
 
   const handleRowsPerPageChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
+    event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     const newRowsPerPage = parseInt(event.target.value);
     setPagination((prev) => ({
@@ -707,8 +695,8 @@ const Users = () => {
 
       const response = await api.get(
         `/admin/customers/note-search?note=${encodeURIComponent(
-          searchText
-        )}&page=1&limit=100`
+          searchText,
+        )}&page=1&limit=100`,
       );
 
       if (response.data.success) {
@@ -726,7 +714,8 @@ const Users = () => {
     } catch (error: any) {
       console.error("Not arama hatası:", error);
       toast.error(
-        error.response?.data?.message || "Not araması sırasında bir hata oluştu"
+        error.response?.data?.message ||
+          "Not araması sırasında bir hata oluştu",
       );
     } finally {
       setNoteSearch((prev) => ({ ...prev, loading: false }));
@@ -929,20 +918,10 @@ const Users = () => {
   const startIndex = pagination.page * pagination.rowsPerPage;
   const endIndex = Math.min(
     startIndex + pagination.rowsPerPage,
-    pagination.total
+    pagination.total,
   );
   const totalPages = Math.ceil(pagination.total / pagination.rowsPerPage);
   const viewMode = isMobile ? "grid" : "table";
-
-  if (!authChecked) {
-    return (
-      <AdminLayout>
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </AdminLayout>
-    );
-  }
 
   return (
     <AdminLayout>

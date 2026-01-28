@@ -330,7 +330,7 @@ export default function AdvertDetailClient({
 
   const safePhotos = Array.isArray(data?.photos)
     ? data.photos.filter(
-        (photo: any) => typeof photo === "string" && photo.trim() !== ""
+        (photo: any) => typeof photo === "string" && photo.trim() !== "",
       )
     : [];
 
@@ -360,13 +360,13 @@ export default function AdvertDetailClient({
 
     if (isLeftSwipe) {
       setSelectedPhoto((prev) =>
-        prev === safePhotos.length - 1 ? 0 : prev + 1
+        prev === safePhotos.length - 1 ? 0 : prev + 1,
       );
     }
 
     if (isRightSwipe) {
       setSelectedPhoto((prev) =>
-        prev === 0 ? safePhotos.length - 1 : prev - 1
+        prev === 0 ? safePhotos.length - 1 : prev - 1,
       );
     }
   };
@@ -438,7 +438,7 @@ export default function AdvertDetailClient({
 
   const placeholderPhoneNumber = data.advisor.gsmNumber || "5322328405";
   const handleImageError = (
-    e: React.SyntheticEvent<HTMLImageElement, Event>
+    e: React.SyntheticEvent<HTMLImageElement, Event>,
   ) => {
     const target = e.target as HTMLImageElement;
     target.src = "/logo.png";
@@ -520,7 +520,7 @@ export default function AdvertDetailClient({
     }
 
     const uniqueParts = addressParts.filter(
-      (part, index, self) => self.indexOf(part) === index
+      (part, index, self) => self.indexOf(part) === index,
     );
 
     return uniqueParts.join(", ");
@@ -756,9 +756,11 @@ export default function AdvertDetailClient({
 
   return (
     <main className="bg-gray-50 min-h-screen">
-      <Navbar />
+      <div className="hidden lg:block">
+        <Navbar />
+      </div>
 
-      <div className="container mx-auto max-w-7xl px-4 py-8">
+      <div className="w-full lg:container lg:mx-auto lg:max-w-7xl lg:px-4 py-0 lg:py-8">
         <div className="hidden lg:block mb-8">
           <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4 flex-wrap">
             <span>Emlak</span>
@@ -794,7 +796,7 @@ export default function AdvertDetailClient({
                     day: "numeric",
                     hour: "numeric",
                     minute: "numeric",
-                  }
+                  },
                 )}
               </span>
             </div>
@@ -809,239 +811,227 @@ export default function AdvertDetailClient({
           <div className="lg:col-span-2 flex flex-col gap-8">
             {/* Mobil Görünüm */}
             <div className="block lg:hidden">
-              {/* Fotoğraf Galerisi */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-                <div
-                  className="relative"
-                  onTouchStart={handleTouchStartMain}
-                  onTouchMove={handleTouchMoveMain}
-                  onTouchEnd={handleTouchEndMain}
-                >
-                  {shouldShowLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    </div>
-                  )}
-                  <img
-                    src={currentPhoto}
-                    onClick={() =>
-                      hasPhotos && handleClickedPhoto(currentPhoto)
-                    }
-                    onLoad={() => setImageLoading(false)}
-                    onError={handleImageError}
-                    className={`w-full h-64 select-none transition-all duration-300 ${
-                      shouldShowLoading ? "opacity-0" : "opacity-100"
-                    } ${
-                      hasPhotos
-                        ? "cursor-zoom-in hover:scale-105"
-                        : "cursor-default"
-                    } ${
-                      isLowQualityImage(currentPhoto) || !hasPhotos
-                        ? "object-contain"
-                        : "object-contain"
-                    }`}
-                    alt={
-                      hasPhotos
-                        ? `İlan Fotoğrafı ${selectedPhoto + 1}`
-                        : "Yenigün Emlak"
-                    }
-                    loading={hasPhotos ? "lazy" : "eager"}
-                    decoding="async"
-                  />
-
+              {/* Mobil App Bar */}
+              <div className="sticky top-0 z-40 bg-[#1f6f93] text-white">
+                <div className="flex items-center justify-between h-12 px-3">
                   <button
-                    className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all z-10"
-                    onClick={handleShare}
+                    className="p-2 -ml-2 active:opacity-80"
+                    onClick={() => history.back()}
+                    aria-label="Geri"
                   >
-                    {copied2 ? (
-                      <Check className="text-green-600" size={16} />
-                    ) : (
-                      <Share2 className="text-gray-700" size={16} />
-                    )}
+                    <ChevronLeft size={22} />
                   </button>
 
-                  {hasPhotos && safePhotos.length > 1 && (
-                    <>
-                      <button
-                        className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all"
-                        onClick={() =>
-                          setSelectedPhoto((p) =>
-                            p === 0 ? safePhotos.length - 1 : p - 1
-                          )
-                        }
-                      >
-                        <ChevronLeft className="text-gray-700" size={12} />
-                      </button>
-                      <button
-                        className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all"
-                        onClick={() =>
-                          setSelectedPhoto((p) =>
-                            p === safePhotos.length - 1 ? 0 : p + 1
-                          )
-                        }
-                      >
-                        <ChevronRight className="text-gray-700" size={12} />
-                      </button>
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm">
-                        {selectedPhoto + 1} / {safePhotos.length}
-                      </div>
-                    </>
-                  )}
+                  <div className="font-semibold text-base">İlan Detayı</div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="p-2 active:opacity-80"
+                      onClick={handleShare}
+                      aria-label="Paylaş"
+                    >
+                      <Share2 size={20} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white px-3 pt-3 pb-2 border-b border-gray-200">
+                <div className="text-[13px] font-semibold text-gray-800 leading-snug uppercase">
+                  {data.title}
+                </div>
+                <div className="mt-1 text-xs text-gray-400">#{data.uid}</div>
+              </div>
+
+              {/* Fotoğraf Alanı */}
+              <div
+                className="relative bg-white"
+                onTouchStart={handleTouchStartMain}
+                onTouchMove={handleTouchMoveMain}
+                onTouchEnd={handleTouchEndMain}
+              >
+                {shouldShowLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1f6f93]"></div>
+                  </div>
+                )}
+
+                <img
+                  src={currentPhoto}
+                  onClick={() => hasPhotos && handleClickedPhoto(currentPhoto)}
+                  onLoad={() => setImageLoading(false)}
+                  onError={handleImageError}
+                  className={`w-full h-[260px] object-cover select-none ${
+                    shouldShowLoading ? "opacity-0" : "opacity-100"
+                  }`}
+                  alt={
+                    hasPhotos ? `İlan Fotoğrafı ${selectedPhoto + 1}` : "İlan"
+                  }
+                  loading={hasPhotos ? "lazy" : "eager"}
+                  decoding="async"
+                />
+
+                {/* Sol / Sağ */}
+                {hasPhotos && safePhotos.length > 1 && (
+                  <>
+                    <button
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/85 rounded-full flex items-center justify-center shadow active:scale-95"
+                      onClick={() =>
+                        setSelectedPhoto((p) =>
+                          p === 0 ? safePhotos.length - 1 : p - 1,
+                        )
+                      }
+                      aria-label="Önceki"
+                    >
+                      <ChevronLeft className="text-gray-800" size={16} />
+                    </button>
+
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/85 rounded-full flex items-center justify-center shadow active:scale-95"
+                      onClick={() =>
+                        setSelectedPhoto((p) =>
+                          p === safePhotos.length - 1 ? 0 : p + 1,
+                        )
+                      }
+                      aria-label="Sonraki"
+                    >
+                      <ChevronRight className="text-gray-800" size={16} />
+                    </button>
+
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-gray-700/70 text-white text-xs px-3 py-1 rounded-full">
+                      {selectedPhoto + 1} / {safePhotos.length}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Emlak adı + breadcrumb */}
+              <div className="bg-white px-3 py-3 border-b border-gray-200">
+                <div className="text-center text-[#1f6f93] font-semibold tracking-wide">
+                  YENİGÜN EMLAK
                 </div>
 
-                {hasPhotos && safePhotos.length > 1 && (
-                  <div className="p-3 border-t border-gray-100">
-                    <PhotoThumbnailsHorizontal
-                      photos={safePhotos}
-                      selectedPhoto={selectedPhoto}
-                      setSelectedPhoto={setSelectedPhoto}
-                    />
+                <div className="mt-1 text-center text-xs text-gray-500">
+                  Emlak &rsaquo; Konut &rsaquo; {data.steps.second} &rsaquo;{" "}
+                  {data.steps.first}
+                </div>
+
+                <div className="mt-1 text-center text-xs text-gray-400">
+                  {data.address.province}, {data.address.district}
+                  {data.address.quarter ? `, ${data.address.quarter}` : ""}
+                </div>
+              </div>
+
+              <div className="bg-white px-2 pt-2 border-b border-gray-200">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveTab("details")}
+                    className={`flex-1 h-11 rounded-t-md border border-gray-300 text-sm font-medium ${
+                      activeTab === "details"
+                        ? "bg-blue-400 text-black border-blue-600"
+                        : "bg-white text-gray-700"
+                    }`}
+                  >
+                    İlan Bilgileri
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab("description")}
+                    className={`flex-1 h-11 rounded-t-md border border-gray-300 text-sm font-medium ${
+                      activeTab === "description"
+                        ? "bg-blue-400 text-black border-blue-600"
+                        : "bg-white text-gray-700"
+                    }`}
+                  >
+                    Açıklama
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab("location")}
+                    className={`flex-1 h-11 rounded-t-md border border-gray-300 text-sm font-medium ${
+                      activeTab === "location"
+                        ? "bg-blue-400 text-black border-blue-600"
+                        : "bg-white text-gray-700"
+                    }`}
+                  >
+                    Konumu
+                  </button>
+                </div>
+              </div>
+
+              {/* İçerik: Sahibinden tarzı tablo/alan */}
+              <div className="bg-white">
+                {activeTab === "details" && (
+                  <div className="px-0">
+                    {data.isFeatures
+                      ? renderFeatureValues()
+                      : renderTraditionalFeatures()}
+                    {!data.isFeatures && renderTraditionalDetails()}
+                  </div>
+                )}
+
+                {activeTab === "description" && (
+                  <div className="px-3 py-4">
+                    {data.thoughts ? (
+                      <div className="prose prose-gray max-w-none">
+                        <MarkdownRenderer content={data.thoughts} />
+                      </div>
+                    ) : (
+                      <div className="text-center py-10 text-gray-500">
+                        Açıklama bulunmuyor
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "location" && (
+                  <div className="px-3 py-4">
+                    <div className="text-sm text-gray-700 mb-3">
+                      {getAddressText()}
+                    </div>
+                    <div className="h-80 w-full overflow-hidden rounded-md border border-gray-200">
+                      <PublicGoogleMap
+                        lat={
+                          typeof data.address.mapCoordinates?.lat === "string"
+                            ? parseFloat(data.address.mapCoordinates.lat)
+                            : data.address.mapCoordinates?.lat || 0
+                        }
+                        lng={
+                          typeof data.address.mapCoordinates?.lng === "string"
+                            ? parseFloat(data.address.mapCoordinates.lng)
+                            : data.address.mapCoordinates?.lng || 0
+                        }
+                        province={data.address.province}
+                        district={data.address.district}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* İlan Başlığı ve Bilgiler */}
-              <div className="mb-2">
-                <h1 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
-                  {data.title}
-                </h1>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-4">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="text-blue-600" size={14} />
-                    <span>
-                      {data.address.province}, {data.address.district}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="text-blue-600" size={14} />
-                    <span>
-                      {new Date(
-                        data.created.createdTimestamp
-                      ).toLocaleDateString("tr-TR", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  <div className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                    İlan No: {data.uid}
-                  </div>
-                </div>
+              {/* Alt Sabit Aksiyon Bar */}
+              <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-3 py-2 pb-[calc(env(safe-area-inset-bottom)+8px)]">
+                <div className="grid grid-cols-2 gap-3">
+                  <a
+                    href={`tel:${placeholderPhoneNumber}`}
+                    className="h-12 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center justify-center active:opacity-90"
+                  >
+                    Ara
+                  </a>
 
-                <div className="mb-6">
-                  <div className="relative rounded-2xl bg-white p-5 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] ring-1 ring-gray-100">
-                    <div className="mb-1 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-cyan-500">
-                          <Tag className="h-4 w-4 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-500">
-                            Fiyat
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {data.steps.second}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-gray-900">
-                          {data.fee}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-5">
-                  <div className="flex bg-white rounded-2xl shadow-sm border border-gray-200 p-1 mb-6">
-                    <button
-                      className={`flex-1 py-4 px-2 text-center font-semibold text-sm md:text-base rounded-xl transition-all duration-300 ${
-                        activeTab === "details"
-                          ? "bg-blue-500 text-white shadow-lg shadow-blue-200"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
-                      onClick={() => setActiveTab("details")}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                          ></path>
-                        </svg>
-                        <span>İlan Detayı</span>
-                      </div>
-                    </button>
-
-                    <button
-                      className={`flex-1 py-4 px-2 text-center font-semibold text-sm md:text-base rounded-xl transition-all duration-300 ${
-                        activeTab === "description"
-                          ? "bg-blue-500 text-white shadow-lg shadow-blue-200"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
-                      onClick={() => setActiveTab("description")}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          ></path>
-                        </svg>
-                        <span>Açıklama</span>
-                      </div>
-                    </button>
-
-                    <button
-                      className={`flex-1 py-4 px-2 text-center font-semibold text-sm md:text-base rounded-xl transition-all duration-300 ${
-                        activeTab === "location"
-                          ? "bg-blue-500 text-white shadow-lg shadow-blue-200"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
-                      onClick={() => setActiveTab("location")}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          ></path>
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          ></path>
-                        </svg>
-                        <span>Konum</span>
-                      </div>
-                    </button>
-                  </div>
+                  <a
+                    href={`https://wa.me/90${placeholderPhoneNumber}?text=Merhaba,%20${data.title}%20ilanınızla%20ilgileniyorum.`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-12 rounded-md bg-green-500 hover:bg-green-600 text-white font-semibold flex items-center justify-center active:opacity-90"
+                  >
+                    WhatsApp
+                  </a>
                 </div>
               </div>
+
+              {/* Alt bar yer kapladığı için içerik sonuna boşluk */}
+              <div className="h-20" />
             </div>
 
             {/* Desktop Fotoğraf Galerisi */}
@@ -1083,7 +1073,7 @@ export default function AdvertDetailClient({
                       className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all"
                       onClick={() =>
                         setSelectedPhoto((p) =>
-                          p === 0 ? safePhotos.length - 1 : p - 1
+                          p === 0 ? safePhotos.length - 1 : p - 1,
                         )
                       }
                     >
@@ -1093,7 +1083,7 @@ export default function AdvertDetailClient({
                       className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all"
                       onClick={() =>
                         setSelectedPhoto((p) =>
-                          p === safePhotos.length - 1 ? 0 : p + 1
+                          p === safePhotos.length - 1 ? 0 : p + 1,
                         )
                       }
                     >
@@ -1199,7 +1189,7 @@ export default function AdvertDetailClient({
             </div>
 
             {/* Mobil İçerik */}
-            <div className="block lg:hidden">{renderContentByTab()}</div>
+            <div className="hidden lg:hidden">{renderContentByTab()}</div>
           </div>
 
           {/* Sağ Sidebar - Desktop */}

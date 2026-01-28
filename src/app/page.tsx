@@ -11,11 +11,8 @@ import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import GoToTop from "@/app/components/GoToTop";
 import ImageSlider from "@/app/components/layout/ImageSlider";
-import axios from "axios";
 import { useState } from "react";
 import { useEffect } from "react";
-import HeroSection from "@/app/components/layout/Hero";
-import Popup from "@/app/components/PopUp";
 import Header from "@/app/components/Header";
 import api from "./lib/api";
 

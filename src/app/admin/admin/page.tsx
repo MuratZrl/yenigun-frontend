@@ -39,7 +39,7 @@ const Avatar = ({
 }) => {
   return (
     <div
-      className={`flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold ${className}`}
+      className={`flex items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-purple-600 text-white font-semibold ${className}`}
     >
       {name[0]?.toUpperCase()}
     </div>
@@ -63,7 +63,7 @@ const StatusBadge = ({ role }: { role: string }) => {
   return (
     <span
       className={`px-3 py-1 rounded-full text-xs font-medium border ${getRoleStyles(
-        role
+        role,
       )}`}
     >
       {role}
@@ -176,7 +176,7 @@ const MobileCard = ({ row, setEdit, setDeleteConfirm }: any) => {
 
 const DesktopRow = ({ row, setEdit, setDeleteConfirm }: any) => {
   return (
-    <tr className="hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50/30 duration-300 border-b border-gray-100 group">
+    <tr className="hover:bg-linear-to-r hover:from-gray-50 hover:to-blue-50/30 duration-300 border-b border-gray-100 group">
       <td className="px-4 lg:px-6 py-4">
         <div className="flex items-center gap-3">
           {row.profilePicture ? (
@@ -294,7 +294,7 @@ const Admin = () => {
   };
 
   const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLSelectElement>
+    event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
@@ -349,10 +349,6 @@ const Admin = () => {
   };
 
   useEffect(() => {
-    if (!cookies.token) {
-      router.push("/login");
-      return;
-    }
     setAuthChecked(true);
 
     api
@@ -402,7 +398,7 @@ const Admin = () => {
   return (
     <AdminLayout>
       <div
-        className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30"
+        className="w-full min-h-screen bg-linear-to-br from-gray-50 to-blue-50/30"
         style={PoppinsFont.style}
       >
         <div className="p-4 lg:p-6 max-w-7xl mx-auto">
@@ -410,7 +406,7 @@ const Admin = () => {
           <div className="mb-6 lg:mb-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
-                <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl lg:text-3xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                   Yetkili Yönetimi
                 </h1>
                 <p className="text-gray-600 mt-2 text-sm lg:text-base">
@@ -419,7 +415,7 @@ const Admin = () => {
               </div>
 
               <button
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 group font-semibold text-sm lg:text-base w-full lg:w-auto justify-center"
+                className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 group font-semibold text-sm lg:text-base w-full lg:w-auto justify-center"
                 onClick={() => setOpen(true)}
               >
                 <Plus
@@ -475,10 +471,7 @@ const Admin = () => {
 
             {listUsers.length < users.length && (
               <div className="mt-4 p-3 lg:p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-center gap-3">
-                <AlertTriangle
-                  size={18}
-                  className="text-yellow-600 flex-shrink-0"
-                />
+                <AlertTriangle size={18} className="text-yellow-600 shrink-0" />
                 <div className="text-xs lg:text-sm text-yellow-800">
                   <span className="font-medium">Aktif filtreleme:</span>{" "}
                   {users.length - listUsers.length} kayıt filtrelendi.{" "}
@@ -497,7 +490,7 @@ const Admin = () => {
           <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-auto">
               <table className="w-full">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-75">
+                <thead className="bg-linear-to-r from-gray-50 to-gray-75">
                   <tr>
                     {[
                       "Kullanıcı",

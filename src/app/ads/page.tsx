@@ -625,6 +625,95 @@ export default function AdsPage({
     router.replace("/ads", { scroll: false });
   };
 
+  const formatTRY = (v: any) => {
+    if (!v) return "";
+    if (typeof v === "string") return v;
+    if (typeof v === "number") {
+      return new Intl.NumberFormat("tr-TR").format(v) + " TL";
+    }
+    return String(v);
+  };
+
+  const GROSS_M2_FEATURE_ID = "69679f63cd76859b79ca8aa4";
+  const NET_M2_FEATURE_ID = "69679f97cd76859b79ca8ac6";
+  const ALT_M2_FEATURE_ID = "6968858ccd76859b79ca9451";
+  const DONUM_FEATURE_ID = "6931851fc9f133554f0adc75";
+
+  const isValidM2 = (v: any) =>
+    v !== undefined &&
+    v !== null &&
+    String(v).trim() !== "" &&
+    String(v).trim() !== "0";
+
+  const getM2Text = (ad: Advert) => {
+    if (!ad.isFeatures || !Array.isArray(ad.featureValues)) return "";
+
+    const gross = ad.featureValues.find(
+      (f) => f.featureId === GROSS_M2_FEATURE_ID,
+    );
+    const net = ad.featureValues.find((f) => f.featureId === NET_M2_FEATURE_ID);
+    const alt = ad.featureValues.find((f) => f.featureId === ALT_M2_FEATURE_ID);
+    const donum = ad.featureValues.find(
+      (f) => f.featureId === DONUM_FEATURE_ID,
+    );
+
+    const grossVal = isValidM2(gross?.value) ? String(gross!.value) : "";
+    const netVal = isValidM2(net?.value) ? String(net!.value) : "";
+    const altVal = isValidM2(alt?.value) ? String(alt!.value) : "";
+    const donumVal = isValidM2(donum?.value) ? String(donum!.value) : "";
+
+    /**
+     * 🎯 ÖNCELİK SIRASI
+     * 1️⃣ Brüt + Net
+     * 2️⃣ Brüt
+     * 3️⃣ Net
+     * 4️⃣ Alternatif m²
+     * 5️⃣ Dönüm
+     */
+
+    if (grossVal && netVal) {
+      return `${grossVal} m²  • ${netVal}  m² `;
+    }
+
+    if (grossVal) {
+      return `${grossVal} m² (Brüt)`;
+    }
+
+    if (netVal) {
+      return `${netVal} m² (Net)`;
+    }
+
+    if (altVal) {
+      return `${altVal} m²`;
+    }
+
+    if (donumVal) {
+      return `${donumVal} Dönüm`;
+    }
+
+    return "";
+  };
+
+  const getRoom = (ad: Advert) => {
+    if (ad.details?.roomCount) return String(ad.details.roomCount);
+    if (ad.isFeatures && Array.isArray(ad.featureValues)) {
+      const rc = ad.featureValues.find(
+        (f) => f.featureId === "693a974dfc353e4edee38799",
+      );
+      if (rc?.value) return String(rc.value);
+    }
+    return "";
+  };
+
+  const getCityDistrict = (ad: Advert) => {
+    const p = ad.address?.province;
+    const d = ad.address?.district;
+    if (p && d) return `${p}\n${d}`;
+    if (p) return p;
+    if (d) return d;
+    return "";
+  };
+
   const hasValidImage = (ad: Advert): boolean => {
     if (!ad.photos || !Array.isArray(ad.photos)) return false;
 
@@ -712,8 +801,6 @@ export default function AdsPage({
     );
   };
 
-  const logoUrl = "/logo.png";
-
   if (loading && data.length === 0) {
     return (
       <div className="w-full min-h-screen flex justify-center items-center bg-white">
@@ -765,232 +852,220 @@ export default function AdsPage({
             }
           />
 
-          <div className="flex-1 container mx-auto px-4 py-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {filters.type && filters.type !== "Hepsi"
-                    ? filters.type
-                    : "Tüm İlanlar"}
-                  <span className="text-sm text-gray-500 ml-2">
-                    ({totalItems} sonuç)
-                  </span>
-                </h2>
+          <div className="flex-1 min-w-0">
+            {/* ÜST BAR (sahibinden gibi) */}
+            <div className="border border-gray-200 rounded-md">
+              <div className="flex flex-col gap-3 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm text-gray-700">
+                    <span className="font-medium">
+                      {filters.type && filters.type !== "Hepsi"
+                        ? `"${filters.type}"`
+                        : `"Tüm İlanlar"`}
+                    </span>{" "}
+                    aramanızda{" "}
+                    <span className="text-red-600 font-semibold">
+                      {totalItems.toLocaleString("tr-TR")}
+                    </span>{" "}
+                    ilan bulundu.
+                  </div>
+                </div>
+
+                {/* Sekmeler + sağ aksiyonlar */}
+                <div className="flex items-center justify-between gap-3">
+                  {/* sağ: görünüm + sıralama */}
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={`${filters.sortBy}_${filters.sortOrder}`}
+                      onChange={(e) => {
+                        const [sb, so] = e.target.value.split("_");
+                        handleSortChangeDesktop(
+                          sb as "date" | "price",
+                          so as "asc" | "desc",
+                        );
+                      }}
+                      className="border border-gray-300 rounded px-3 py-2 text-sm bg-white"
+                    >
+                      <option value="date_desc">
+                        Gelişmiş sıralama (Yeni → Eski)
+                      </option>
+                      <option value="date_asc">Eski ilanlar önce</option>
+                      <option value="price_asc">Ucuzdan pahalıya</option>
+                      <option value="price_desc">Pahalıdan ucuza</option>
+                    </select>
+
+                    {(filters.location !== "Hepsi" ||
+                      filters.district !== "Hepsi" ||
+                      filters.type !== "Hepsi" ||
+                      filters.minPrice ||
+                      filters.maxPrice ||
+                      Object.keys(featureFilters).length > 0) && (
+                      <button
+                        className="ml-2 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-2 rounded flex items-center gap-2"
+                        onClick={clearFilters}
+                      >
+                        <RotateCcw size={16} />
+                        Temizle
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {(filters.location !== "Hepsi" ||
-                filters.district !== "Hepsi" ||
-                filters.type !== "Hepsi" ||
-                filters.minPrice ||
-                filters.maxPrice ||
-                Object.keys(featureFilters).length > 0) && (
-                <button
-                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors flex items-center gap-2 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg border border-blue-200"
-                  onClick={clearFilters}
-                >
-                  <RotateCcw size={16} />
-                  Filtreleri Temizle
-                </button>
-              )}
-            </div>
+              {/* TABLO BAŞLIKLARI */}
+              <div className="hidden md:grid grid-cols-[120px_1fr_90px_90px_140px_130px_140px] border-t border-gray-200 bg-gray-50 text-xs font-semibold text-gray-700">
+                <div className="px-3 py-2"> </div>
+                <div className="px-3 py-2">İlan Başlığı</div>
+                <div className="px-3 py-2 text-center">m² (Brüt)</div>
+                <div className="px-3 py-2 text-right">Fiyat</div>
+                <div className="px-3 py-2 text-center">İlan Tarihi</div>
+                <div className="px-3 py-2 text-center">İl / İlçe</div>
+              </div>
 
-            <div className="space-y-0 mb-8">
-              {data.length === 0 ? (
-                <div className="py-16 text-center">
-                  <div className="max-w-md mx-auto">
-                    <Search size={64} className="mx-auto text-gray-300 mb-4" />
-                    <p className="text-xl font-semibold text-gray-900 mb-2">
+              {/* SATIRLAR */}
+              <div className="divide-y divide-gray-200">
+                {data.length === 0 ? (
+                  <div className="py-16 text-center">
+                    <Search size={56} className="mx-auto text-gray-300 mb-3" />
+                    <p className="text-lg font-semibold text-gray-900">
                       İlan bulunamadı
                     </p>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-gray-600">
                       Filtrelerinizi değiştirerek tekrar deneyin
                     </p>
                   </div>
-                </div>
-              ) : (
-                data.map((ad: Advert, index: number) => (
-                  <Link
-                    href={`/ads/${ad.uid}`}
-                    key={ad.uid || index}
-                    className="flex relative bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150 overflow-hidden group"
-                  >
-                    <div className="w-20 h-20 md:w-36 md:h-36 shrink-0 relative m-2 md:m-3">
-                      {hasValidImage(ad) ? (
-                        <img
-                          src={ad.photos?.find(
-                            (photo: any) => typeof photo === "string",
-                          )}
-                          alt={ad.title || "İlan görseli"}
-                          className="w-full h-full object-cover rounded group-hover:opacity-90 transition-opacity"
-                          onError={(e) => {
-                            e.currentTarget.src = logoUrl;
-                            e.currentTarget.alt = "Logo";
-                            e.currentTarget.className =
-                              "w-full h-full object-contain p-2 md:p-3 bg-gray-100 rounded";
-                          }}
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center bg-gray-100 w-full h-full rounded">
-                          <img
-                            src={logoUrl}
-                            alt="Logo"
-                            className="object-contain h-8 md:h-12 opacity-70"
-                            onError={(e) => {
-                              e.currentTarget.src =
-                                "https://via.placeholder.com/150x150?text=Logo";
-                            }}
-                          />
+                ) : (
+                  data.map((ad: Advert, index: number) => (
+                    <Link
+                      href={`/ads/${ad.uid}`}
+                      key={ad.uid || index}
+                      className="block hover:bg-gray-50 transition-colors"
+                    >
+                      {/* DESKTOP ROW */}
+                      <div className="hidden md:grid grid-cols-[120px_1fr_90px_90px_140px_130px_140px] items-center">
+                        {/* görsel */}
+                        <div className="p-2">
+                          <div className="w-[110px] h-20 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                            {hasValidImage(ad) ? (
+                              <img
+                                src={ad.photos?.find(
+                                  (p: any) => typeof p === "string",
+                                )}
+                                alt={ad.title || "İlan görseli"}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = "/logo.png";
+                                  e.currentTarget.className =
+                                    "w-full h-full object-contain p-2";
+                                }}
+                              />
+                            ) : (
+                              <img
+                                src="/logo.png"
+                                alt="Logo"
+                                className="w-full h-full object-contain p-2 opacity-70"
+                              />
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
+                        {/* başlık */}
+                        <div className="px-3 py-2 min-w-0">
+                          <div className="text-[13px] font-semibold text-blue-700 hover:underline line-clamp-2">
+                            {ad.title || "Başlık Yok"}
+                          </div>
+                          <div className="mt-1 text-xs text-gray-500 truncate">
+                            {ad.steps?.second ? ad.steps.second : ""}
+                          </div>
+                        </div>
+                        {/* m2 */}
 
-                    <div className="flex-1 flex flex-col justify-between py-2 md:py-3 pr-2 md:pr-3 min-w-0">
-                      <div className="mb-1">
-                        <h3 className="font-bold text-gray-900 text-xs md:text-base hover:text-blue-600 transition-colors wrap-break-words whitespace-normal line-clamp-2">
-                          {ad.title || "Başlık Yok"}
-                        </h3>
-                      </div>
+                        <div className="px-3 py-2 text-center text-sm text-gray-800">
+                          {getM2Text(ad) || "-"}
+                        </div>
 
-                      <div className="mb-1">
-                        {ad.steps?.second && (
-                          <span className="text-[10px] md:text-xs text-gray-600 bg-gray-100 px-1.5 md:px-2 py-0.5 rounded">
-                            {ad.steps.second}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mb-1 flex flex-wrap gap-2">
-                        {/* Metrekare bilgisi   */}
-                        {ad.details?.netArea && (
-                          <span className="text-[10px] md:text-xs text-gray-700   px-1 py-0.5   ">
-                            {ad.details.netArea} m²
-                          </span>
-                        )}
-
-                        {/* Oda sayısı bilgisi*/}
-                        {ad.details?.roomCount && (
-                          <span className="text-[10px] md:text-xs text-gray-700   px-1 py-0.5  ">
-                            {ad.details.roomCount} Oda
-                          </span>
-                        )}
-
-                        {/* Eğer ilanda özellikler aktifse (isFeatures true) ve featureValues dizisi varsa, belirli özellikleri göster */}
-                        {ad.isFeatures && Array.isArray(ad.featureValues) && (
-                          <>
-                            {(() => {
-                              const donumFeature = ad.featureValues.find(
-                                (f) =>
-                                  f.featureId === "6931851fc9f133554f0adc75",
-                              );
-
-                              const m2Feature = ad.featureValues.find(
-                                (f) =>
-                                  f.featureId === "6968858ccd76859b79ca9451",
-                              );
-
-                              const donumVal =
-                                donumFeature?.value !== undefined &&
-                                donumFeature?.value !== null &&
-                                String(donumFeature.value).trim() !== "" &&
-                                String(donumFeature.value) !== "0"
-                                  ? donumFeature.value
-                                  : null;
-
-                              const m2Val =
-                                m2Feature?.value !== undefined &&
-                                m2Feature?.value !== null &&
-                                String(m2Feature.value).trim() !== "" &&
-                                String(m2Feature.value) !== "0"
-                                  ? m2Feature.value
-                                  : null;
-
-                              if (donumVal) {
-                                return (
-                                  <span className="text-[10px] md:text-xs text-gray-700 px-1 py-0.5">
-                                    {donumVal} Dönüm
-                                  </span>
-                                );
-                              }
-
-                              if (m2Val) {
-                                return (
-                                  <span className="text-[10px] md:text-xs text-gray-700 px-1 py-0.5">
-                                    {m2Val} m²
-                                  </span>
-                                );
-                              }
-
-                              return (
-                                <span className="text-[10px] md:text-xs text-gray-400 px-1 py-0.5">
-                                  - m²
-                                </span>
-                              );
-                            })()}
-
-                            {(() => {
-                              const roomCountFeature = ad.featureValues.find(
-                                (f) =>
-                                  f.featureId === "693a974dfc353e4edee38799",
-                              );
-                              return roomCountFeature?.value ? (
-                                <span className="text-[10px] md:text-xs text-gray-700   px-1 py-0.5  ">
-                                  {roomCountFeature.value} Oda
-                                </span>
-                              ) : null;
-                            })()}
-                          </>
-                        )}
-                      </div>
-
-                      <div className="flex justify-between items-center mt-auto">
-                        <div className="text-[10px] md:text-sm text-gray-600 truncate pr-1 min-w-0">
-                          <p className="truncate">
-                            {ad.address?.province && `${ad.address.province}`}
-                            {ad.address?.district &&
-                              ` - ${ad.address.district}`}
-                            <span className="hidden md:inline">
-                              {ad.address?.quarter && `, ${ad.address.quarter}`}
-                            </span>
-                            {!ad.address?.province &&
-                              !ad.address?.district &&
-                              !ad.address?.quarter &&
-                              "Lokasyon yok"}
-                          </p>
-                          {ad.created?.createdTimestamp && (
-                            <div className="text-[10px] md:text-[12px] text-gray-900 whitespace-nowrap">
-                              {new Date(
+                        {/* fiyat */}
+                        <div className="px-3 py-2 text-right">
+                          <div className="text-sm font-bold text-blue-800 whitespace-nowrap">
+                            {formatTRY(ad.fee) || "Fiyat Yok"}
+                          </div>
+                        </div>
+                        {/* ilan tarihi */}
+                        <div className="px-3 py-2 text-center text-sm text-gray-800">
+                          {ad.created?.createdTimestamp
+                            ? new Date(
                                 ad.created.createdTimestamp,
                               ).toLocaleDateString("tr-TR", {
                                 day: "2-digit",
                                 month: "2-digit",
                                 year: "numeric",
-                              })}
-                            </div>
+                              })
+                            : "-"}
+                        </div>
+                        {/* il/ilçe */}
+                        <div className="px-3 py-2 text-center text-sm text-gray-800 whitespace-pre-line">
+                          {getCityDistrict(ad) || "-"}
+                        </div>
+                      </div>
+
+                      {/* MOBILE CARD (basit) */}
+                      <div className="md:hidden flex gap-3 p-3">
+                        <div className="w-24 h-20 bg-gray-100 rounded overflow-hidden shrink-0 flex items-center justify-center">
+                          {hasValidImage(ad) ? (
+                            <img
+                              src={ad.photos?.find(
+                                (p: any) => typeof p === "string",
+                              )}
+                              alt={ad.title || "İlan görseli"}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "/logo.png";
+                                e.currentTarget.className =
+                                  "w-full h-full object-contain p-2";
+                              }}
+                            />
+                          ) : (
+                            <img
+                              src="/logo.png"
+                              alt="Logo"
+                              className="w-full h-full object-contain p-2 opacity-70"
+                            />
                           )}
                         </div>
 
-                        <div className="text-right shrink-0 pl-1 flex flex-col items-end">
-                          <div className="text-xs md:text-xl font-bold text-blue-800 whitespace-nowrap mb-0.5">
-                            {ad.fee ? (
-                              <>{ad.fee}</>
-                            ) : (
-                              <span className="text-blue-800 text-[10px] md:text-sm block">
-                                Fiyat Yok
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-blue-700 line-clamp-2">
+                            {ad.title || "Başlık Yok"}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1 truncate">
+                            {ad.address?.province || ""}
+                            {ad.address?.district
+                              ? ` - ${ad.address.district}`
+                              : ""}
+                          </div>
+
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            <div className="text-xs text-gray-700">
+                              <span className="text-[10px] md:text-xs text-gray-700 px-1 py-0.5">
+                                {getM2Text(ad) || "-"}
                               </span>
-                            )}
+                            </div>
+                            <div className="text-sm font-bold text-blue-800 whitespace-nowrap">
+                              {formatTRY(ad.fee) || "Fiyat Yok"}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                ))
-              )}
+                    </Link>
+                  ))
+                )}
+              </div>
             </div>
 
             {totalPages > 1 && <CustomPagination />}
           </div>
         </div>
       </div>
+
       {isSortMenuOpen && (
         <>
           <div
