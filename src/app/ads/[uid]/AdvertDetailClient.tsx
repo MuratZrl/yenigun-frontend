@@ -461,11 +461,6 @@ export default function AdvertDetailClient({
     site: "🏘️",
   };
 
-  const isLowQualityImage = (url: string | undefined) => {
-    if (!url || typeof url !== "string") return false;
-    return url.includes("low-quality") || url.includes("thumbnail");
-  };
-
   const goToPreviousPhoto = () => {
     if (!hasPhotos) return;
 
@@ -1120,7 +1115,7 @@ export default function AdvertDetailClient({
                   onClick={() => setActiveTab("details")}
                   className={`px-5 py-3 text-sm font-semibold border-r border-gray-200 ${
                     activeTab === "details"
-                      ? "bg-[#f6c343] text-gray-900"
+                      ? "bg-blue-400 text-gray-900"
                       : "bg-white text-blue-700 hover:bg-gray-50"
                   }`}
                 >
@@ -1131,7 +1126,7 @@ export default function AdvertDetailClient({
                   onClick={() => setActiveTab("location")}
                   className={`px-5 py-3 text-sm font-semibold ${
                     activeTab === "location"
-                      ? "bg-[#f6c343] text-gray-900"
+                      ? "bg-blue-400 text-gray-900"
                       : "bg-white text-blue-700 hover:bg-gray-50"
                   }`}
                 >
