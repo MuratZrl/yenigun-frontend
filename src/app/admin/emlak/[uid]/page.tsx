@@ -1211,29 +1211,24 @@ export default function EditE() {
   const handleFileUpdates = async () => {
     let uploadSuccess = true;
 
-    const localFiles = mediaItems.filter(isLocal).map((x) => x.file);
+    const keepRemoteUrls = mediaItems.filter(isRemote).map((it) => it.url);
 
-    console.log("🔍 handleFileUpdates çağrıldı");
-    console.log("Local files:", localFiles.length);
+    const localFiles = mediaItems.filter(isLocal).map((it) => it.file);
 
-    if (localFiles.length > 0) {
+    const shouldCallImagesEndpoint =
+      localFiles.length > 0 || keepRemoteUrls.length > 0;
+
+    if (shouldCallImagesEndpoint) {
       try {
         const imageToast = toast.loading("İlan Resimleri Güncelleniyor...");
+
         const formData = new FormData();
 
-        formData.append("uid", advertUid);
+        formData.append("uid", String(Number(advertUid)));
 
-        localFiles.forEach((file) => {
-          formData.append("images", file);
-          console.log("✅ Resim eklendi:", file.name);
-        });
+        formData.append("images", JSON.stringify(keepRemoteUrls));
 
-        const order = mediaItems.map((it) =>
-          isRemote(it) ? it.url : `local:${it.id}`,
-        );
-        formData.append("order", JSON.stringify(order));
-
-        formData.append("removedRemote", JSON.stringify(removedRemote));
+        localFiles.forEach((file) => formData.append("images", file));
 
         const response = await api.post(
           "/admin/update-advert-images",
@@ -1243,23 +1238,22 @@ export default function EditE() {
           },
         );
 
-        console.log("✅ API yanıtı:", response.data);
+        console.log("✅ update-advert-image response:", response.data);
+
         toast.dismiss(imageToast);
         toast.success("✅ Resimler başarıyla güncellendi!");
       } catch (error: any) {
-        console.error("❌ Resim yükleme hatası:", error);
+        console.error("❌ Resim güncelleme hatası:", error);
         uploadSuccess = false;
-        toast.warning("İlan güncellendi ancak resimler yüklenemedi");
+        toast.warning("İlan güncellendi ancak resimler güncellenemedi");
       }
-    } else {
-      console.log("⚠️ Yüklenecek yeni (local) resim yok");
     }
 
     if (videoFile && videoFile instanceof File) {
       try {
         const videoToast = toast.loading("İlan Videosu Güncelleniyor...");
         const videoForm = new FormData();
-        videoForm.append("uid", advertUid);
+        videoForm.append("uid", String(Number(advertUid)));
         videoForm.append("video", videoFile);
 
         await api.post("/admin/update-advert-video", videoForm, {

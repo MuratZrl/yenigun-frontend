@@ -760,52 +760,435 @@ export default function AdvertDetailClient({
         <Navbar />
       </div>
 
-      <div className="w-full lg:container lg:mx-auto lg:max-w-7xl lg:px-4 py-0 lg:py-8">
-        <div className="hidden lg:block mb-8">
-          <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4 flex-wrap">
-            <span>Emlak</span>
+      <div className="w-full lg:container lg:mx-auto lg:max-w-7xl lg:px-4 py-0 lg:py-6">
+        {/* ÜST BAR: breadcrumb + aksiyonlar */}
+        <div className="hidden lg:flex items-center justify-between text-xs text-gray-500 border-b border-gray-200 pb-2">
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="text-blue-700 hover:underline cursor-pointer">
+              Anasayfa
+            </span>
             <span>›</span>
-            <span>{data.steps.first}</span>
+            <span className="text-blue-700 hover:underline cursor-pointer">
+              Emlak
+            </span>
             <span>›</span>
-            <span>{data.steps.second}</span>
+            <span className="text-blue-700 hover:underline cursor-pointer">
+              {data.steps.first}
+            </span>
             <span>›</span>
-            <span>{data.address.province}</span>
+            <span className="text-blue-700 hover:underline cursor-pointer">
+              {data.steps.second}
+            </span>
             <span>›</span>
-            <span className="text-gray-700">{data.address.district}</span>
-          </nav>
+            <span className="text-blue-700 hover:underline cursor-pointer">
+              {data.address.province}
+            </span>
+            <span>›</span>
+            <span className="text-blue-700 hover:underline cursor-pointer">
+              {data.address.district}
+            </span>
+            {data.address.quarter ? (
+              <>
+                <span>›</span>
+                <span className="text-blue-700 hover:underline cursor-pointer">
+                  {data.address.quarter}
+                </span>
+              </>
+            ) : null}
+          </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-3 leading-tight">
-            {data.title}
-          </h1>
-
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <MapPin className="text-blue-600" size={16} />
-              <span>
-                {data.address.province}, {data.address.district}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="text-blue-600" size={16} />
-              <span>
-                {new Date(data.created.createdTimestamp).toLocaleDateString(
-                  "tr-TR",
-                  {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "numeric",
-                  },
-                )}
-              </span>
-            </div>
-            <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-              İlan No: {data.uid}
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="px-3 py-1.5 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-blue-700"
+            >
+              Paylaş
+            </button>
           </div>
         </div>
 
+        {/* BAŞLIK */}
+        <div className="hidden lg:block pt-3">
+          <h1 className="text-[22px] font-bold text-gray-900 leading-snug">
+            {data.title}
+          </h1>
+
+          <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+            <MapPin size={16} className="text-blue-700" />
+            <span>
+              {data.address.province} / {data.address.district}
+              {data.address.quarter ? ` / ${data.address.quarter}` : ""}
+            </span>
+
+            <span className="text-gray-300">•</span>
+
+            <Calendar size={16} className="text-blue-700" />
+            <span>
+              {data?.created?.createdTimestamp
+                ? new Date(data.created.createdTimestamp).toLocaleDateString(
+                    "tr-TR",
+                    {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    },
+                  )
+                : "-"}
+            </span>
+
+            <span className="ml-2 inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-2.5 py-1 text-xs font-semibold border border-blue-100">
+              İlan No: {data.uid}
+            </span>
+          </div>
+        </div>
+
+        {/* ANA 3 KOLON */}
+        <div className="hidden lg:grid grid-cols-12 gap-6 mt-4">
+          {/* SOL: Fotoğraf alanı */}
+          <div className="col-span-6">
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="relative">
+                <img
+                  src={currentPhoto}
+                  onClick={() => hasPhotos && handleClickedPhoto(currentPhoto)}
+                  onLoad={() => setImageLoading(false)}
+                  onError={handleImageError}
+                  className="w-full h-[380px] object-cover select-none"
+                  alt={
+                    hasPhotos ? `İlan Fotoğrafı ${selectedPhoto + 1}` : "İlan"
+                  }
+                  loading={hasPhotos ? "lazy" : "eager"}
+                  decoding="async"
+                />
+
+                {hasPhotos && safePhotos.length > 1 && (
+                  <>
+                    <button
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white"
+                      onClick={() =>
+                        setSelectedPhoto((p) =>
+                          p === 0 ? safePhotos.length - 1 : p - 1,
+                        )
+                      }
+                      aria-label="Önceki"
+                    >
+                      <ChevronLeft size={18} className="text-gray-700" />
+                    </button>
+
+                    <button
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white"
+                      onClick={() =>
+                        setSelectedPhoto((p) =>
+                          p === safePhotos.length - 1 ? 0 : p + 1,
+                        )
+                      }
+                      aria-label="Sonraki"
+                    >
+                      <ChevronRight size={18} className="text-gray-700" />
+                    </button>
+
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/55 text-white text-xs px-3 py-1 rounded-full">
+                      {selectedPhoto + 1} / {safePhotos.length}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* küçük fotoğraflar */}
+              {hasPhotos && safePhotos.length > 1 && (
+                <div className="border-t border-gray-200 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <button
+                      onClick={() => handleClickedPhoto(currentPhoto)}
+                      className="text-sm text-blue-700 hover:underline flex items-center gap-2"
+                    >
+                      <ZoomIn size={16} /> Büyük Fotoğraf
+                    </button>
+
+                    {data.video ? (
+                      <button
+                        onClick={() => setOpenVideo(true)}
+                        className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2"
+                      >
+                        <Play size={16} /> Video
+                      </button>
+                    ) : (
+                      <span className="text-sm text-gray-400">Video</span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    {safePhotos.slice(0, 6).map((p, i) => (
+                      <button
+                        key={p + i}
+                        onClick={() => setSelectedPhoto(i)}
+                        className={`w-24 h-16 rounded-md border overflow-hidden transition ${
+                          selectedPhoto === i
+                            ? "border-blue-600 ring-2 ring-blue-100"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                        title={`${i + 1}. Fotoğraf`}
+                      >
+                        <img
+                          src={p}
+                          alt={`thumb-${i}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/logo.png";
+                          }}
+                        />
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="text-xs text-gray-500 mt-2">
+                    {Math.min(6, safePhotos.length)}/{safePhotos.length}{" "}
+                    Fotoğraf
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ORTA: Fiyat + Detay tablosu (GELİŞTİRİLDİ) */}
+          <div className="col-span-3">
+            <div className="sticky top-6 space-y-4">
+              {/* Fiyat kartı */}
+              <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+                <div className="p-4 bg-linear-to-r from-blue-700 to-blue-600 text-white">
+                  <div className="text-xs opacity-90">Fiyat</div>
+                  <div className="mt-1 text-2xl font-extrabold tracking-tight">
+                    {data.fee || "Fiyat yok"}
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+                    <span className="inline-flex items-center rounded-full bg-white/15 px-2 py-1">
+                      {data.steps.second}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4">
+                  <div className="flex items-start gap-2 text-sm text-gray-700">
+                    <MapPin
+                      size={16}
+                      className="text-blue-700 mt-0.5 shrink-0"
+                    />
+                    <div className="font-medium">
+                      {data.address.province} / {data.address.district}
+                      {data.address.quarter ? ` / ${data.address.quarter}` : ""}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 border-t border-gray-200 pt-3">
+                    <div className="text-xs font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                      <Tag size={14} className="text-gray-500" />
+                      İlan Bilgileri
+                    </div>
+
+                    <div className="space-y-2">
+                      {[
+                        ["İlan No", String(data.uid)],
+                        [
+                          "İlan Tarihi",
+                          data?.created?.createdTimestamp
+                            ? new Date(
+                                data.created.createdTimestamp,
+                              ).toLocaleDateString("tr-TR", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })
+                            : "-",
+                        ],
+                        [
+                          "Emlak Tipi",
+                          `${data.steps.second} ${data.steps.first}`,
+                        ],
+                      ].map(([k, v]) => (
+                        <div
+                          key={k}
+                          className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+                        >
+                          <span className="text-xs font-medium text-gray-600">
+                            {k}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            {v}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-span-3">
+            <div className="sticky top-6 space-y-4">
+              <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                {/* üst header */}
+                <div className="p-4 bg-gray-50 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg border border-gray-200 bg-white overflow-hidden flex items-center justify-center">
+                      <img
+                        src="/logo.png"
+                        alt="Yenigün Emlak"
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/logo.png";
+                        }}
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-gray-900 truncate">
+                        {data.advisor?.name} {data.advisor?.surname}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Yenigün Emlak • Şubat 2022
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* telefon kutusu */}
+                <div className="p-4">
+                  <div className="rounded-lg border border-gray-200 bg-white p-3">
+                    <div className="text-xs text-gray-500 mb-1">Cep</div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm font-extrabold text-gray-900 tracking-wide whitespace-nowrap">
+                        {formatPhoneNumber(placeholderPhoneNumber)}
+                      </div>
+
+                      <button
+                        onClick={() => copyNumber(placeholderPhoneNumber)}
+                        className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50 text-xs font-semibold text-gray-700"
+                        title="Kopyala"
+                      >
+                        {copied ? (
+                          <>
+                            <Check size={14} className="text-green-600" />
+                            Kopyalandı
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={14} className="text-gray-600" />
+                            Kopyala
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 gap-2">
+                    <a
+                      href={`tel:${placeholderPhoneNumber}`}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white py-2.5 text-sm font-semibold shadow-sm"
+                    >
+                      <Phone size={16} /> Telefonla Ara
+                    </a>
+
+                    <a
+                      href={`https://wa.me/90${placeholderPhoneNumber}?text=Merhaba,%20${data.title}%20ilanınızla%20ilgileniyorum.`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-green-500 hover:bg-green-600 text-white py-2.5 text-sm font-semibold shadow-sm"
+                    >
+                      <MessageCircle size={16} /> WhatsApp
+                    </a>
+
+                    <button
+                      onClick={handleShare}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 py-2.5 text-sm font-semibold text-gray-800"
+                    >
+                      <Share2 size={16} /> Linki Paylaş
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ALT: Sekmeler (2 tab) */}
+          <div className="col-span-12 mt-4">
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="flex border-b border-gray-200">
+                <button
+                  onClick={() => setActiveTab("details")}
+                  className={`px-5 py-3 text-sm font-semibold border-r border-gray-200 ${
+                    activeTab === "details"
+                      ? "bg-[#f6c343] text-gray-900"
+                      : "bg-white text-blue-700 hover:bg-gray-50"
+                  }`}
+                >
+                  İlan Detayları
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("location")}
+                  className={`px-5 py-3 text-sm font-semibold ${
+                    activeTab === "location"
+                      ? "bg-[#f6c343] text-gray-900"
+                      : "bg-white text-blue-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Konumu ve Sokak Görünümü
+                </button>
+              </div>
+
+              <div className="p-4">
+                {activeTab === "location" ? (
+                  <div>
+                    <div className="text-sm text-gray-700 mb-3">
+                      {getAddressText()}
+                    </div>
+                    <div className="h-[420px] w-full overflow-hidden border border-gray-200 rounded-lg">
+                      <PublicGoogleMap
+                        lat={
+                          typeof data.address.mapCoordinates?.lat === "string"
+                            ? parseFloat(data.address.mapCoordinates.lat)
+                            : data.address.mapCoordinates?.lat || 0
+                        }
+                        lng={
+                          typeof data.address.mapCoordinates?.lng === "string"
+                            ? parseFloat(data.address.mapCoordinates.lng)
+                            : data.address.mapCoordinates?.lng || 0
+                        }
+                        province={data.address.province}
+                        district={data.address.district}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {data.isFeatures
+                      ? renderFeatureValues()
+                      : renderTraditionalFeatures()}
+                    {!data.isFeatures && renderTraditionalDetails()}
+
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="font-semibold text-gray-900 mb-2">
+                        Açıklama
+                      </div>
+                      {data.thoughts ? (
+                        <div className="prose prose-gray max-w-none">
+                          <MarkdownRenderer content={data.thoughts} />
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500">
+                          Açıklama bulunmuyor
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Ana İçerik */}
           <div className="lg:col-span-2 flex flex-col gap-8">
@@ -1034,239 +1417,8 @@ export default function AdvertDetailClient({
               <div className="h-20" />
             </div>
 
-            {/* Desktop Fotoğraf Galerisi */}
-            <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="relative">
-                {shouldShowLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                  </div>
-                )}
-                <img
-                  src={currentPhoto}
-                  onClick={() => hasPhotos && handleClickedPhoto(currentPhoto)}
-                  onLoad={() => setImageLoading(false)}
-                  onError={handleImageError}
-                  className={`w-full h-96 select-none transition-all duration-300 ${
-                    shouldShowLoading ? "opacity-0" : "opacity-100"
-                  } ${
-                    hasPhotos
-                      ? "cursor-zoom-in hover:scale-105"
-                      : "cursor-default"
-                  } ${
-                    isLowQualityImage(currentPhoto) || !hasPhotos
-                      ? "object-contain"
-                      : "object-contain"
-                  }`}
-                  alt={
-                    hasPhotos
-                      ? `İlan Fotoğrafı ${selectedPhoto + 1}`
-                      : "Yenigün Emlak"
-                  }
-                  loading={hasPhotos ? "lazy" : "eager"}
-                  decoding="async"
-                />
-
-                {hasPhotos && safePhotos.length > 1 && (
-                  <>
-                    <button
-                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all"
-                      onClick={() =>
-                        setSelectedPhoto((p) =>
-                          p === 0 ? safePhotos.length - 1 : p - 1,
-                        )
-                      }
-                    >
-                      <ChevronLeft className="text-gray-700" size={16} />
-                    </button>
-                    <button
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all"
-                      onClick={() =>
-                        setSelectedPhoto((p) =>
-                          p === safePhotos.length - 1 ? 0 : p + 1,
-                        )
-                      }
-                    >
-                      <ChevronRight className="text-gray-700" size={16} />
-                    </button>
-                  </>
-                )}
-
-                {hasPhotos && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
-                    {selectedPhoto + 1} / {safePhotos.length}
-                  </div>
-                )}
-
-                {isLowQualityImage(currentPhoto) && (
-                  <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm">
-                    ⚠️ Düşük Çözünürlük
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4 border-t border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-3">
-                    {hasPhotos && (
-                      <button
-                        onClick={() => handleClickedPhoto(currentPhoto)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium"
-                      >
-                        <ZoomIn size={16} />
-                        Fotoğrafı Büyüt
-                      </button>
-                    )}
-                    {data.video && (
-                      <button
-                        onClick={() => setOpenVideo(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
-                      >
-                        <Play size={16} />
-                        Videoyu İzle
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      className="p-2 bg-gray-100 text-gray-600 flex flex-row items-center gap-2 hover:bg-gray-200 rounded-lg transition-colors"
-                      onClick={handleShare}
-                    >
-                      <Share2 size={16} /> Paylaş
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {hasPhotos && safePhotos.length > 1 && (
-                <div className="p-4 border-t border-gray-100">
-                  <PhotoThumbnails
-                    photos={safePhotos}
-                    selectedPhoto={selectedPhoto}
-                    setSelectedPhoto={setSelectedPhoto}
-                    visibleCount={8}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Desktop Tab Navigation */}
-            <div className="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="flex border-b border-gray-200">
-                <button
-                  className={`flex-1 py-4 text-center font-semibold text-lg border-b-2 transition-colors ${
-                    activeTab === "details"
-                      ? "border-blue-700 text-blue-800 bg-blue-50"
-                      : "border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                  onClick={() => setActiveTab("details")}
-                >
-                  İlan Detayı
-                </button>
-                <button
-                  className={`flex-1 py-4 text-center font-semibold text-lg border-b-2 transition-colors ${
-                    activeTab === "description"
-                      ? "border-blue-700 text-blue-800 bg-blue-50"
-                      : "border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                  onClick={() => setActiveTab("description")}
-                >
-                  Açıklama
-                </button>
-                <button
-                  className={`flex-1 py-4 text-center font-semibold text-lg border-b-2 transition-colors ${
-                    activeTab === "location"
-                      ? "border-blue-700 text-blue-800 bg-blue-50"
-                      : "border-transparent text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                  onClick={() => setActiveTab("location")}
-                >
-                  Konum
-                </button>
-              </div>
-              <div className="p-6">{renderContentByTab()}</div>
-            </div>
-
             {/* Mobil İçerik */}
             <div className="hidden lg:hidden">{renderContentByTab()}</div>
-          </div>
-
-          {/* Sağ Sidebar - Desktop */}
-          <div className="hidden lg:block lg:col-span-1">
-            <div className="sticky top-8 flex flex-col gap-6">
-              <div className="bg-linear-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg">
-                <p className="text-sm opacity-90">Fiyat</p>
-                <p className="text-3xl font-bold mt-1">{data.fee}</p>
-                <p className="text-sm opacity-90 mt-2">{data.steps.second}</p>
-              </div>
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-20 h-16 bg-white flex items-center justify-center rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <img
-                      src="/logo.png"
-                      alt="Yenigün Emlak"
-                      className="w-full h-full select-none object-contain p-2"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder-logo.png";
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900">
-                      Yenigün Emlak
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {data.advisor.name + " " + data.advisor.surname}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
-                    <span className="font-mono text-lg text-gray-900 tracking-wide">
-                      {formatPhoneNumber(placeholderPhoneNumber)}
-                    </span>
-                    <button
-                      onClick={() => copyNumber(placeholderPhoneNumber)}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-                    >
-                      {copied ? (
-                        <Check className="text-green-500" size={16} />
-                      ) : (
-                        <Copy className="text-gray-600" size={16} />
-                      )}
-                      {copied ? "Kopyalandı" : "Kopyala"}
-                    </button>
-                  </div>
-
-                  <a
-                    href={`tel:${placeholderPhoneNumber}`}
-                    className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
-                  >
-                    <Phone size={16} />
-                    Telefonla Ara
-                  </a>
-
-                  <a
-                    href={`https://wa.me/90${placeholderPhoneNumber}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-3 bg-green-500 hover:bg-green-600 text-white py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
-                  >
-                    <MessageCircle size={16} />
-                    WhatsApp&apos;tan Yaz
-                  </a>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <p className="text-xs text-gray-500 text-center">
-                    Bizi tercih ettiğiniz için teşekkürler!
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 

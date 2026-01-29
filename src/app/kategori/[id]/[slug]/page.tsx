@@ -32,48 +32,6 @@ interface Subcategory {
   subcategories?: Subcategory[];
 }
 
-/** -------------------------
- * Helpers
- * ------------------------- */
-
-/**
- * details.acre normalize:
- * - "1935 m² m²" -> "1935 m²"
- * - "1935 m2" -> "1935 m²"
- * - "0", "0 m2", "0 m²" -> null
- * - birim yoksa ekler: "1935" -> "1935 m²"
- */
-const normalizeAreaText = (raw: any): string | null => {
-  if (raw == null || raw === false) return null;
-
-  let t = String(raw).trim();
-  if (!t) return null;
-
-  const lower = t.toLowerCase();
-  if (lower === "false") return null;
-
-  t = t.replace(/㎡/g, "m²").replace(/m2/gi, "m²");
-
-  t = t.replace(/(m²)(\s*m²)+/gi, "m²");
-
-  t = t.replace(/\s+/g, " ").trim();
-
-  if (!/m²/i.test(t)) t = `${t} m²`;
-
-  const normalizedForZero = t
-    .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace("m²", "m2");
-
-  if (normalizedForZero === "0" || normalizedForZero === "0m2") return null;
-
-  const num = Number(t.match(/\d+(\.\d+)?/)?.[0] ?? "0");
-  if (!num || num === 0) return null;
-
-  return t;
-};
-
-// ✅ Feature ID’ler (alan)
 const GROSS_M2_FEATURE_ID = "69679f63cd76859b79ca8aa4"; // m² (Brüt)
 const NET_M2_FEATURE_ID = "69679f97cd76859b79ca8ac6"; // m² (Net)
 const ALT_M2_FEATURE_ID = "6968858ccd76859b79ca9451"; // eski/alternatif m²

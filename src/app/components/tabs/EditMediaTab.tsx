@@ -77,6 +77,17 @@ export default function MediaTab({
   const count = mediaItems.length;
   const remaining = Math.max(0, max - count);
 
+  const handleRemoveClick = (item: MediaItem) => {
+    if (item.kind === "remote") {
+      const ok = confirm(
+        "Bu fotoğraf yayındaki ilandan silinecek. Devam edilsin mi?",
+      );
+      if (!ok) return;
+    }
+
+    onRemove(item.id);
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -168,7 +179,7 @@ export default function MediaTab({
 
                     <button
                       type="button"
-                      onClick={() => onRemove(item.id)}
+                      onClick={() => handleRemoveClick(item)}
                       className="absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-gray-800 backdrop-blur transition hover:bg-white"
                       aria-label="Kaldır"
                       title="Kaldır"

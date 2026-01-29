@@ -913,13 +913,27 @@ export default function AdsPage({
               </div>
 
               {/* TABLO BAŞLIKLARI */}
-              <div className="hidden md:grid grid-cols-[120px_1fr_90px_90px_140px_130px_140px] border-t border-gray-200 bg-gray-50 text-xs font-semibold text-gray-700">
-                <div className="px-3 py-2"> </div>
+              <div className="hidden md:grid grid-cols-[120px_1fr_90px_130px_140px_130px] border-t border-gray-200 bg-gray-50 text-xs font-semibold text-gray-700">
+                {/* görsel kolonu */}
+                <div className="p-2" />
+
                 <div className="px-3 py-2">İlan Başlığı</div>
-                <div className="px-3 py-2 text-center">m² (Brüt)</div>
-                <div className="px-3 py-2 text-right">Fiyat</div>
-                <div className="px-3 py-2 text-center">İlan Tarihi</div>
-                <div className="px-3 py-2 text-center">İl / İlçe</div>
+
+                <div className="px-3 py-2 text-center border-l border-gray-200">
+                  m²
+                </div>
+
+                <div className="px-3 py-2 text-right border-l border-gray-200">
+                  Fiyat
+                </div>
+
+                <div className="px-3 py-2 text-center border-l border-gray-200">
+                  İlan Tarihi
+                </div>
+
+                <div className="px-3 py-2 text-center border-l border-gray-200">
+                  İl / İlçe
+                </div>
               </div>
 
               {/* SATIRLAR */}
@@ -942,10 +956,10 @@ export default function AdsPage({
                       className="block hover:bg-gray-50 transition-colors"
                     >
                       {/* DESKTOP ROW */}
-                      <div className="hidden md:grid grid-cols-[120px_1fr_90px_90px_140px_130px_140px] items-center">
+                      <div className="hidden md:grid grid-cols-[120px_1fr_90px_130px_140px_130px] items-stretch">
                         {/* görsel */}
-                        <div className="p-2">
-                          <div className="w-[110px] h-20 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                        <div className="p-2 flex items-center justify-center">
+                          <div className="w-full h-20 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
                             {hasValidImage(ad) ? (
                               <img
                                 src={ad.photos?.find(
@@ -968,8 +982,9 @@ export default function AdsPage({
                             )}
                           </div>
                         </div>
+
                         {/* başlık */}
-                        <div className="px-3 py-2 min-w-0">
+                        <div className="px-3 py-2 min-w-0 flex flex-col justify-center">
                           <div className="text-[13px] font-semibold text-blue-700 hover:underline line-clamp-2">
                             {ad.title || "Başlık Yok"}
                           </div>
@@ -977,20 +992,21 @@ export default function AdsPage({
                             {ad.steps?.second ? ad.steps.second : ""}
                           </div>
                         </div>
-                        {/* m2 */}
 
-                        <div className="px-3 py-2 text-center text-sm text-gray-800">
+                        {/* m2 */}
+                        <div className="px-3 py-2 text-center text-sm text-gray-800 border-l border-gray-100 flex items-center justify-center">
                           {getM2Text(ad) || "-"}
                         </div>
 
                         {/* fiyat */}
-                        <div className="px-3 py-2 text-right">
+                        <div className="px-3 py-2 text-right border-l border-gray-100 flex items-center justify-end">
                           <div className="text-sm font-bold text-blue-800 whitespace-nowrap">
                             {formatTRY(ad.fee) || "Fiyat Yok"}
                           </div>
                         </div>
+
                         {/* ilan tarihi */}
-                        <div className="px-3 py-2 text-center text-sm text-gray-800">
+                        <div className="px-3 py-2 text-center text-sm text-gray-800 border-l border-gray-100 flex items-center justify-center">
                           {ad.created?.createdTimestamp
                             ? new Date(
                                 ad.created.createdTimestamp,
@@ -1001,8 +1017,9 @@ export default function AdsPage({
                               })
                             : "-"}
                         </div>
+
                         {/* il/ilçe */}
-                        <div className="px-3 py-2 text-center text-sm text-gray-800 whitespace-pre-line">
+                        <div className="px-3 py-2 text-center text-sm text-gray-800 border-l border-gray-100 flex items-center justify-center whitespace-pre-line">
                           {getCityDistrict(ad) || "-"}
                         </div>
                       </div>
