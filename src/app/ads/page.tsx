@@ -672,23 +672,23 @@ export default function AdsPage({
      */
 
     if (grossVal && netVal) {
-      return `${grossVal} m²  • ${netVal}  m² `;
+      return `${grossVal}  • ${netVal}  `;
     }
 
     if (grossVal) {
-      return `${grossVal} m² (Brüt)`;
+      return `${grossVal}`;
     }
 
     if (netVal) {
-      return `${netVal} m² (Net)`;
+      return `${netVal}`;
     }
 
     if (altVal) {
-      return `${altVal} m²`;
+      return `${altVal} `;
     }
 
     if (donumVal) {
-      return `${donumVal} Dönüm`;
+      return `${donumVal}`;
     }
 
     return "";

@@ -43,6 +43,7 @@ export async function generateMetadata({
     console.log("🔍 Generating metadata for UID:", uid);
 
     const res = await api.get(`/advert/adverts/${uid}`);
+    console.log("📦 API response for metadata:", res.data);
     const data = res.data.data;
 
     if (!data) {
@@ -268,7 +269,7 @@ async function getAdvertData(uid: string) {
     let similarAds = [];
     try {
       const similarResponse = await api.get(
-        `/advert/adverts/${uid}/similar?page=1&limit=12`
+        `/advert/adverts/${uid}/similar?page=1&limit=12`,
       );
       similarAds = similarResponse.data.data || [];
     } catch (error) {
@@ -277,7 +278,7 @@ async function getAdvertData(uid: string) {
 
     const safePhotos = Array.isArray(data.photos)
       ? data.photos.filter(
-          (photo: any) => typeof photo === "string" && photo.trim() !== ""
+          (photo: any) => typeof photo === "string" && photo.trim() !== "",
         )
       : [];
 

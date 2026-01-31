@@ -21,11 +21,71 @@ import {
   Share2,
   Phone,
   MessageCircle,
-  Tag,
   FileText,
 } from "lucide-react";
 import PublicGoogleMap from "@/app/components/PublicGoogleMap";
 import MarkdownRenderer from "@/app/components/MarkdownRenderer";
+
+const DesktopSpecRow = ({
+  label,
+  value,
+  important,
+  valueClassName,
+}: {
+  label: string;
+  value: React.ReactNode;
+  important?: boolean;
+  valueClassName?: string;
+}) => {
+  if (
+    value === undefined ||
+    value === null ||
+    value === "" ||
+    value === "0" ||
+    value === 0
+  )
+    return null;
+
+  return (
+    <div className="flex items-center justify-between gap-4 py-1.5 text-[12px] leading-5 border-b border-dotted border-gray-300">
+      <div className="text-gray-900 font-semibold whitespace-nowrap">
+        {label}
+      </div>
+      <div
+        className={`text-right font-semibold ${
+          important ? "text-red-600" : "text-gray-900"
+        } ${valueClassName || ""}`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+};
+
+const DesktopTabButton = ({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) => {
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "px-3 py-2 text-[12px] font-semibold border border-gray-300",
+        "border-b-0 rounded-t-sm",
+        active
+          ? "bg-blue-400 text-gray-900"
+          : "bg-[#f3f3f3] text-blue-700 hover:bg-white",
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+};
 
 const DetailRow = ({
   label,
@@ -87,110 +147,6 @@ const FeatureCard = ({
         <p className="text-xs text-gray-500">{label}</p>
         <p className="text-sm font-semibold text-gray-900">{value}</p>
       </div>
-    </div>
-  );
-};
-
-const PhotoThumbnails = ({
-  photos,
-  selectedPhoto,
-  setSelectedPhoto,
-  visibleCount = 8,
-}: {
-  photos: string[];
-  selectedPhoto: number;
-  setSelectedPhoto: (index: number) => void;
-  visibleCount?: number;
-}) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const totalPages = Math.ceil(photos.length / visibleCount);
-  const startIndex = currentPage * visibleCount;
-  const visiblePhotos = photos.slice(startIndex, startIndex + visibleCount);
-
-  const nextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const prevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  return (
-    <div className="relative">
-      <div className="grid grid-cols-4 gap-2">
-        {visiblePhotos.map((photo, index) => {
-          const actualIndex = startIndex + index;
-          return (
-            <div
-              key={actualIndex}
-              className="aspect-square relative rounded-lg overflow-hidden cursor-pointer group"
-              onClick={() => setSelectedPhoto(actualIndex)}
-            >
-              <img
-                src={photo}
-                alt={`Thumbnail ${actualIndex + 1}`}
-                className="w-full h-full object-cover select-none transition-all duration-300 group-hover:scale-110"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/logo.png";
-                }}
-                loading="lazy"
-                decoding="async"
-              />
-              <div
-                className={`absolute inset-0 border-2 transition-all ${
-                  selectedPhoto === actualIndex
-                    ? "border-blue-500"
-                    : "border-transparent group-hover:border-blue-300"
-                }`}
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-            </div>
-          );
-        })}
-      </div>
-
-      {totalPages > 1 && (
-        <>
-          <button
-            onClick={prevPage}
-            disabled={currentPage === 0}
-            className={`absolute -left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all ${
-              currentPage === 0 ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            <ChevronLeft className="text-gray-700 text-sm" size={16} />
-          </button>
-
-          <button
-            onClick={nextPage}
-            disabled={currentPage === totalPages - 1}
-            className={`absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all ${
-              currentPage === totalPages - 1
-                ? "opacity-50 cursor-not-allowed"
-                : ""
-            }`}
-          >
-            <ChevronRight className="text-gray-700 text-sm" size={16} />
-          </button>
-
-          <div className="flex justify-center mt-3 gap-1">
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentPage ? "bg-blue-600" : "bg-gray-300"
-                }`}
-              />
-            ))}
-          </div>
-        </>
-      )}
     </div>
   );
 };
@@ -321,6 +277,9 @@ export default function AdvertDetailClient({
   const [videoLoading, setVideoLoading] = useState(true);
   const [copied2, setCopied2] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("details");
+  const [desktopTab, setDesktopTab] = useState<
+    "details" | "location" | "index"
+  >("details");
 
   useEffect(() => {
     if (data?.title) {
@@ -519,6 +478,38 @@ export default function AdvertDetailClient({
     );
 
     return uniqueParts.join(", ");
+  };
+
+  const valueTranslations: Record<string, string> = {
+    yes: "Evet",
+    no: "Hayır",
+    true: "Evet",
+    false: "Hayır",
+    Yes: "Evet",
+    No: "Hayır",
+    True: "Evet",
+    False: "Hayır",
+  };
+
+  const isEmptyValue = (v: any) => {
+    if (v === null || v === undefined) return true;
+    if (typeof v === "string" && v.trim() === "") return true;
+    if (typeof v === "number" && v === 0) return true;
+    if (v === "0") return true;
+    if (Array.isArray(v) && v.length === 0) return true;
+    return false;
+  };
+
+  const formatAnyValue = (v: any) => {
+    if (isEmptyValue(v)) return "";
+    if (Array.isArray(v)) {
+      const joined = v.filter(Boolean).join(", ");
+      return valueTranslations[joined] || joined;
+    }
+    if (typeof v === "boolean") return v ? "Evet" : "Hayır";
+
+    const s = String(v).trim();
+    return valueTranslations[s] || s;
   };
 
   const renderFeatureValues = () => {
@@ -749,437 +740,502 @@ export default function AdvertDetailClient({
     }
   };
 
+  const renderDesktopFeaturesLike = () => {
+    if (data?.isFeatures) {
+      const features = Array.isArray(data?.featureValues)
+        ? data.featureValues
+        : [];
+
+      const rows = features
+        .filter((f: any) => f?.name && !isEmptyValue(f?.value))
+        .map((f: any) => ({
+          name: String(f.name),
+          value: formatAnyValue(f.value),
+        }));
+
+      return (
+        <div className="border border-gray-300 bg-white">
+          <div className="px-3 py-2 border-b border-gray-300 bg-white">
+            <div className="font-semibold text-[12px] text-gray-900">
+              Özellikler
+            </div>
+          </div>
+
+          <div className="p-3">
+            {rows.length === 0 ? (
+              <div className="text-[12px] text-gray-600">
+                Özellik bulunamadı.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-6">
+                {rows.map((r, idx) => (
+                  <div
+                    key={`${r.name}-${idx}`}
+                    className="flex items-start justify-between gap-4 py-1.5 text-[12px] leading-5 border-b border-dotted border-gray-300"
+                  >
+                    <div className="text-gray-900 font-semibold">{r.name}</div>
+                    <div className="text-right font-semibold text-gray-900">
+                      {r.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    const d: any = data?.details || {};
+    const rows: Array<[string, any]> = [
+      ["m² (Brüt)", d.grossArea],
+      ["m² (Net)", d.netArea],
+      ["Oda Sayısı", d.roomCount],
+      ["Bina Yaşı", d.buildingAge],
+      ["Bulunduğu Kat", d.floor],
+      ["Kat Sayısı", d.totalFloor],
+      ["Isıtma", d.heating],
+      ["Banyo Sayısı", d.bathCount],
+      ["Mutfak", d.kitchen],
+      ["Balkon", d.balcony],
+      ["Asansör", d.elevator],
+      ["Otopark", d.parking || d.park],
+      ["Eşyalı", d.furniture],
+      ["Site İçinde", d.inSite],
+      ["Cephe", d.whichSide],
+      ["Aidat", d.dues],
+      ["Depozito", d.deposit],
+    ];
+
+    const filtered = rows
+      .filter(([, v]) => !isEmptyValue(v))
+      .map(([k, v]) => [k, formatAnyValue(v)] as const);
+
+    return (
+      <div className="border border-gray-300 bg-white">
+        <div className="px-3 py-2 border-b border-gray-300 bg-white">
+          <div className="font-semibold text-[12px] text-gray-900">
+            Özellikler
+          </div>
+        </div>
+
+        <div className="p-3">
+          {filtered.length === 0 ? (
+            <div className="text-[12px] text-gray-600">Özellik bulunamadı.</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-x-6">
+              {filtered.map(([k, v]) => (
+                <div
+                  key={k}
+                  className="flex items-start justify-between gap-4 py-1.5 text-[12px] leading-5 border-b border-dotted border-gray-300"
+                >
+                  <div className="text-gray-900 font-semibold">{k}</div>
+                  <div className="text-right font-semibold text-gray-900">
+                    {v}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDesktopDescriptionBox = () => {
+    return (
+      <div className="border border-gray-300 bg-white">
+        <div className="px-3 py-2 border-b border-gray-300 bg-white">
+          <div className="font-semibold text-[12px] text-gray-900">
+            Açıklama
+          </div>
+        </div>
+
+        <div className="p-3 text-[12px] leading-5 text-gray-800">
+          {data.thoughts ? (
+            <div className="prose prose-sm max-w-none">
+              <MarkdownRenderer content={data.thoughts} />
+            </div>
+          ) : (
+            <div className="text-gray-600">Açıklama bulunmuyor.</div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDesktopDetailsContent = () => {
+    return (
+      <div className="space-y-3">
+        {renderDesktopDescriptionBox()}
+        {renderDesktopFeaturesLike()}
+      </div>
+    );
+  };
+
+  const renderDesktopLocationContent = () => {
+    return (
+      <div className="border border-gray-300 bg-white">
+        <div className="px-3 py-2 border-b border-gray-300 bg-white">
+          <div className="font-semibold text-[12px] text-gray-900">
+            Konumu ve Sokak Görünümü
+          </div>
+        </div>
+
+        <div className="p-3">
+          <div className="text-[12px] text-gray-700 mb-2">
+            {getAddressText()}
+          </div>
+          <div className="h-[420px] w-full overflow-hidden border border-gray-200">
+            <PublicGoogleMap
+              lat={
+                typeof data.address.mapCoordinates?.lat === "string"
+                  ? parseFloat(data.address.mapCoordinates.lat)
+                  : data.address.mapCoordinates?.lat || 0
+              }
+              lng={
+                typeof data.address.mapCoordinates?.lng === "string"
+                  ? parseFloat(data.address.mapCoordinates.lng)
+                  : data.address.mapCoordinates?.lng || 0
+              }
+              province={data.address.province}
+              district={data.address.district}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <main className="bg-gray-50 min-h-screen">
       <div className="hidden lg:block">
         <Navbar />
       </div>
 
-      <div className="w-full lg:container lg:mx-auto lg:max-w-7xl lg:px-4 py-0 lg:py-6">
-        {/* ÜST BAR: breadcrumb + aksiyonlar */}
-        <div className="hidden lg:flex items-center justify-between text-xs text-gray-500 border-b border-gray-200 pb-2">
-          <div className="flex flex-wrap items-center gap-1">
-            <span className="text-blue-700 hover:underline cursor-pointer">
-              Anasayfa
-            </span>
-            <span>›</span>
-            <span className="text-blue-700 hover:underline cursor-pointer">
-              Emlak
-            </span>
-            <span>›</span>
-            <span className="text-blue-700 hover:underline cursor-pointer">
-              {data.steps.first}
-            </span>
-            <span>›</span>
-            <span className="text-blue-700 hover:underline cursor-pointer">
-              {data.steps.second}
-            </span>
-            <span>›</span>
-            <span className="text-blue-700 hover:underline cursor-pointer">
-              {data.address.province}
-            </span>
-            <span>›</span>
-            <span className="text-blue-700 hover:underline cursor-pointer">
-              {data.address.district}
-            </span>
-            {data.address.quarter ? (
-              <>
-                <span>›</span>
-                <span className="text-blue-700 hover:underline cursor-pointer">
-                  {data.address.quarter}
-                </span>
-              </>
-            ) : null}
+      <div className="w-full lg:mx-auto lg:max-w-[1200px] lg:px-4 py-0 lg:py-4">
+        <div className="hidden lg:block">
+          <div className=" pt-4 flex items-center justify-between mb-2">
+            <h1 className="text-[14px] font-bold text-gray-900">
+              {data.title}
+            </h1>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleShare}
-              className="px-3 py-1.5 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-blue-700"
-            >
-              Paylaş
-            </button>
-          </div>
-        </div>
+          <div className="grid grid-cols-12 gap-4">
+            {/* SOL: Foto alanı */}
+            <div className="col-span-6">
+              <div className="border border-gray-300 bg-white">
+                <div className="relative">
+                  <img
+                    src={currentPhoto}
+                    onClick={() =>
+                      hasPhotos && handleClickedPhoto(currentPhoto)
+                    }
+                    onLoad={() => setImageLoading(false)}
+                    onError={handleImageError}
+                    className="w-full h-[360px] object-cover select-none"
+                    alt={
+                      hasPhotos ? `İlan Fotoğrafı ${selectedPhoto + 1}` : "İlan"
+                    }
+                    loading={hasPhotos ? "lazy" : "eager"}
+                    decoding="async"
+                  />
 
-        {/* BAŞLIK */}
-        <div className="hidden lg:block pt-3">
-          <h1 className="text-[22px] font-bold text-gray-900 leading-snug">
-            {data.title}
-          </h1>
+                  {hasPhotos && safePhotos.length > 1 && (
+                    <>
+                      <button
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 border border-gray-200 rounded-full flex items-center justify-center hover:bg-white"
+                        onClick={() =>
+                          setSelectedPhoto((p) =>
+                            p === 0 ? safePhotos.length - 1 : p - 1,
+                          )
+                        }
+                        aria-label="Önceki"
+                      >
+                        <ChevronLeft size={18} className="text-gray-700" />
+                      </button>
 
-          <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
-            <MapPin size={16} className="text-blue-700" />
-            <span>
-              {data.address.province} / {data.address.district}
-              {data.address.quarter ? ` / ${data.address.quarter}` : ""}
-            </span>
+                      <button
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 border border-gray-200 rounded-full flex items-center justify-center hover:bg-white"
+                        onClick={() =>
+                          setSelectedPhoto((p) =>
+                            p === safePhotos.length - 1 ? 0 : p + 1,
+                          )
+                        }
+                        aria-label="Sonraki"
+                      >
+                        <ChevronRight size={18} className="text-gray-700" />
+                      </button>
+                    </>
+                  )}
+                </div>
 
-            <span className="text-gray-300">•</span>
+                <div className="px-3 py-2 border-t border-gray-300 bg-white flex items-center justify-between text-[12px]">
+                  <button
+                    onClick={() => handleClickedPhoto(currentPhoto)}
+                    className="inline-flex items-center gap-1 text-blue-700 hover:underline"
+                  >
+                    <ZoomIn size={14} /> Büyük Fotoğraf
+                  </button>
 
-            <Calendar size={16} className="text-blue-700" />
-            <span>
-              {data?.created?.createdTimestamp
-                ? new Date(data.created.createdTimestamp).toLocaleDateString(
-                    "tr-TR",
-                    {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    },
-                  )
-                : "-"}
-            </span>
-
-            <span className="ml-2 inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-2.5 py-1 text-xs font-semibold border border-blue-100">
-              İlan No: {data.uid}
-            </span>
-          </div>
-        </div>
-
-        {/* ANA 3 KOLON */}
-        <div className="hidden lg:grid grid-cols-12 gap-6 mt-4">
-          {/* SOL: Fotoğraf alanı */}
-          <div className="col-span-6">
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="relative">
-                <img
-                  src={currentPhoto}
-                  onClick={() => hasPhotos && handleClickedPhoto(currentPhoto)}
-                  onLoad={() => setImageLoading(false)}
-                  onError={handleImageError}
-                  className="w-full h-[380px] object-cover select-none"
-                  alt={
-                    hasPhotos ? `İlan Fotoğrafı ${selectedPhoto + 1}` : "İlan"
-                  }
-                  loading={hasPhotos ? "lazy" : "eager"}
-                  decoding="async"
-                />
+                  {data.video ? (
+                    <button
+                      onClick={() => setOpenVideo(true)}
+                      className="inline-flex items-center gap-1 text-gray-600 hover:text-gray-900"
+                    >
+                      <Play size={14} /> Video
+                    </button>
+                  ) : (
+                    <span className="text-gray-400">Video</span>
+                  )}
+                </div>
 
                 {hasPhotos && safePhotos.length > 1 && (
-                  <>
-                    <button
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white"
-                      onClick={() =>
-                        setSelectedPhoto((p) =>
-                          p === 0 ? safePhotos.length - 1 : p - 1,
-                        )
-                      }
-                      aria-label="Önceki"
-                    >
-                      <ChevronLeft size={18} className="text-gray-700" />
-                    </button>
-
-                    <button
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white"
-                      onClick={() =>
-                        setSelectedPhoto((p) =>
-                          p === safePhotos.length - 1 ? 0 : p + 1,
-                        )
-                      }
-                      aria-label="Sonraki"
-                    >
-                      <ChevronRight size={18} className="text-gray-700" />
-                    </button>
-
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/55 text-white text-xs px-3 py-1 rounded-full">
-                      {selectedPhoto + 1} / {safePhotos.length}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* küçük fotoğraflar */}
-              {hasPhotos && safePhotos.length > 1 && (
-                <div className="border-t border-gray-200 p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <button
-                      onClick={() => handleClickedPhoto(currentPhoto)}
-                      className="text-sm text-blue-700 hover:underline flex items-center gap-2"
-                    >
-                      <ZoomIn size={16} /> Büyük Fotoğraf
-                    </button>
-
-                    {data.video ? (
-                      <button
-                        onClick={() => setOpenVideo(true)}
-                        className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2"
-                      >
-                        <Play size={16} /> Video
-                      </button>
-                    ) : (
-                      <span className="text-sm text-gray-400">Video</span>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    {safePhotos.slice(0, 6).map((p, i) => (
-                      <button
-                        key={p + i}
-                        onClick={() => setSelectedPhoto(i)}
-                        className={`w-24 h-16 rounded-md border overflow-hidden transition ${
-                          selectedPhoto === i
-                            ? "border-blue-600 ring-2 ring-blue-100"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                        title={`${i + 1}. Fotoğraf`}
-                      >
-                        <img
-                          src={p}
-                          alt={`thumb-${i}`}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/logo.png";
-                          }}
-                        />
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="text-xs text-gray-500 mt-2">
-                    {Math.min(6, safePhotos.length)}/{safePhotos.length}{" "}
-                    Fotoğraf
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ORTA: Fiyat + Detay tablosu (GELİŞTİRİLDİ) */}
-          <div className="col-span-3">
-            <div className="sticky top-6 space-y-4">
-              {/* Fiyat kartı */}
-              <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-white">
-                <div className="p-4 bg-linear-to-r from-blue-700 to-blue-600 text-white">
-                  <div className="text-xs opacity-90">Fiyat</div>
-                  <div className="mt-1 text-2xl font-extrabold tracking-tight">
-                    {data.fee || "Fiyat yok"}
-                  </div>
-
-                  <div className="mt-2 flex items-center justify-between gap-2 text-xs">
-                    <span className="inline-flex items-center rounded-full bg-white/15 px-2 py-1">
-                      {data.steps.second}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-4">
-                  <div className="flex items-start gap-2 text-sm text-gray-700">
-                    <MapPin
-                      size={16}
-                      className="text-blue-700 mt-0.5 shrink-0"
-                    />
-                    <div className="font-medium">
-                      {data.address.province} / {data.address.district}
-                      {data.address.quarter ? ` / ${data.address.quarter}` : ""}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 border-t border-gray-200 pt-3">
-                    <div className="text-xs font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                      <Tag size={14} className="text-gray-500" />
-                      İlan Bilgileri
-                    </div>
-
-                    <div className="space-y-2">
-                      {[
-                        ["İlan No", String(data.uid)],
-                        [
-                          "İlan Tarihi",
-                          data?.created?.createdTimestamp
-                            ? new Date(
-                                data.created.createdTimestamp,
-                              ).toLocaleDateString("tr-TR", {
-                                day: "numeric",
-                                month: "long",
-                                year: "numeric",
-                              })
-                            : "-",
-                        ],
-                        [
-                          "Emlak Tipi",
-                          `${data.steps.second} ${data.steps.first}`,
-                        ],
-                      ].map(([k, v]) => (
-                        <div
-                          key={k}
-                          className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
+                  <div className="px-3 py-3 border-t border-gray-300 bg-white">
+                    <div className="grid grid-cols-6 gap-2">
+                      {safePhotos.slice(0, 12).map((p, i) => (
+                        <button
+                          key={p + i}
+                          onClick={() => setSelectedPhoto(i)}
+                          className={[
+                            "h-[52px] border overflow-hidden",
+                            selectedPhoto === i
+                              ? "border-blue-600"
+                              : "border-gray-300 hover:border-gray-400",
+                          ].join(" ")}
+                          title={`${i + 1}. Fotoğraf`}
                         >
-                          <span className="text-xs font-medium text-gray-600">
-                            {k}
-                          </span>
-                          <span className="text-sm font-semibold text-gray-900">
-                            {v}
-                          </span>
-                        </div>
+                          <img
+                            src={p}
+                            alt={`thumb-${i}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/logo.png";
+                            }}
+                          />
+                        </button>
                       ))}
                     </div>
+
+                    <div className="mt-2 text-[12px] text-gray-600">
+                      1/{safePhotos.length} Fotoğraf
+                    </div>
                   </div>
+                )}
+              </div>
+            </div>
+
+            {/* ORTA: Fiyat + detay tablo */}
+            <div className="col-span-3">
+              <div className="border border-gray-300 bg-white p-3">
+                {/* Fiyat (mavi) */}
+                <div className="flex items-center justify-between">
+                  <div className="text-[14px] font-bold text-blue-700">
+                    {data.fee || "Fiyat yok"}
+                  </div>
+                  <Calendar size={14} className="text-gray-400" />
+                </div>
+
+                {/* Konum (mavi link gibi) */}
+                <div className="mt-1 text-[12px] text-blue-700 font-semibold">
+                  {data.address.province} / {data.address.district}
+                  {data.address.quarter ? ` / ${data.address.quarter}` : ""}
+                </div>
+
+                <div className="mt-2">
+                  <DesktopSpecRow
+                    label="İlan No"
+                    value={String(data.uid)}
+                    important
+                  />
+                  <DesktopSpecRow
+                    label="İlan Tarihi"
+                    value={
+                      data?.created?.createdTimestamp
+                        ? new Date(
+                            data.created.createdTimestamp,
+                          ).toLocaleDateString("tr-TR")
+                        : "-"
+                    }
+                  />
+                  <DesktopSpecRow
+                    label="Emlak Tipi"
+                    value={`${data.steps.second} ${data.steps.first}`}
+                  />
+                  <DesktopSpecRow
+                    label="m² (Brüt)"
+                    value={data.details?.grossArea || ""}
+                  />
+                  <DesktopSpecRow
+                    label="m² (Net)"
+                    value={data.details?.netArea || ""}
+                  />
+                  <DesktopSpecRow
+                    label="Oda Sayısı"
+                    value={data.details?.roomCount || ""}
+                  />
+                  <DesktopSpecRow
+                    label="Bina Yaşı"
+                    value={data.details?.buildingAge || ""}
+                  />
+                  <DesktopSpecRow
+                    label="Bulunduğu Kat"
+                    value={data.details?.floor || ""}
+                  />
+                  <DesktopSpecRow
+                    label="Kat Sayısı"
+                    value={data.details?.totalFloor || ""}
+                  />
+                  <DesktopSpecRow
+                    label="Isıtma"
+                    value={data.details?.heating || ""}
+                  />
+                  <DesktopSpecRow
+                    label="Banyo Sayısı"
+                    value={data.details?.bathCount || ""}
+                  />
+                  <DesktopSpecRow
+                    label="Balkon"
+                    value={
+                      typeof data.details?.balcony === "boolean"
+                        ? data.details.balcony
+                          ? "Var"
+                          : "Yok"
+                        : (data.details?.balcony as any) || ""
+                    }
+                  />
+                  <DesktopSpecRow
+                    label="Asansör"
+                    value={
+                      typeof data.details?.elevator === "boolean"
+                        ? data.details.elevator
+                          ? "Var"
+                          : "Yok"
+                        : (data.details?.elevator as any) || ""
+                    }
+                  />
+
+                  <DesktopSpecRow
+                    label="Eşyalı"
+                    value={
+                      typeof data.details?.furniture === "boolean"
+                        ? data.details.furniture
+                          ? "Evet"
+                          : "Hayır"
+                        : (data.details?.furniture as any) || ""
+                    }
+                  />
+
+                  <DesktopSpecRow
+                    label="Site İçerisinde"
+                    value={
+                      typeof data.details?.inSite === "boolean"
+                        ? data.details.inSite
+                          ? "Evet"
+                          : "Hayır"
+                        : (data.details?.inSite as any) || ""
+                    }
+                  />
+                  <DesktopSpecRow
+                    label="Tapu Durumu"
+                    value={data.details?.deed || ""}
+                  />
+                  <DesktopSpecRow
+                    label="Kimden"
+                    value={"Sahibinden"}
+                    valueClassName="text-blue-700"
+                  />
+                </div>
+
+                <div className="mt-2 text-[12px] text-blue-700 hover:underline cursor-pointer">
+                  İlan ile ilgili Şikayetim Var
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="col-span-3">
-            <div className="sticky top-6 space-y-4">
-              <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                {/* üst header */}
-                <div className="p-4 bg-gray-50 border-b border-gray-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg border border-gray-200 bg-white overflow-hidden flex items-center justify-center">
-                      <img
-                        src="/logo.png"
-                        alt="Yenigün Emlak"
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/logo.png";
-                        }}
-                      />
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="text-sm font-bold text-gray-900 truncate">
-                        {data.advisor?.name} {data.advisor?.surname}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Yenigün Emlak • Şubat 2022
-                      </div>
-                    </div>
+            {/* SAĞ: Kişi kartı + güvenlik ipucu */}
+            <div className="col-span-3">
+              <div className="border border-gray-300 bg-white">
+                <div className="p-3 border-b border-gray-300">
+                  <div className="text-[12px] font-semibold text-gray-900">
+                    {data.advisor?.name} {data.advisor?.surname}
+                  </div>
+                  <div className="text-[11px] text-gray-500 mt-1">
+                    Hesap açma tarihi: Şubat 2022
                   </div>
                 </div>
 
-                {/* telefon kutusu */}
-                <div className="p-4">
-                  <div className="rounded-lg border border-gray-200 bg-white p-3">
-                    <div className="text-xs text-gray-500 mb-1">Cep</div>
+                <div className="p-3">
+                  <div className="text-[11px] text-gray-500">Cep</div>
 
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="text-sm font-extrabold text-gray-900 tracking-wide whitespace-nowrap">
-                        {formatPhoneNumber(placeholderPhoneNumber)}
-                      </div>
-
-                      <button
-                        onClick={() => copyNumber(placeholderPhoneNumber)}
-                        className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50 text-xs font-semibold text-gray-700"
-                        title="Kopyala"
-                      >
-                        {copied ? (
-                          <>
-                            <Check size={14} className="text-green-600" />
-                            Kopyalandı
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={14} className="text-gray-600" />
-                            Kopyala
-                          </>
-                        )}
-                      </button>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <div className="text-[12px] font-bold text-gray-900 whitespace-nowrap">
+                      {formatPhoneNumber(placeholderPhoneNumber)}
                     </div>
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-1 gap-2">
-                    <a
-                      href={`tel:${placeholderPhoneNumber}`}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white py-2.5 text-sm font-semibold shadow-sm"
-                    >
-                      <Phone size={16} /> Telefonla Ara
-                    </a>
-
-                    <a
-                      href={`https://wa.me/90${placeholderPhoneNumber}?text=Merhaba,%20${data.title}%20ilanınızla%20ilgileniyorum.`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-green-500 hover:bg-green-600 text-white py-2.5 text-sm font-semibold shadow-sm"
-                    >
-                      <MessageCircle size={16} /> WhatsApp
-                    </a>
 
                     <button
-                      onClick={handleShare}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 py-2.5 text-sm font-semibold text-gray-800"
+                      onClick={() => copyNumber(placeholderPhoneNumber)}
+                      className="inline-flex items-center gap-1 px-2 py-1 border border-gray-300 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
                     >
-                      <Share2 size={16} /> Linki Paylaş
+                      {copied ? (
+                        <>
+                          <Check size={14} className="text-green-600" />{" "}
+                          Kopyalandı
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={14} /> Kopyala
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="mt-3">
+                    <button className="w-full h-8 border border-gray-300 bg-gray-50 text-[12px] font-semibold text-gray-700 hover:bg-white">
+                      Mesaj Gönder
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* ALT: Sekmeler (2 tab) */}
-          <div className="col-span-12 mt-4">
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="flex border-b border-gray-200">
-                <button
-                  onClick={() => setActiveTab("details")}
-                  className={`px-5 py-3 text-sm font-semibold border-r border-gray-200 ${
-                    activeTab === "details"
-                      ? "bg-blue-400 text-gray-900"
-                      : "bg-white text-blue-700 hover:bg-gray-50"
-                  }`}
+              {/* Güvenlik ipuçları */}
+              <div className="mt-3 border border-gray-300 bg-white p-3">
+                <div className="text-[12px] font-bold text-blue-700">
+                  Güvenlik İpuçları
+                </div>
+                <div className="mt-2 text-[11px] text-gray-700 leading-4">
+                  Kiralayacağınız gayrimenkulü görmeden kapora ve benzeri bir
+                  ödeme gerçekleştirmeyin.
+                </div>
+                <div className="mt-2 text-[11px] text-blue-700 hover:underline cursor-pointer">
+                  Detaylı bilgi için tıklayın.
+                </div>
+              </div>
+            </div>
+
+            {/* ALT TAB MENÜ + İÇERİK */}
+            <div className="col-span-12 mt-4">
+              <div className="flex items-end gap-1">
+                <DesktopTabButton
+                  active={desktopTab === "details"}
+                  onClick={() => setDesktopTab("details")}
                 >
                   İlan Detayları
-                </button>
+                </DesktopTabButton>
 
-                <button
-                  onClick={() => setActiveTab("location")}
-                  className={`px-5 py-3 text-sm font-semibold ${
-                    activeTab === "location"
-                      ? "bg-blue-400 text-gray-900"
-                      : "bg-white text-blue-700 hover:bg-gray-50"
-                  }`}
+                <DesktopTabButton
+                  active={desktopTab === "location"}
+                  onClick={() => setDesktopTab("location")}
                 >
                   Konumu ve Sokak Görünümü
-                </button>
+                </DesktopTabButton>
+
+                <div className="flex-1 border-b border-gray-300" />
               </div>
 
-              <div className="p-4">
-                {activeTab === "location" ? (
-                  <div>
-                    <div className="text-sm text-gray-700 mb-3">
-                      {getAddressText()}
-                    </div>
-                    <div className="h-[420px] w-full overflow-hidden border border-gray-200 rounded-lg">
-                      <PublicGoogleMap
-                        lat={
-                          typeof data.address.mapCoordinates?.lat === "string"
-                            ? parseFloat(data.address.mapCoordinates.lat)
-                            : data.address.mapCoordinates?.lat || 0
-                        }
-                        lng={
-                          typeof data.address.mapCoordinates?.lng === "string"
-                            ? parseFloat(data.address.mapCoordinates.lng)
-                            : data.address.mapCoordinates?.lng || 0
-                        }
-                        province={data.address.province}
-                        district={data.address.district}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {data.isFeatures
-                      ? renderFeatureValues()
-                      : renderTraditionalFeatures()}
-                    {!data.isFeatures && renderTraditionalDetails()}
-
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <div className="font-semibold text-gray-900 mb-2">
-                        Açıklama
-                      </div>
-                      {data.thoughts ? (
-                        <div className="prose prose-gray max-w-none">
-                          <MarkdownRenderer content={data.thoughts} />
-                        </div>
-                      ) : (
-                        <div className="text-sm text-gray-500">
-                          Açıklama bulunmuyor
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+              <div className="mt-0 border border-gray-300 bg-[#f7f7f7] p-3">
+                {desktopTab === "details" && renderDesktopDetailsContent()}
+                {desktopTab === "location" && renderDesktopLocationContent()}
               </div>
             </div>
           </div>

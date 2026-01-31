@@ -65,16 +65,14 @@ const getM2Text = (ad: any) => {
   const donumVal = isValidM2(donum?.value) ? String(donum.value) : "";
 
   // Öncelik: Brüt+Net > Brüt > Net > Alt m² > Dönüm
-  if (grossVal && netVal) return `${grossVal} m² (Brüt) • ${netVal} m² (Net)`;
-  if (grossVal) return `${grossVal} m² (Brüt)`;
-  if (netVal) return `${netVal} m² (Net)`;
-  if (altVal) return `${altVal} m²`;
-  if (donumVal) return `${donumVal} Dönüm`;
+  if (grossVal && netVal) return `${grossVal} • ${netVal}  `;
+  if (grossVal) return `${grossVal}  `;
+  if (netVal) return `${netVal}  `;
+  if (altVal) return `${altVal}  `;
+  if (donumVal) return `${donumVal} `;
 
   return "";
 };
-
-const isValidNumber = (v: any) => typeof v === "number" && isFinite(v) && v > 0;
 
 const formatDate = (timestamp?: number) => {
   if (!timestamp) return "Tarih yok";
@@ -148,6 +146,45 @@ export default function CategoryDetailPage() {
 
     const path = findPath(category.subcategories, subcategoryId);
     return path ? path.join(" > ") : "";
+  };
+
+  const formatShortDate = (timestamp?: number) => {
+    if (!timestamp) return "-";
+    const d = new Date(timestamp);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}.${mm}.${yyyy}`;
+  };
+
+  const getM2Compact = (ad: any) => {
+    if (!ad?.isFeatures || !Array.isArray(ad?.featureValues)) return "-";
+
+    const gross = ad.featureValues.find(
+      (f: any) => f.featureId === GROSS_M2_FEATURE_ID,
+    );
+    const net = ad.featureValues.find(
+      (f: any) => f.featureId === NET_M2_FEATURE_ID,
+    );
+    const alt = ad.featureValues.find(
+      (f: any) => f.featureId === ALT_M2_FEATURE_ID,
+    );
+    const donum = ad.featureValues.find(
+      (f: any) => f.featureId === DONUM_FEATURE_ID,
+    );
+
+    const grossVal = isValidM2(gross?.value) ? String(gross.value) : "";
+    const netVal = isValidM2(net?.value) ? String(net.value) : "";
+    const altVal = isValidM2(alt?.value) ? String(alt.value) : "";
+    const donumVal = isValidM2(donum?.value) ? String(donum.value) : "";
+
+    if (grossVal && netVal) return `${grossVal} • ${netVal}`;
+    if (grossVal) return grossVal;
+    if (netVal) return netVal;
+    if (altVal) return altVal;
+    if (donumVal) return `${donumVal} `;
+
+    return "-";
   };
 
   useEffect(() => {
@@ -625,26 +662,123 @@ export default function CategoryDetailPage() {
               ) : (
                 <>
                   <div className="space-y-2 pt-3">
-                    {/* ✅ Desktop header */}
-                    <div className="hidden md:grid grid-cols-[120px_1fr_140px_110px_160px_160px] gap-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                      <div className="px-4 py-3 text-xs font-semibold text-gray-600">
-                        Görsel
-                      </div>
-                      <div className="px-4 py-3 text-xs font-semibold text-gray-600">
-                        İlan
-                      </div>
-                      <div className="px-4 py-3 text-xs font-semibold text-gray-600 text-center">
-                        m²
+                    <div className="hidden md:block bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      {/* Header */}
+                      <div className="grid grid-cols-[120px_1fr_120px_160px_140px_160px] bg-gray-50 border-b border-gray-200">
+                        <div className="px-4 py-3 text-xs font-semibold text-gray-700">
+                          {" "}
+                        </div>
+                        <div className="px-4 py-3 text-xs font-semibold text-gray-700">
+                          İlan Başlığı
+                        </div>
+                        <div className="px-4 py-3 text-xs font-semibold text-gray-700 text-center">
+                          m²
+                        </div>
+                        <div className="px-4 py-3 text-xs font-semibold text-gray-700 text-center">
+                          Fiyat
+                        </div>
+                        <div className="px-4 py-3 text-xs font-semibold text-gray-700 text-center">
+                          İlan Tarihi
+                        </div>
+                        <div className="px-4 py-3 text-xs font-semibold text-gray-700 text-center">
+                          İl / İlçe
+                        </div>
                       </div>
 
-                      <div className="px-4 py-3 text-xs font-semibold text-gray-600 text-center">
-                        Konum
-                      </div>
-                      <div className="px-4 py-3 text-xs font-semibold text-gray-600 text-right">
-                        Fiyat
+                      {/* Rows */}
+                      <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                        {adverts.map((advert: any, index: number) => {
+                          const m2Compact = getM2Compact(advert);
+
+                          const province = advert?.address?.province || "-";
+                          const district = advert?.address?.district || "-";
+
+                          const createdTs = advert?.created?.createdTimestamp;
+                          const dateText = formatShortDate(createdTs);
+
+                          const adType = advert?.steps?.second
+                            ? String(advert.steps.second).toUpperCase()
+                            : "";
+
+                          return (
+                            <Link
+                              href={`/ads/${advert.uid}`}
+                              key={advert.uid || index}
+                              className="group block"
+                            >
+                              <div className="grid grid-cols-[120px_1fr_120px_160px_140px_160px] items-stretch hover:bg-gray-50 transition-colors border-b border-gray-200 last:border-b-0">
+                                {/* Image */}
+                                <div className="px-4 py-4 border-r border-gray-200">
+                                  <div className="w-[92px] h-16 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
+                                    {hasValidImage(advert) ? (
+                                      <img
+                                        src={advert.photos[0]}
+                                        alt={advert.title || "İlan görseli"}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.src = logoUrl;
+                                          e.currentTarget.className =
+                                            "w-full h-full object-contain p-2";
+                                        }}
+                                      />
+                                    ) : (
+                                      <img
+                                        src={logoUrl}
+                                        alt="Logo"
+                                        className="w-full h-full object-contain p-2 opacity-70"
+                                      />
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Title */}
+                                <div className="px-4 py-4 min-w-0 border-r border-gray-200">
+                                  <div className="text-[13px] font-bold text-blue-700 group-hover:underline line-clamp-2">
+                                    {(
+                                      advert.title || "İsimsiz İlan"
+                                    ).toUpperCase()}
+                                  </div>
+                                  {adType && (
+                                    <div className="mt-1 text-[12px] text-gray-500 font-medium">
+                                      {adType}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* m² */}
+                                <div className="px-4 py-4 text-center text-sm text-gray-800 border-r border-gray-200 flex items-center justify-center">
+                                  {m2Compact}
+                                </div>
+
+                                {/* Price */}
+                                <div className="px-4 py-4 text-center border-r border-gray-200 flex items-center justify-center">
+                                  <div className="text-[18px] font-extrabold text-blue-700 whitespace-nowrap">
+                                    {advert.fee || "-"}
+                                  </div>
+                                </div>
+
+                                {/* Date */}
+                                <div className="px-4 py-4 text-center text-sm text-gray-800 whitespace-nowrap border-r border-gray-200 flex items-center justify-center">
+                                  {dateText}
+                                </div>
+
+                                {/* City / District */}
+                                <div className="px-4 py-4 text-center border-r-0 flex flex-col items-center justify-center">
+                                  <div className="text-sm text-gray-900 font-medium">
+                                    {province}
+                                  </div>
+                                  <div className="text-sm text-gray-700">
+                                    {district}
+                                  </div>
+                                </div>
+                              </div>
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
 
+                    {/* ✅ Mobile card (aynı kalsın) */}
                     {adverts.map((advert: any, index: number) => {
                       const m2Text = getM2Text(advert);
                       const room =
@@ -662,83 +796,10 @@ export default function CategoryDetailPage() {
                         <Link
                           href={`/ads/${advert.uid}`}
                           key={advert.uid || index}
-                          className="group block"
+                          className="group block md:hidden"
                         >
-                          {/* ✅ Desktop row (table like) */}
-                          <div className="hidden md:grid grid-cols-[120px_1fr_140px_110px_160px_160px] items-center bg-white border border-gray-200 rounded-xl overflow-hidden hover:bg-gray-50 transition-colors">
-                            {/* Görsel */}
-                            <div className="p-3">
-                              <div className="w-[110px] h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                                {hasValidImage(advert) ? (
-                                  <img
-                                    src={advert.photos[0]}
-                                    alt={advert.title || "İlan görseli"}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      e.currentTarget.src = logoUrl;
-                                      e.currentTarget.className =
-                                        "w-full h-full object-contain p-2";
-                                    }}
-                                  />
-                                ) : (
-                                  <img
-                                    src={logoUrl}
-                                    alt="Logo"
-                                    className="w-full h-full object-contain p-2 opacity-70"
-                                  />
-                                )}
-                              </div>
-                            </div>
-
-                            {/* İlan */}
-                            <div className="px-4 py-3 min-w-0">
-                              <div className="text-[13px] font-semibold text-blue-700 group-hover:underline line-clamp-2">
-                                {advert.title || "İsimsiz İlan"}
-                              </div>
-                              <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                                {advert.steps?.second && (
-                                  <span className="bg-gray-100 px-2 py-0.5 rounded">
-                                    {advert.steps.second}
-                                  </span>
-                                )}
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  {formatDate(advert.created?.createdTimestamp)}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* m² */}
-                            <div className="px-4 py-3 text-center text-sm text-gray-800">
-                              {m2Text || "-"}
-                            </div>
-
-                            {/* Konum */}
-                            <div className="px-4 py-3 text-center text-sm text-gray-700 truncate">
-                              {locationText}
-                            </div>
-
-                            {/* Fiyat */}
-                            <div className="px-4 py-3 text-right">
-                              <div className="text-base font-bold text-gray-900 whitespace-nowrap">
-                                {advert.fee || "Fiyat Belirtilmemiş"}
-                              </div>
-                              {advert.advisor && (
-                                <div className="mt-1 text-xs text-gray-500 flex items-center justify-end gap-1">
-                                  <User className="w-3 h-3" />
-                                  <span className="truncate max-w-[140px]">
-                                    {advert.advisor.name}{" "}
-                                    {advert.advisor.surname}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* ✅ Mobile card */}
-                          <div className="md:hidden bg-white border border-gray-200 rounded-xl overflow-hidden hover:bg-gray-50 transition-colors">
+                          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:bg-gray-50 transition-colors">
                             <div className="flex gap-3 p-3">
-                              {/* img */}
                               <div className="w-24 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                                 {hasValidImage(advert) ? (
                                   <img
@@ -760,7 +821,6 @@ export default function CategoryDetailPage() {
                                 )}
                               </div>
 
-                              {/* content */}
                               <div className="min-w-0 flex-1">
                                 <div className="text-[13px] font-semibold text-blue-700 line-clamp-2">
                                   {advert.title || "İsimsiz İlan"}

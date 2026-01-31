@@ -48,12 +48,17 @@ const FeatureAccordion = ({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 text-left active:opacity-90"
+        className="w-full flex items-center justify-between px-4 py-4 text-left active:opacity-90"
       >
-        <div>
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        {/* pt-4 KALDIRILDI */}
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-gray-900 leading-6 truncate">
+            {title}
+          </div>
           {subtitle ? (
-            <div className="text-xs text-gray-500 mt-0.5">{subtitle}</div>
+            <div className="text-xs text-gray-500 mt-1 leading-5">
+              {subtitle}
+            </div>
           ) : null}
         </div>
 
@@ -72,14 +77,12 @@ const FeatureAccordion = ({
         className="px-4"
         style={{ overflow: "hidden" }}
       >
-        <div className="pb-4">{children}</div>
+        <div className="pb-4 pt-2">{children}</div>
       </motion.div>
     </div>
   );
 };
 
-// İstersen sadece uzun listeleri accordion yapalım:
-// (6+ seçenek => accordion)
 const shouldAccordion = (feature: Feature) =>
   (feature.options?.length || 0) >= 6;
 
@@ -97,7 +100,6 @@ export default function FeaturesTab({
   const [dynamicFeatures, setDynamicFeatures] = useState<Feature[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // accordion open state (birden çok açık olabilir)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const toggleGroup = (id: string) =>
     setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -139,7 +141,6 @@ export default function FeaturesTab({
 
         setFeaturesStep(initialFeatureState);
 
-        // başlangıçta hiçbir accordion açık olmasın
         setOpenGroups({});
       } catch (error) {
         console.error("Feature'lar yüklenirken hata:", error);
@@ -152,7 +153,6 @@ export default function FeaturesTab({
     if (firstStep.selected.categoryData) {
       fetchFeatures();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstStep, secondStep, thirdStep, setFeaturesStep]);
 
   function getDefaultFeatureValue(
@@ -252,7 +252,6 @@ export default function FeaturesTab({
         </div>
       )}
 
-      {/* Single Select + External Options (senin özel seçenek listelerin varsa burada ayrıca ekleyebilirsin) */}
       {(selectFeatures.length > 0 ||
         heatingOptions.length > 0 ||
         deedStatusOptions.length > 0 ||
@@ -272,7 +271,6 @@ export default function FeaturesTab({
               const selected =
                 (featuresStep.selections[feature._id]?.value as string) || "";
 
-              // kısa listeler direkt select, uzun listeler accordion
               if (!shouldAccordion(feature)) {
                 return (
                   <SimpleSelect
@@ -292,9 +290,7 @@ export default function FeaturesTab({
                 <FeatureAccordion
                   key={feature._id}
                   title={feature.name}
-                  subtitle={
-                    selected ? `Seçili: ${selected}` : `Seçenek: ${opts.length}`
-                  }
+                  subtitle={selected ? `Seçili: ${selected}` : ` `}
                   isOpen={!!openGroups[feature._id]}
                   onToggle={() => toggleGroup(feature._id)}
                 >
@@ -326,7 +322,6 @@ export default function FeaturesTab({
               const selectedArr =
                 (featuresStep.selections[feature._id]?.value as string[]) || [];
 
-              // kısa listeler direkt, uzun listeler accordion
               if (!shouldAccordion(feature)) {
                 return (
                   <DynamicFeatureInput
@@ -347,7 +342,7 @@ export default function FeaturesTab({
                   subtitle={
                     selectedArr.length > 0
                       ? `Seçili: ${selectedArr.length}`
-                      : `Seçenek: ${feature.options?.length || 0}`
+                      : ` `
                   }
                   isOpen={!!openGroups[feature._id]}
                   onToggle={() => toggleGroup(feature._id)}
