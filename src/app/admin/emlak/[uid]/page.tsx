@@ -49,9 +49,6 @@ import api from "@/app/lib/api";
 import AdminLayout from "@/app/components/layout/AdminLayout";
 import { useParams, useRouter } from "next/navigation";
 import EditOtherInfoTab from "@/app/components/tabs/EditOtherInfoTab";
-import EditPropertyTab from "@/app/components/tabs/EditPropertyTab";
-import EditListingTypeTab from "@/app/components/tabs/EditListingTypeTab ";
-import EditCategoryTab from "@/app/components/tabs/EditCategoryTab";
 import EditFeaturesTab from "@/app/components/tabs/EditFeaturesTab";
 import Customer from "@/app/types/customers";
 
@@ -577,24 +574,34 @@ export default function EditE() {
             const customersData: Customer[] =
               response.data.data || response.data;
 
-            if (!customersData || customersData.length === 0) {
-              break;
-            }
+            if (!customersData || customersData.length === 0) break;
 
             allCustomers = [...allCustomers, ...customersData];
             currentPage++;
 
-            if (customersData.length < limit) {
-              break;
-            }
+            if (customersData.length < limit) break;
           }
 
           return allCustomers;
         };
 
-        const [allCustomers] = await Promise.all([fetchAllCustomers()]);
+        const fetchAdvisors = async () => {
+          let currentPage = 1;
+          const limit = 100;
+          const res = await api.get(
+            `/admin/users?page=${currentPage}&limit=${limit}`,
+          );
+          const data = res.data?.data ?? res.data ?? [];
+          return Array.isArray(data) ? data : [];
+        };
+
+        const [allCustomers, allAdvisors] = await Promise.all([
+          fetchAllCustomers(),
+          fetchAdvisors(),
+        ]);
 
         setCustomers(allCustomers);
+        setAdvisors(allAdvisors);
       } catch (error: any) {
         if (error.response?.status === 401) {
           toast.error("Oturum süresi doldu. Lütfen tekrar giriş yapın.");

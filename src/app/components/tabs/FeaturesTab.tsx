@@ -50,7 +50,6 @@ const FeatureAccordion = ({
         onClick={onToggle}
         className="w-full flex items-center justify-between px-4 py-4 text-left active:opacity-90"
       >
-        {/* pt-4 KALDIRILDI */}
         <div className="min-w-0">
           <div className="text-sm font-semibold text-gray-900 leading-6 truncate">
             {title}
@@ -262,7 +261,7 @@ export default function FeaturesTab({
             Seçim Özellikleri
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="columns-1 md:columns-2 gap-4">
             {selectFeatures.map((feature) => {
               const opts =
                 feature.options?.map((opt) => ({ value: opt, label: opt })) ||
@@ -271,39 +270,38 @@ export default function FeaturesTab({
               const selected =
                 (featuresStep.selections[feature._id]?.value as string) || "";
 
-              if (!shouldAccordion(feature)) {
-                return (
-                  <SimpleSelect
-                    key={feature._id}
-                    label={feature.name}
-                    value={selected}
-                    onChange={handleSimpleSelectChange(
-                      feature._id,
-                      "single_select",
-                    )}
-                    options={opts}
-                  />
-                );
-              }
-
+              //  masonry/columns
               return (
-                <FeatureAccordion
-                  key={feature._id}
-                  title={feature.name}
-                  subtitle={selected ? `Seçili: ${selected}` : ` `}
-                  isOpen={!!openGroups[feature._id]}
-                  onToggle={() => toggleGroup(feature._id)}
-                >
-                  <SimpleSelect
-                    label={feature.name}
-                    value={selected}
-                    onChange={handleSimpleSelectChange(
-                      feature._id,
-                      "single_select",
-                    )}
-                    options={opts}
-                  />
-                </FeatureAccordion>
+                <div key={feature._id} className="mb-4 break-inside-avoid">
+                  {!shouldAccordion(feature) ? (
+                    <SimpleSelect
+                      label={feature.name}
+                      value={selected}
+                      onChange={handleSimpleSelectChange(
+                        feature._id,
+                        "single_select",
+                      )}
+                      options={opts}
+                    />
+                  ) : (
+                    <FeatureAccordion
+                      title={feature.name}
+                      subtitle={selected ? `Seçili: ${selected}` : ` `}
+                      isOpen={!!openGroups[feature._id]}
+                      onToggle={() => toggleGroup(feature._id)}
+                    >
+                      <SimpleSelect
+                        label={feature.name}
+                        value={selected}
+                        onChange={handleSimpleSelectChange(
+                          feature._id,
+                          "single_select",
+                        )}
+                        options={opts}
+                      />
+                    </FeatureAccordion>
+                  )}
+                </div>
               );
             })}
           </div>

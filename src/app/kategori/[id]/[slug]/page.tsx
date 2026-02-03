@@ -752,7 +752,7 @@ export default function CategoryDetailPage() {
 
                                 {/* Price */}
                                 <div className="px-4 py-4 text-center border-r border-gray-200 flex items-center justify-center">
-                                  <div className="text-[18px] font-extrabold text-blue-700 whitespace-nowrap">
+                                  <div className="text-[14px] font-extrabold text-blue-700 whitespace-nowrap">
                                     {advert.fee || "-"}
                                   </div>
                                 </div>
@@ -778,7 +778,7 @@ export default function CategoryDetailPage() {
                       </div>
                     </div>
 
-                    {/* ✅ Mobile card (aynı kalsın) */}
+                    {/* ✅ Mobile card  */}
                     {adverts.map((advert: any, index: number) => {
                       const m2Text = getM2Text(advert);
                       const room =

@@ -68,7 +68,7 @@ export default function OtherInfoTab({
     if (!fourthStep.customer) return null;
 
     const selectedCustomer = customers.find(
-      (item: Customer) => item.uid?.toString() === fourthStep.customer
+      (item: Customer) => item.uid?.toString() === fourthStep.customer,
     );
 
     if (!selectedCustomer) return null;
@@ -89,7 +89,7 @@ export default function OtherInfoTab({
           c.phones?.[0]?.number || "Telefon yok"
         }`,
       })),
-    [customers]
+    [customers],
   );
 
   const selectedCustomer = useMemo(() => {
@@ -97,6 +97,16 @@ export default function OtherInfoTab({
       customerOptions.find((opt) => opt.value === fourthStep.customer) || null
     );
   }, [customerOptions, fourthStep.customer]);
+
+  const fallbackAdvisorOption =
+    fourthStep.advisor && advisors.length === 0
+      ? [
+          {
+            value: fourthStep.advisor,
+            label: "Mevcut Danışman (yükleniyor...)",
+          },
+        ]
+      : [];
 
   return (
     <motion.div
@@ -161,7 +171,8 @@ export default function OtherInfoTab({
             onChange={onAdvisorChange}
             options={[
               { value: "", label: "Danışman Seçin" },
-              ...advisors.map((a: Advisor) => ({
+              ...fallbackAdvisorOption,
+              ...advisors.map((a: any) => ({
                 value: a.uid?.toString() || "",
                 label: `${a.name} ${a.surname}`,
               })),
