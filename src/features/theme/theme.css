@@ -1,0 +1,66 @@
+/* src/features/theme/theme.css */
+@layer base {
+  :root {
+    /* Brand HSL (logo renklerinden) */
+    --brand-navy: 240 100% 20%;
+    --brand-blue: 210 97% 37%;
+    --brand-blue2: 217 96% 32%;
+    --brand-red: 0 96% 54%;
+    --brand-light: 219 47% 94%;
+
+    /* App tokens (shadcn tarzı) */
+    --background: 0 0% 100%;
+    --foreground: var(--brand-navy);
+
+    --card: 0 0% 100%;
+    --card-foreground: var(--brand-navy);
+
+    --popover: 0 0% 100%;
+    --popover-foreground: var(--brand-navy);
+
+    --primary: var(--brand-blue);
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: var(--brand-light);
+    --secondary-foreground: var(--brand-navy);
+
+    --accent: var(--brand-red);
+    --accent-foreground: 0 0% 100%;
+
+    --muted: var(--brand-light);
+    --muted-foreground: 217 20% 35%;
+
+    --border: 219 25% 85%;
+    --input: 219 25% 85%;
+    --ring: var(--brand-blue);
+
+    --radius: 16px;
+  }
+
+  .dark {
+    --background: var(--brand-navy);
+    --foreground: 0 0% 100%;
+
+    --card: 240 100% 14%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 240 100% 14%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: var(--brand-blue);
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 50% 18%;
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: var(--brand-red);
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 240 50% 18%;
+    --muted-foreground: 220 10% 75%;
+
+    --border: 240 30% 22%;
+    --input: 240 30% 22%;
+    --ring: var(--brand-blue);
+  }
+}

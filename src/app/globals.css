@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @tailwind utilities;
+@import "../features/theme/theme.css";
 @import 'leaflet/dist/leaflet.css';
 
 /* Scrollbar'ı tamamen gizle ama scroll özelliğini koru */
@@ -41,7 +42,7 @@
 .custom-marker {
   width: 40px;
   height: 40px;
-  background-color: #3b82f6;
+  background-color: white;
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   position: relative;
