@@ -39,7 +39,9 @@ function tryResolveEidsNoFromFeatureValues(data: AdvertData): string {
   // Senin örnekte EIDS No featureId: 69688c3fcd76859b79ca9772
   const EIDS_FEATURE_ID = "69688c3fcd76859b79ca9772";
 
-  const hit = arr.find((x) => String((x as any)?.featureId) === EIDS_FEATURE_ID);
+  const hit = arr.find(
+    (x) => String((x as any)?.featureId) === EIDS_FEATURE_ID,
+  );
   const val = hit ? (hit as any)?.value : null;
   const t = toText(val);
 
@@ -108,46 +110,13 @@ export default function BottomInfoSection({
           <div className="flex items-center gap-4">
             <EidsBadge />
             <div className="text-[12px] text-gray-800 leading-5">
-              Bu gayrimenkul için Ticaret Bakanlığı EİDS sisteminde ilan verme izni bulunmaktadır.
-              <span className="text-gray-500">{" "}(EİDS No: {eidsNo})</span>
+              Bu gayrimenkul için Ticaret Bakanlığı EİDS sisteminde ilan verme
+              izni bulunmaktadır.
+              <span className="text-gray-500"> (EİDS No: {eidsNo})</span>
             </div>
           </div>
         </SectionBox>
       )}
-
-      {/* Güvenlik uyarısı */}
-      <SectionBox title="Emlak alırken/kiralarken bunlara dikkat edin!">
-        <div className="text-[12px] text-gray-800 leading-5">
-          İlanla ilgili kesin karar vermeden önce ön ödeme, avans veya kapora göndermeyin. Mümkünse
-          taşınmazı yerinde görün, sözleşme ve tapu gibi belgeleri kontrol edin. İlanda yer alan bilgi
-          veya görsellerin gerçeği yansıtmadığını düşünüyorsanız ilan sahibinden doğrulama isteyin ve
-          şüpheli durumları bildirin.
-        </div>
-      </SectionBox>
-
-      {/* Sponsorlu bağlantı */}
-      <SectionBox title="Sponsorlu Bağlantı">
-        {sponsoredLinks.length ? (
-          <div className="space-y-3">
-            {sponsoredLinks.map((s) => (
-              <a
-                key={s.href}
-                href={s.href}
-                className="block border border-gray-200 hover:border-gray-300 bg-white p-3"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <div className="text-[12px] font-semibold text-blue-700">{s.title}</div>
-                {s.description ? (
-                  <div className="mt-1 text-[12px] text-gray-600">{s.description}</div>
-                ) : null}
-              </a>
-            ))}
-          </div>
-        ) : (
-          <div className="text-[12px] text-gray-500"> </div>
-        )}
-      </SectionBox>
     </section>
   );
 }

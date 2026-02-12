@@ -75,9 +75,15 @@ export default function AdvisorSection({
   const [copied, setCopied] = useState(false);
 
   const advisorName = useMemo(() => getAdvisorName(data), [data]);
-  const phoneDigits = useMemo(() => getAdvisorPhone(data, fallbackPhone), [data, fallbackPhone]);
+  const phoneDigits = useMemo(
+    () => getAdvisorPhone(data, fallbackPhone),
+    [data, fallbackPhone],
+  );
 
-  const formattedPhone = useMemo(() => formatPhoneNumber(phoneDigits), [phoneDigits]);
+  const formattedPhone = useMemo(
+    () => formatPhoneNumber(phoneDigits),
+    [phoneDigits],
+  );
 
   const waText = useMemo(() => {
     if (buildWhatsAppText) return buildWhatsAppText(data);
@@ -114,15 +120,18 @@ export default function AdvisorSection({
       <div className="hidden lg:block">
         <div className="border border-gray-300 bg-white">
           <div className="p-3 border-b border-gray-300">
-            <div className="text-[12px] font-semibold text-gray-900">{advisorName}</div>
-            <div className="text-[11px] text-gray-500 mt-1">Hesap açma tarihi: Şubat 2022</div>
+            <div className="text-[12px] font-semibold text-gray-900">
+              {advisorName}
+            </div>
           </div>
 
           <div className="p-3">
             <div className="text-[11px] text-gray-500">Cep</div>
 
             <div className="mt-1 flex items-center justify-between gap-2">
-              <div className="text-[12px] font-bold text-gray-900 whitespace-nowrap">{formattedPhone}</div>
+              <div className="text-[12px] font-bold text-gray-900 whitespace-nowrap">
+                {formattedPhone}
+              </div>
 
               <button
                 type="button"
@@ -175,8 +184,12 @@ export default function AdvisorSection({
 
         {showSafetyTips && (
           <div className="mt-3 border border-gray-300 bg-white p-3">
-            <div className="text-[12px] font-bold text-blue-700">{safetyTitle}</div>
-            <div className="mt-2 text-[11px] text-gray-700 leading-4">{safetyBody}</div>
+            <div className="text-[12px] font-bold text-blue-700">
+              {safetyTitle}
+            </div>
+            <div className="mt-2 text-[11px] text-gray-700 leading-4">
+              {safetyBody}
+            </div>
 
             <button
               type="button"
@@ -212,13 +225,19 @@ export default function AdvisorSection({
 
           <div className="space-y-3">
             <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl">
-              <span className="font-mono text-sm text-gray-900 tracking-wide">{formattedPhone}</span>
+              <span className="font-mono text-sm text-gray-900 tracking-wide">
+                {formattedPhone}
+              </span>
               <button
                 type="button"
                 onClick={copyNumber}
                 className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-xs"
               >
-                {copied ? <Check className="text-green-500" size={16} /> : <Copy className="text-gray-600" size={16} />}
+                {copied ? (
+                  <Check className="text-green-500" size={16} />
+                ) : (
+                  <Copy className="text-gray-600" size={16} />
+                )}
                 {copied ? "Kopyalandı" : "Kopyala"}
               </button>
             </div>
@@ -244,8 +263,12 @@ export default function AdvisorSection({
 
           {showSafetyTips && (
             <div className="mt-6 pt-4 border-t border-gray-200">
-              <div className="text-xs font-semibold text-blue-700">{safetyTitle}</div>
-              <div className="mt-2 text-xs text-gray-600 leading-5">{safetyBody}</div>
+              <div className="text-xs font-semibold text-blue-700">
+                {safetyTitle}
+              </div>
+              <div className="mt-2 text-xs text-gray-600 leading-5">
+                {safetyBody}
+              </div>
               <button
                 type="button"
                 onClick={onSafetyLinkClick}

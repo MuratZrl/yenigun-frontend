@@ -19,8 +19,12 @@ import SortModal from "./components/SortModal.client";
 import { turkeyCities } from "../model/turkeyCities";
 import { useAdsController } from "../hooks/useAdsController";
 
-import { AdsTableHeader, AdsRowDesktop, AdsRowMobile, AdsGridCard } from "./components/AdsRow.client";
-import AdsListBottomCta from "./components/AdsListBottomCta.client";
+import {
+  AdsTableHeader,
+  AdsRowDesktop,
+  AdsRowMobile,
+  AdsGridCard,
+} from "./components/AdsRow.client";
 import AdsMap from "./components/map/AdsMap.client";
 
 function formatLastUpdated(ts: number) {
@@ -150,7 +154,10 @@ export default function AdsPageClient({
                         : `"Türkiye"`}
                     </span>{" "}
                     aramanız için{" "}
-                    <span className="font-semibold">{c.totalItems.toLocaleString("tr-TR")}</span> ilan arasından{" "}
+                    <span className="font-semibold">
+                      {c.totalItems.toLocaleString("tr-TR")}
+                    </span>{" "}
+                    ilan arasından{" "}
                     <span className="font-semibold">
                       {Math.min(c.data.length, 1000).toLocaleString("tr-TR")}
                     </span>{" "}
@@ -164,14 +171,6 @@ export default function AdsPageClient({
                       className="text-[13px] text-blue-700 hover:underline"
                     >
                       Liste Görünümü
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => console.log("Aramayı Kaydet")}
-                      className="text-[13px] text-blue-700 hover:underline"
-                    >
-                      Aramayı Kaydet
                     </button>
                   </div>
                 </div>
@@ -189,7 +188,9 @@ export default function AdsPageClient({
             currentPage={c.currentPage}
             featureFilters={c.featureFilters}
             onClose={() => c.setIsSortMenuOpen(false)}
-            onApply={(next) => void c.handleSortChangeDesktop(next.sortBy, next.sortOrder)}
+            onApply={(next) =>
+              void c.handleSortChangeDesktop(next.sortBy, next.sortOrder)
+            }
           />
         </div>
       </>
@@ -249,15 +250,22 @@ export default function AdsPageClient({
                 sortValue={`${c.filters.sortBy}_${c.filters.sortOrder}`}
                 onSortChange={(v) => {
                   const [sb, so] = v.split("_");
-                  void c.handleSortChangeDesktop(sb as "date" | "price", so as "asc" | "desc");
+                  void c.handleSortChangeDesktop(
+                    sb as "date" | "price",
+                    so as "asc" | "desc",
+                  );
                 }}
               />
 
               {c.data.length === 0 ? (
                 <div className="py-16 text-center">
                   <Search size={56} className="mx-auto text-gray-300 mb-3" />
-                  <p className="text-lg font-semibold text-gray-900">İlan bulunamadı</p>
-                  <p className="text-gray-600">Filtrelerinizi değiştirerek tekrar deneyin</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    İlan bulunamadı
+                  </p>
+                  <p className="text-gray-600">
+                    Filtrelerinizi değiştirerek tekrar deneyin
+                  </p>
                 </div>
               ) : viewMode === "list" ? (
                 <div className="divide-y divide-gray-200">
@@ -265,27 +273,39 @@ export default function AdsPageClient({
 
                   {c.data.map((ad: Advert, index: number) => (
                     <div key={(ad as any)?.uid || index}>
-                      <AdsRowDesktop ad={ad} fallbackKey={index} rowIndex={index} />
-                      <AdsRowMobile ad={ad} fallbackKey={index} rowIndex={index} />
+                      <AdsRowDesktop
+                        ad={ad}
+                        fallbackKey={index}
+                        rowIndex={index}
+                      />
+                      <AdsRowMobile
+                        ad={ad}
+                        fallbackKey={index}
+                        rowIndex={index}
+                      />
                     </div>
                   ))}
                 </div>
               ) : (
-              <div className="grid grid-cols-2 divide-x divide-y divide-gray-200 border border-gray-200 bg-white">
-                {c.data.map((ad, i) => (
-                  <AdsGridCard key={(ad as any)?.uid || i} ad={ad} fallbackKey={i} />
-                ))}
-              </div>
+                <div className="grid grid-cols-2 divide-x divide-y divide-gray-200 border border-gray-200 bg-white">
+                  {c.data.map((ad, i) => (
+                    <AdsGridCard
+                      key={(ad as any)?.uid || i}
+                      ad={ad}
+                      fallbackKey={i}
+                    />
+                  ))}
+                </div>
               )}
-
-              <AdsListBottomCta />
             </div>
 
             <div className="mt-4 border border-gray-200 rounded-sm bg-white">
               <div className="px-4 py-6">
                 <div className="text-center text-[13px] text-gray-700">
-                  Toplam <span className="font-medium">{totalPagesLabel}</span> sayfa içerisinde{" "}
-                  <span className="font-medium">{currentPageLabel}</span>. sayfayı görmektesiniz.
+                  Toplam <span className="font-medium">{totalPagesLabel}</span>{" "}
+                  sayfa içerisinde{" "}
+                  <span className="font-medium">{currentPageLabel}</span>.
+                  sayfayı görmektesiniz.
                 </div>
 
                 <div className="mt-3 flex justify-center">
@@ -327,25 +347,6 @@ export default function AdsPageClient({
               </div>
             </div>
 
-            <div className="mt-4 border border-gray-200 rounded-sm bg-white">
-              <div className="px-6 py-5 flex items-center justify-between gap-6">
-                <div className="min-w-0">
-                  <div className="text-[15px] font-semibold text-gray-900">Favori Aramalarım</div>
-                  <div className="mt-1 text-[13px] text-gray-600">
-                    Emlak listesine yeni bir ilan eklendiğinde size anında haber vermemizi ister misiniz?
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => console.log("Aramayı Kaydet")}
-                  className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-7 py-2.5 rounded-sm text-[13px] font-semibold shadow-sm"
-                >
-                  Aramayı Kaydet
-                </button>
-              </div>
-            </div>
-
             <div className="mt-6 text-center text-[13px] text-gray-700">
               Bu sayfa en son{" "}
               <span className="text-red-600 font-semibold">
@@ -362,7 +363,9 @@ export default function AdsPageClient({
           currentPage={c.currentPage}
           featureFilters={c.featureFilters}
           onClose={() => c.setIsSortMenuOpen(false)}
-          onApply={(next) => void c.handleSortChangeDesktop(next.sortBy, next.sortOrder)}
+          onApply={(next) =>
+            void c.handleSortChangeDesktop(next.sortBy, next.sortOrder)
+          }
         />
       </div>
     </>

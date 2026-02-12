@@ -166,7 +166,7 @@ const Navbar: React.FC = () => {
                       className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-white/10"
                     >
                       <User className="w-4 h-4" />
-                      Hesabım
+                      Yönetim Paneli
                     </Link>
                     <div className="border-t border-white/10" />
                     <button

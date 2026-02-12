@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { ShieldCheck, MessageSquareText } from "lucide-react";
+import { PhoneCall, MessageSquareText } from "lucide-react";
 
 import type { AdvertData } from "@/types/advert";
 import formatPhoneNumber from "@/utils/formatPhoneNumber";
@@ -64,9 +64,8 @@ export default function RightSidebarSection({ data, className }: Props) {
         {/* Danışman Kartı */}
         <div className="border border-gray-300 bg-white">
           <div className="p-3">
-            <div className="text-[14px] font-semibold text-gray-900">{advisorName}</div>
-            <div className="mt-1 text-[12px] text-gray-500">
-              Hesap açma tarihi: {accountCreatedText}
+            <div className="text-[14px] font-semibold text-gray-900">
+              {advisorName}
             </div>
 
             <div className="mt-3 border border-gray-200 bg-white">
@@ -77,7 +76,17 @@ export default function RightSidebarSection({ data, className }: Props) {
                 </div>
               </div>
             </div>
-
+            <button
+              type="button"
+              className="mt-3 w-full h-9 border border-gray-300 bg-white text-[13px] font-medium text-blue-700 hover:bg-gray-50 inline-flex items-center justify-center gap-2"
+              onClick={() => {
+                // Şimdilik UI butonu; gerçek mesajlaşma varsa burada route/modal açarsın.
+                console.log("Mesaj gönder");
+              }}
+            >
+              <PhoneCall size={16} />
+              Telefonla Ara
+            </button>
             <button
               type="button"
               className="mt-3 w-full h-9 border border-gray-300 bg-white text-[13px] font-medium text-blue-700 hover:bg-gray-50 inline-flex items-center justify-center gap-2"
@@ -91,7 +100,6 @@ export default function RightSidebarSection({ data, className }: Props) {
             </button>
           </div>
         </div>
-
       </div>
     </aside>
   );
