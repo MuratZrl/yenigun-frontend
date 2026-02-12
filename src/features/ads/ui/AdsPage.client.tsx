@@ -62,22 +62,19 @@ export default function AdsPageClient({
 
   // ✅ Kategoriye tıklar tıklamaz filtre uygula (Ara butonu gereksiz)
   React.useEffect(() => {
-    const cat = c.selectedCategory as any;
-    const key = cat ? String(cat.uid ?? cat._id ?? cat.id ?? cat.slug ?? cat.name ?? "") : "";
+    const typeKey = (c.filters as any)?.type ?? "";
 
-    // İlk render’da controller zaten initial fetch yapıyor, tekrar tetiklemeyelim.
     if (!didMountRef.current) {
       didMountRef.current = true;
-      lastCatKeyRef.current = key || null;
+      lastCatKeyRef.current = typeKey || null;
       return;
     }
 
-    // Aynı kategori tekrar set edildiyse boşuna fetch yapma
-    if ((key || null) === lastCatKeyRef.current) return;
-    lastCatKeyRef.current = key || null;
+    if ((typeKey || null) === lastCatKeyRef.current) return;
+    lastCatKeyRef.current = typeKey || null;
 
     void c.handleFilter();
-  }, [c.selectedCategory, c.handleFilter]);
+  }, [(c.filters as any)?.type, c.handleFilter]);
 
   const totalPagesLabel = (c.totalPages || 1).toLocaleString("tr-TR");
   const currentPageLabel = (c.currentPage || 1).toLocaleString("tr-TR");

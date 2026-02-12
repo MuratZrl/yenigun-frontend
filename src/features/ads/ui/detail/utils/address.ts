@@ -66,11 +66,22 @@ function toNumber(v: unknown): number | null {
 }
 
 /**
- * Harita bileşeni için lat/lng’i güvenli şekilde sayıya çevirir.
+ * Harita bileşeni için lat/lng'i güvenli şekilde sayıya çevirir.
  * Parse edilemiyorsa 0 döndürür ki component patlamasın.
  */
 export function getLatLng(address?: AddressLike | null): { lat: number; lng: number } {
   const lat = toNumber(address?.mapCoordinates?.lat) ?? 0;
   const lng = toNumber(address?.mapCoordinates?.lng) ?? 0;
   return { lat, lng };
+}
+
+/**
+ * Formats location as "Province / District / Quarter"
+ */
+export function formatLocationText(data: any): string {
+  const p = String(data?.address?.province ?? "").trim();
+  const d = String(data?.address?.district ?? "").trim();
+  const q = String(data?.address?.quarter ?? "").trim();
+  const parts = [p, d, q].filter(Boolean);
+  return parts.join(" / ");
 }

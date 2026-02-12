@@ -1,4 +1,6 @@
+// src/components/tabs/LocationTab.tsx
 "use client";
+
 import React from "react";
 import { motion } from "framer-motion";
 import { MapPin, Hash } from "lucide-react";

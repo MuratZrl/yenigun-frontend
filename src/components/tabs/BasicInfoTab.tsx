@@ -1,4 +1,6 @@
+// src/components/tabs/BasicInfoTab.tsx
 "use client";
+
 import React from "react";
 import { motion } from "framer-motion";
 import { FileText, DollarSign } from "lucide-react";

@@ -196,7 +196,7 @@ export default function FeaturesTab({
             name,
             type: mapBackendTypeToUiType(a?.type),
             options: safeArr<string>(a?.options),
-            required: Boolean(a?.required),
+            required: false,
             order: typeof a?.order === "number" ? a.order : undefined,
           } as any;
         })

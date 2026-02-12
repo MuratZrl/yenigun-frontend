@@ -230,11 +230,11 @@ export function useEmlakCreateController() {
 
         setTimeout(() => router.push("/admin/emlak"), 2000);
       } catch (err: any) {
-        if (err?.response?.status === 404) {
-          toast.error("Müşteri bulunamadı. Lütfen geçerli bir müşteri seçin.");
-          return;
-        }
-        toast.error(err?.response?.data?.message || "Bir hata oluştu. Lütfen girdiğiniz bilgileri kontrol edin.");
+        const msg = err?.response?.data?.message || err?.message || "Bilinmeyen hata";
+        const status = err?.response?.status;
+        console.error("CREATE ADVERT ERROR:", status, err?.response?.data);
+        toast.error(`Hata (${status || "?"}): ${msg}`);
+        
       } finally {
         setIsSubmitting(false);
       }

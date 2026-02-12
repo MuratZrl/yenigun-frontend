@@ -1,4 +1,6 @@
-"use client";
+// src/components/tabs/MediaTab.tsx
+"use client"; 
+
 import React, { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {

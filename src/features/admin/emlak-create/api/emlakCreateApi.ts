@@ -8,7 +8,7 @@ import type { Advisor } from "@/types/advert";
 type IdLike = string | number;
 
 const ENDPOINTS = {
-  categoriesList: "/admin/categories",
+  categoriesList: "/admin/categories/tree",
   customers: "/admin/customers",
   advisors: "/admin/users",
   createAdvert: "/admin/create-advert",
@@ -105,7 +105,10 @@ function getErrorMessage(e: any, fallback: string) {
 export async function fetchCategories(signal?: AbortSignal): Promise<Category[]> {
   try {
     const res = await api.get(ENDPOINTS.categoriesList, { signal } as any);
-    return extractArray<Category>(res);
+    const raw = unwrapAxios(res);
+    // /admin/categories/tree returns { data: { tree: [...] } }
+    const arr = raw?.data?.tree || raw?.tree || extractArray(res);
+    return Array.isArray(arr) ? arr : [];
   } catch (e: any) {
     throw new Error(getErrorMessage(e, "Kategoriler yüklenemedi."));
   }
@@ -175,11 +178,7 @@ export async function fetchAllAdvisors(signal?: AbortSignal): Promise<Advisor[]>
  * requestData'nın şekli backend'e bağlı; burada bilinçli olarak generic bırakıyoruz.
  */
 export async function createAdvert<TResponse = any>(requestData: Record<string, any>, signal?: AbortSignal) {
-  try {
-    return await api.post<TResponse>(ENDPOINTS.createAdvert, requestData, { signal } as any);
-  } catch (e: any) {
-    throw new Error(getErrorMessage(e, "İlan oluşturma başarısız."));
-  }
+  return await api.post<TResponse>(ENDPOINTS.createAdvert, requestData, { signal } as any);
 }
 
 function buildFormData(pairs: Array<[string, string | Blob]>) {

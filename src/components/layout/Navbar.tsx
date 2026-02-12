@@ -66,10 +66,10 @@ const Navbar: React.FC = () => {
     e.preventDefault();
     const query = q.trim();
     if (!query) {
-      router.push("/ads");
+      router.push("/ilanlar");
       return;
     }
-    router.push(`/ads?q=${encodeURIComponent(query)}`);
+    router.push(`/ilanlar?q=${encodeURIComponent(query)}`);
   };
 
   const handleLogout = () => {
@@ -86,9 +86,11 @@ const Navbar: React.FC = () => {
     return `${a}${b}`.toUpperCase();
   })();
 
+  const navLinkClass =
+    "hidden md:inline text-sm text-white/80 hover:text-white transition-colors";
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#2f3b4a] text-white">
-      {/* Layout ile aynı container: max-w-6xl + px-4 */}
       <div className="mx-auto max-w-6xl px-4">
         <div className="h-14 flex items-center gap-3">
           {/* Sol: Logo */}
@@ -103,14 +105,13 @@ const Navbar: React.FC = () => {
             />
           </Link>
 
-          {/* Orta: Search */}
-          <div className="flex-1 flex items-center gap-3">
+          {/* Orta: Search + Nav Links */}
+          <div className="flex-1 flex items-center gap-4">
             <form onSubmit={handleSubmitSearch} className="w-full max-w-sm">
               <div className="relative">
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
                   <Search className="w-4 h-4" />
                 </span>
-
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
@@ -120,11 +121,14 @@ const Navbar: React.FC = () => {
               </div>
             </form>
 
-            <Link
-              href="/search"
-              className="hidden md:inline text-sm text-white/90 hover:text-white hover:underline hover:underline-offset-4"
-            >
-              Detaylı Arama
+            <Link href="/ilanlar" className={navLinkClass}>
+              İlanlar
+            </Link>
+            <Link href="/about" className={navLinkClass}>
+              Hakkımızda
+            </Link>
+            <Link href="/contact" className={navLinkClass}>
+              İletişim
             </Link>
           </div>
 
@@ -159,10 +163,12 @@ const Navbar: React.FC = () => {
                     <Link
                       href="/admin/emlak"
                       onClick={() => setOpenUserMenu(false)}
-                      className="block px-4 py-3 text-sm hover:bg-white/10"
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-white/10"
                     >
+                      <User className="w-4 h-4" />
                       Hesabım
                     </Link>
+                    <div className="border-t border-white/10" />
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-3 text-sm text-red-300 hover:bg-white/10 flex items-center gap-2"

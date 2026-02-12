@@ -92,27 +92,6 @@ export default function RightSidebarSection({ data, className }: Props) {
           </div>
         </div>
 
-        {/* Güvenlik İpuçları */}
-        <div className="border border-gray-300 bg-white">
-          <div className="p-3">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="text-blue-600" size={18} />
-              <div className="text-[13px] font-semibold text-gray-900">Güvenlik ipuçları</div>
-            </div>
-
-            <div className="mt-2 text-[12px] text-gray-700 leading-4">
-              Satın alacağınız gayrimenkulü görmeden kapora ödemeyin, para göndermeyin.
-            </div>
-
-            <button
-              type="button"
-              className="mt-2 text-[12px] text-blue-700 hover:underline"
-              onClick={() => console.log("Güvenlik detay")}
-            >
-              Detaylı bilgi için tıklayın.
-            </button>
-          </div>
-        </div>
       </div>
     </aside>
   );

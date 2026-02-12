@@ -379,7 +379,7 @@ export default function FilterAdminAds({
     try {
       setLoadingCategories(true);
       // projede başka yerde /admin/categories kullanmışsın; burada da onu tercih etmek daha tutarlı
-      const res = await api.get("/admin/categories");
+      const res = await api.get("/admin/categories/tree");
       const items = unwrapArray<CategoryNode>(res);
       setCategories(items);
     } catch (e) {

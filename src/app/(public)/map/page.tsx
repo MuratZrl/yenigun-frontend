@@ -1,9 +1,8 @@
+// src/app/(public)/map/page.tsx
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import "../globals.css";
-
 
 const HaritaClient = dynamic(() => import("@/components/HaritaClient"), {
   ssr: false,

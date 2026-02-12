@@ -17,6 +17,7 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "api.yenigunemlak.com", pathname: "/public/**" },
+      { protocol: "https", hostname: "storage.googleapis.com" },
     ],
   },
 };

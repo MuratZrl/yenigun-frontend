@@ -26,9 +26,9 @@ import CreditEligibleBox from "./CreditBoxEligble.client";
 import DeedStatusBox from "./DeedStatusBox.client";
 import FromWhoBox from "./FromWhoBox.client";
 import SwapBox from "./SwapBox.client";
-import ListingDateBox from "./ListingDateBox.client";
-import MediaFilterBox from "./MediaFilterBox.client";
-import MapFilterBox from "./MapFilterBox.client";
+// import ListingDateBox from "./ListingDateBox.client";
+// import MediaFilterBox from "./MediaFilterBox.client";
+// import MapFilterBox from "./MapFilterBox.client";
 import KeywordFilterBox from "./KeywordFilterBox.client";
 import MoreOptionsModal from "./MoreOptionsModal.client";
 import FilterActions from "./FilterActions.client";
@@ -198,7 +198,7 @@ export default function DesktopFiltersPanel({
           <SwapBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.swap} />
         </div>
 
-        <div className="mt-3">
+        {/* <div className="mt-3">
           <ListingDateBox filters={filters} setFilters={setFilters} />
         </div>
 
@@ -208,7 +208,7 @@ export default function DesktopFiltersPanel({
 
         <div className="mt-3">
           <MapFilterBox filters={filters} setFilters={setFilters} />
-        </div>
+        </div> */}
 
         <div className="mt-3">
           <KeywordFilterBox filters={filters} setFilters={setFilters} />

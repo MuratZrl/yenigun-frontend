@@ -202,8 +202,8 @@ export default function AddressBox({
               disabled={loading || !districtObj}
             >
               <option value="Hepsi">Semt / Mahalle</option>
-              {quarters.map((q) => (
-                <option key={q} value={q}>
+                {[...new Set(quarters)].map((q) => (
+                  <option key={q} value={q}>
                   {q}
                 </option>
               ))}

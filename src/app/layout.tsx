@@ -1,13 +1,8 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-
 import ClientProviders from "@/providers/ClientProviders";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import GoToTop from "@/components/GoToTop";
-import BreadcrumbBar from "@/components/layout/Breadcrumb.client";
-
+import LayoutShell from "@/components/layout/LayoutShell.client";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -36,21 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${poppins.variable} font-sans`}>
         <ClientProviders>
-          {/* Navbar fixed ise mutlaka aşağıya offset ver */}
-          <Navbar />
-
-          {/* Navbar h-14 (56px) olduğu için içerik blokunu 56px aşağı itiyoruz */}
-          <div className="pt-14">
-            {/* Breadcrumb navbarın altında sticky kalsın */}
-            <BreadcrumbBar className="sticky top-14 z-40" />
-
-            <main className="mx-auto max-w-6xl px-4 pt-4 pb-4 bg-white min-h-screen">
-              {children}
-            </main>
-
-            <Footer />
-            <GoToTop />
-          </div>
+          <LayoutShell>{children}</LayoutShell>
         </ClientProviders>
       </body>
     </html>

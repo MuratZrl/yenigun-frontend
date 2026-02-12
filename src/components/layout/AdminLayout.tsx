@@ -1,3 +1,4 @@
+// src/components/layout/AdminLayout.tsx
 import React, { useState, useEffect } from "react";
 import AdminSidebar from "./AdminSidebar";
 import { useCookies } from "react-cookie";
@@ -14,7 +15,6 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         setSidebarOpen(false);
       }
     };
-
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -23,12 +23,11 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex h-screen bg-gray-50">
       <AdminSidebar
-        cookie={cookies}
+        cookie={cookies.token}
         isMobile={isMobile}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
-
       <div className="flex-1 flex flex-col overflow-hidden">
         {isMobile && (
           <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b">
@@ -63,7 +62,6 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="w-6"></div>
           </div>
         )}
-
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
           {children}
         </main>

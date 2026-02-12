@@ -1,16 +1,14 @@
 // src/components/tabs/EditFeaturesTab.tsx
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
-import api from "@/lib/api";
 import type { StepState } from "@/types/property";
 import type {
   FeatureValues,
   Category,
-  Subcategory,
   Feature,
 } from "@/types/category";
 
@@ -40,66 +38,128 @@ interface EditFeaturesTabProps {
   zoningStatusOptions: any[];
 
   featureValues: FeatureValues;
-    setFeatureValues: React.Dispatch<React.SetStateAction<FeatureValues>>;
+  setFeatureValues: React.Dispatch<React.SetStateAction<FeatureValues>>;
 
   categories: Category[];
   categoryId: string;
   subcategoryId: string;
 }
 
-type ApiAny = any;
+/* ------------------------------------------------------------------ */
+/*  helpers                                                           */
+/* ------------------------------------------------------------------ */
 
-function unwrapArray<T>(res: ApiAny): T[] {
-  const root = res?.data ?? res;
-
-  const maybe =
-    root?.data?.data ??
-    root?.data ??
-    root?.items ??
-    root?.categories ??
-    root;
-
-  return Array.isArray(maybe) ? (maybe as T[]) : [];
+function safeArr<T>(v: any): T[] {
+  return Array.isArray(v) ? v : [];
 }
 
-function unwrapFeatures(res: ApiAny): Feature[] {
-  const root = res?.data ?? res;
+/** Read .value from a SelectionItem or plain string */
+function selVal(x: any): string {
+  if (!x) return "";
+  if (typeof x === "string") return x;
+  if (typeof x === "object" && "value" in x) return String(x.value ?? "");
+  return String(x);
+}
 
-  const direct =
-    root?.data?.data?.features ??
-    root?.data?.features ??
-    root?.features ??
-    null;
+function slugifyTR(input: string) {
+  return String(input || "")
+    .toLowerCase()
+    .trim()
+    .replace(/ç/g, "c")
+    .replace(/ğ/g, "g")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ş/g, "s")
+    .replace(/ü/g, "u")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
-  if (Array.isArray(direct)) return direct as Feature[];
+/** Backend type → UI type */
+function mapType(t: any): string {
+  const up = String(t || "").toUpperCase();
+  if (up === "TEXT") return "text";
+  if (up === "NUMBER") return "number";
+  if (up === "SELECT") return "single_select";
+  if (up === "MULTI_SELECT" || up === "MULTISELECT") return "multi_select";
+  if (up === "BOOLEAN" || up === "BOOL") return "boolean";
+  return "text";
+}
 
-  // Bazı backendler subcategory objesi döndürür: [{..., features:[...] }]
-  const arr = unwrapArray<any>(res);
-  const maybe = arr?.[0]?.features;
-  return Array.isArray(maybe) ? (maybe as Feature[]) : [];
+function findNodeInTree(nodes: any[], id: string | number | undefined): any | null {
+  if (!id && id !== 0) return null;
+  const strId = String(id);
+
+  for (const node of nodes) {
+    const nodeUid = String(node?.uid ?? "");
+    const nodeId = String(node?._id ?? "");
+
+    if (nodeUid === strId || nodeId === strId) return node;
+
+    const kids = safeArr<any>(node?.children ?? node?.subcategories);
+    if (kids.length) {
+      const found = findNodeInTree(kids, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function collectChainToNode(
+  nodes: any[],
+  targetId: string | number | undefined,
+  chain: any[] = []
+): any[] | null {
+  if (!targetId && targetId !== 0) return null;
+  const strId = String(targetId);
+
+  for (const node of nodes) {
+    const nodeUid = String(node?.uid ?? "");
+    const nodeId = String(node?._id ?? "");
+
+    if (nodeUid === strId || nodeId === strId) {
+      return [...chain, node];
+    }
+
+    const kids = safeArr<any>(node?.children ?? node?.subcategories);
+    if (kids.length) {
+      const result = collectChainToNode(kids, targetId, [...chain, node]);
+      if (result) return result;
+    }
+  }
+  return null;
 }
 
 function normalizeOptions(options: any[]) {
   return (options ?? []).map((opt) => {
     if (opt && typeof opt === "object") {
-      return { value: opt.value ?? opt.label ?? String(opt), label: opt.label ?? opt.value ?? String(opt) };
+      return {
+        value: opt.value ?? opt.label ?? String(opt),
+        label: opt.label ?? opt.value ?? String(opt),
+      };
     }
     return { value: String(opt), label: String(opt) };
   });
 }
 
-const FeatureToggle = React.memo(
-  ({
-    label,
-    value,
-    onChange,
-    className = "",
-  }: {
-    label: string;
-    value: "Evet" | "Hayır";
-    onChange: (v: "Evet" | "Hayır") => void;
-    className?: string;
-  }) => (
+/* ------------------------------------------------------------------ */
+/*  sub-components (no React.memo — must re-render on parent change)  */
+/* ------------------------------------------------------------------ */
+
+function FeatureToggle({
+  label,
+  value,
+  onChange,
+  className = "",
+}: {
+  label: string;
+  value: "Evet" | "Hayır";
+  onChange: (v: "Evet" | "Hayır") => void;
+  className?: string;
+}) {
+  return (
     <div
       className={`flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:border-blue-400 transition-colors duration-200 ${className}`}
     >
@@ -118,168 +178,164 @@ const FeatureToggle = React.memo(
         />
       </button>
     </div>
-  )
-);
-FeatureToggle.displayName = "FeatureToggle";
+  );
+}
 
-const SimpleSelect = React.memo(
-  ({
-    label,
-    value,
-    onChange,
-    options,
-    className = "",
-  }: {
-    label: string;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-    options: { value: string; label: string }[];
-    className?: string;
-  }) => {
-    return (
-      <div className={`relative ${className}`}>
-        <select
-          value={value || ""}
-          onChange={onChange}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-black appearance-none transition-colors outline-none cursor-pointer"
-        >
-          <option value="">Seçiniz</option>
-          {options.map((option) => (
-            <option key={option.value} value={option.value} className="text-black">
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <label className="absolute -top-2 left-3 bg-white px-2 text-xs text-gray-700 font-semibold pointer-events-none">
-          {label}
-        </label>
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-          <ChevronDown size={16} className="text-gray-600" />
-        </div>
+function SimpleSelect({
+  label,
+  value,
+  onChange,
+  options,
+  className = "",
+}: {
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: { value: string; label: string }[];
+  className?: string;
+}) {
+  return (
+    <div className={`relative ${className}`}>
+      <select
+        value={value || ""}
+        onChange={onChange}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-black appearance-none transition-colors outline-none cursor-pointer"
+      >
+        <option value="">Seçiniz</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value} className="text-black">
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <label className="absolute -top-2 left-3 bg-white px-2 text-xs text-gray-700 font-semibold pointer-events-none">
+        {label}
+      </label>
+      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+        <ChevronDown size={16} className="text-gray-600" />
       </div>
-    );
-  }
-);
-SimpleSelect.displayName = "SimpleSelect";
+    </div>
+  );
+}
 
-const DynamicFeatureInput = React.memo(
-  ({
-    feature,
-    value,
-    onChange,
-  }: {
-    feature: Feature & {
-      placeholder?: string;
-      min?: number;
-      max?: number;
-      required?: boolean;
-      description?: string;
-      options?: string[];
-    };
-    value: any;
-    onChange: (v: any) => void;
-  }) => {
-    const type = (feature as any)?.type;
+function DynamicFeatureInput({
+  feature,
+  value,
+  onChange,
+}: {
+  feature: any;
+  value: any;
+  onChange: (v: any) => void;
+}) {
+  const type = feature?.type;
 
-    const renderInput = () => {
-      switch (type) {
-        case "boolean":
-          return (
-            <FeatureToggle
-              label={feature.name}
-              value={value === true || value === "Evet" ? "Evet" : "Hayır"}
-              onChange={(toggleValue) => onChange(toggleValue === "Evet")}
-            />
-          );
+  const renderInput = () => {
+    switch (type) {
+      case "boolean":
+        return (
+          <FeatureToggle
+            label={feature.name}
+            value={value === true || value === "Evet" ? "Evet" : "Hayır"}
+            onChange={(toggleValue) => onChange(toggleValue === "Evet")}
+          />
+        );
 
-        case "text":
-          return (
-            <input
-              type="text"
-              value={value || ""}
-              onChange={(e) => onChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={(feature as any).placeholder || ""}
-            />
-          );
+      case "text":
+        return (
+          <input
+            type="text"
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder={feature.placeholder || ""}
+          />
+        );
 
-        case "number":
-          return (
-            <input
-              type="number"
-              value={typeof value === "number" ? value : value || 0}
-              onChange={(e) => onChange(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={(feature as any).placeholder || ""}
-              min={(feature as any).min}
-              max={(feature as any).max}
-            />
-          );
+      case "number":
+        return (
+          <input
+            type="number"
+            value={typeof value === "number" ? value : value || 0}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder={feature.placeholder || ""}
+            min={feature.min}
+            max={feature.max}
+          />
+        );
 
-        case "select":
-        case "single_select":
-          return (
-            <select
-              value={value || ""}
-              onChange={(e) => onChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-            >
-              <option value="">Seçiniz</option>
-              {(feature.options ?? []).map((option: string) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          );
+      case "select":
+      case "single_select":
+        return (
+          <select
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+          >
+            <option value="">Seçiniz</option>
+            {(feature.options ?? []).map((option: string) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        );
 
-        case "multi_select":
-          return (
-            <select
-              multiple
-              value={Array.isArray(value) ? value : []}
-              onChange={(e) => {
-                const selectedOptions = Array.from(e.target.selectedOptions, (o) => o.value);
-                onChange(selectedOptions);
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-32 bg-white"
-            >
-              {(feature.options ?? []).map((option: string) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          );
+      case "multi_select":
+        return (
+          <div className="space-y-2">
+            {(feature.options ?? []).map((option: string) => {
+              const selected = Array.isArray(value) ? value : [];
+              const isChecked = selected.includes(option);
+              return (
+                <label key={option} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      const next = isChecked
+                        ? selected.filter((v: string) => v !== option)
+                        : [...selected, option];
+                      onChange(next);
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm text-gray-700">{option}</span>
+                </label>
+              );
+            })}
+          </div>
+        );
 
-        default:
-          return (
-            <input
-              type="text"
-              value={value || ""}
-              onChange={(e) => onChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={(feature as any).placeholder || ""}
-            />
-          );
-      }
-    };
+      default:
+        return (
+          <input
+            type="text"
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder={feature.placeholder || ""}
+          />
+        );
+    }
+  };
 
-    return (
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          {feature.name}
-          {(feature as any).required && <span className="text-red-500 ml-1">*</span>}
-        </label>
-        {renderInput()}
-        {(feature as any).description && (
-          <p className="text-xs text-gray-500">{(feature as any).description}</p>
-        )}
-      </div>
-    );
-  }
-);
-DynamicFeatureInput.displayName = "DynamicFeatureInput";
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-gray-700">
+        {feature.name}
+      </label>
+      {renderInput()}
+      {feature.description && (
+        <p className="text-xs text-gray-500">{feature.description}</p>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  main component                                                    */
+/* ------------------------------------------------------------------ */
 
 const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
   fourthStep,
@@ -309,111 +365,53 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
   categoryId,
   subcategoryId,
 }) => {
-  const [apiFeatures, setApiFeatures] = useState<Feature[]>([]);
-  const [isLoadingFeatures, setIsLoadingFeatures] = useState(false);
-  const [featureError, setFeatureError] = useState<string | null>(null);
+  const allFeatures = useMemo(() => {
+    if (!categories?.length) return [];
 
-  const { selectedCategory, selectedSubcategory } = useMemo(() => {
-    const category = categories?.find((cat: any) => cat?._id === categoryId) ?? null;
-    const subcategory =
-      category?.subcategories?.find((sub: any) => sub?._id === subcategoryId) ?? null;
+    const targetId = subcategoryId || categoryId;
+    if (!targetId) return [];
 
-    return { selectedCategory: category, selectedSubcategory: subcategory };
+    const chain = collectChainToNode(categories, targetId);
+    if (!chain?.length) {
+      const node = findNodeInTree(categories, targetId);
+      if (!node) return [];
+      return buildFeaturesFromChain([node]);
+    }
+
+    return buildFeaturesFromChain(chain);
   }, [categories, categoryId, subcategoryId]);
 
-  const allFeatures = useMemo(() => {
-    // API’den geldiyse onu kullan, yoksa props içinden subcategory.features fallback.
-    return apiFeatures.length > 0 ? apiFeatures : (selectedSubcategory?.features ?? []);
-  }, [apiFeatures, selectedSubcategory]);
-
   useEffect(() => {
-    if (!categoryId || !subcategoryId) return;
+    if (!allFeatures.length) return;
 
-    let cancelled = false;
+    setFeatureValues((prev) => {
+      const next: FeatureValues = { ...(prev ?? {}) };
+      let changed = false;
 
-    const fetchFeaturesFromApi = async () => {
-      try {
-        setIsLoadingFeatures(true);
-        setFeatureError(null);
+      for (const f of allFeatures) {
+        const id = f._id;
+        if (!id) continue;
+        if (Object.prototype.hasOwnProperty.call(next, id)) continue;
 
-        // ✅ En mantıklı endpoint: subcategory features
-        let features: Feature[] = [];
-        try {
-          const res1 = await api.get(
-            `/admin/categories/${categoryId}/subcategories/${subcategoryId}/features`
-          );
-          features = unwrapArray<Feature>(res1);
-          if (!features.length) features = unwrapFeatures(res1);
-        } catch (e: any) {
-          // 404 vs. durumunda fallback
-          const status = e?.response?.status;
-          if (status !== 404) throw e;
-        }
-
-        // Fallback: senin eski kullandığın yapı (subcategory objesi içinden features çekme)
-        if (!features.length) {
-          const res2 = await api.get(
-            `/admin/categories/${categoryId}/subcategories`,
-            { params: { parentSubcategoryId: subcategoryId } }
-          );
-          features = unwrapFeatures(res2);
-        }
-
-        if (cancelled) return;
-
-        setApiFeatures(features);
-
-        // featureValues içinde olmayanlara default değer bas (stale closure yok, functional update)
-        if (features?.length) {
-          setFeatureValues((prev) => {
-            const next: FeatureValues = { ...(prev ?? {}) };
-            let changed = false;
-
-            for (const f of features) {
-              const id = (f as any)._id;
-              if (!id) continue;
-              if (Object.prototype.hasOwnProperty.call(next, id)) continue;
-
-              const t = (f as any).type;
-              if (t === "boolean") next[id] = false;
-              else if (t === "number") next[id] = 0;
-              else if (t === "multi_select") next[id] = [];
-              else next[id] = "";
-
-              changed = true;
-            }
-
-            return changed ? next : prev;
-          });
-        }
-      } catch (e: any) {
-        if (cancelled) return;
-        const status = e?.response?.status;
-        if (status === 401) setFeatureError("Yetkisiz (401). Token/login sorunu var.");
-        else if (status === 404) setFeatureError("Endpoint bulunamadı (404). Route yanlış.");
-        else setFeatureError("Feature'lar yüklenemedi");
-        setApiFeatures([]);
-      } finally {
-        if (!cancelled) setIsLoadingFeatures(false);
+        const t = f.type;
+        if (t === "boolean") next[id] = false;
+        else if (t === "number") next[id] = 0;
+        else if (t === "multi_select") next[id] = [];
+        else next[id] = "";
+        changed = true;
       }
-    };
 
-    fetchFeaturesFromApi();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [categoryId, subcategoryId, setFeatureValues]);
+      return changed ? next : prev;
+    });
+  }, [allFeatures, setFeatureValues]);
 
   const handleFeatureChange = useCallback(
     (featureId: string, value: any, featureType?: string) => {
-      // FeatureValues güncelle (functional update)
       setFeatureValues((prev) => ({
         ...(prev ?? {}),
         [featureId]: value,
       }));
 
-      // StepState selections güncelle (functional update)
       setFeaturesStep((prev: any) => ({
         ...prev,
         selections: {
@@ -432,12 +430,11 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
   const featureGroups = useMemo(() => {
     const feats = allFeatures ?? [];
     return {
-      booleanFeatures: feats.filter((f: any) => f?.type === "boolean"),
-      selectFeatures: feats.filter((f: any) => f?.type === "single_select" || f?.type === "select"),
-      multiSelectFeatures: feats.filter((f: any) => f?.type === "multi_select"),
-      textFeatures: feats.filter((f: any) => f?.type === "text"),
-      numberFeatures: feats.filter((f: any) => f?.type === "number"),
-      dynamicFeatures: feats,
+      booleanFeatures: feats.filter((f) => f.type === "boolean"),
+      selectFeatures: feats.filter((f) => f.type === "single_select" || f.type === "select"),
+      multiSelectFeatures: feats.filter((f) => f.type === "multi_select"),
+      textFeatures: feats.filter((f) => f.type === "text"),
+      numberFeatures: feats.filter((f) => f.type === "number"),
     };
   }, [allFeatures]);
 
@@ -447,40 +444,12 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
     multiSelectFeatures,
     textFeatures,
     numberFeatures,
-    dynamicFeatures,
   } = featureGroups;
 
   const heatingOpts = useMemo(() => normalizeOptions(heatingOptions), [heatingOptions]);
   const deedOpts = useMemo(() => normalizeOptions(deedStatusOptions), [deedStatusOptions]);
   const dirOpts = useMemo(() => normalizeOptions(directionOptions), [directionOptions]);
   const zoningOpts = useMemo(() => normalizeOptions(zoningStatusOptions), [zoningStatusOptions]);
-
-  if (isLoadingFeatures) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto" />
-          <p className="mt-4 text-gray-600">Özellikler yükleniyor...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (featureError) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h3 className="text-red-800 font-semibold">Hata</h3>
-        <p className="text-red-600">{featureError}</p>
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          Tekrar Dene
-        </button>
-      </div>
-    );
-  }
 
   return (
     <motion.div
@@ -489,6 +458,7 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
       transition={{ duration: 0.25 }}
       className="space-y-8"
     >
+      {/* ---- Temel Özellikler (toggles) ---- */}
       {(booleanFeatures.length > 0 ||
         fourthStep?.elevator ||
         fourthStep?.inSite ||
@@ -498,37 +468,35 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
           <h3 className="text-lg font-semibold text-gray-900">Temel Özellikler</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Static toggles (backend feature değil, senin form state’in) */}
             {"elevator" in (fourthStep ?? {}) && (
               <FeatureToggle
                 label="Asansör"
-                value={fourthStep?.elevator === "Evet" ? "Evet" : "Hayır"}
+                value={selVal(fourthStep?.elevator) === "Evet" ? "Evet" : "Hayır"}
                 onChange={onElevatorToggle}
               />
             )}
             {"inSite" in (fourthStep ?? {}) && (
               <FeatureToggle
                 label="Site İçinde"
-                value={fourthStep?.inSite === "Evet" ? "Evet" : "Hayır"}
+                value={selVal(fourthStep?.inSite) === "Evet" ? "Evet" : "Hayır"}
                 onChange={onInSiteToggle}
               />
             )}
             {"balcony" in (fourthStep ?? {}) && (
               <FeatureToggle
                 label="Balkon"
-                value={fourthStep?.balcony === "Evet" ? "Evet" : "Hayır"}
+                value={selVal(fourthStep?.balcony) === "Evet" ? "Evet" : "Hayır"}
                 onChange={onBalconyToggle}
               />
             )}
             {"isFurnished" in (fourthStep ?? {}) && (
               <FeatureToggle
                 label="Eşyalı"
-                value={fourthStep?.isFurnished === "Evet" ? "Evet" : "Hayır"}
+                value={selVal(fourthStep?.isFurnished) === "Evet" ? "Evet" : "Hayır"}
                 onChange={onIsFurnishedToggle}
               />
             )}
 
-            {/* Dynamic boolean features */}
             {booleanFeatures.map((feature: any) => (
               <FeatureToggle
                 key={feature._id}
@@ -541,6 +509,7 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
         </div>
       )}
 
+      {/* ---- Seçim Özellikleri (selects) ---- */}
       {(selectFeatures.length > 0 ||
         heatingOpts.length > 0 ||
         deedOpts.length > 0 ||
@@ -550,11 +519,10 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
           <h3 className="text-lg font-semibold text-gray-900">Seçim Özellikleri</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Static selects */}
             {heatingOpts.length > 0 && (
               <SimpleSelect
                 label="Isıtma"
-                value={String(fourthStep?.heating ?? "")}
+                value={selVal(fourthStep?.heating)}
                 onChange={onHeatingChange}
                 options={heatingOpts}
               />
@@ -562,7 +530,7 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
             {deedOpts.length > 0 && (
               <SimpleSelect
                 label="Tapu Durumu"
-                value={String(fourthStep?.deedStatus ?? "")}
+                value={selVal(fourthStep?.deedStatus)}
                 onChange={onDeedStatusChange}
                 options={deedOpts}
               />
@@ -570,7 +538,7 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
             {dirOpts.length > 0 && (
               <SimpleSelect
                 label="Cephe"
-                value={String(fourthStep?.whichSide ?? "")}
+                value={selVal(fourthStep?.whichSide)}
                 onChange={onWhichSideChange}
                 options={dirOpts}
               />
@@ -578,13 +546,12 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
             {zoningOpts.length > 0 && (
               <SimpleSelect
                 label="İmar Durumu"
-                value={String(fourthStep?.zoningStatus ?? "")}
+                value={selVal(fourthStep?.zoningStatus)}
                 onChange={onZoningStatusChange}
                 options={zoningOpts}
               />
             )}
 
-            {/* Dynamic single selects */}
             {selectFeatures.map((feature: any) => (
               <SimpleSelect
                 key={feature._id}
@@ -598,6 +565,7 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
         </div>
       )}
 
+      {/* ---- Çoklu Seçim ---- */}
       {multiSelectFeatures.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Çoklu Seçim Özellikleri</h3>
@@ -615,6 +583,7 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
         </div>
       )}
 
+      {/* ---- Text / Number ---- */}
       {(textFeatures.length > 0 || numberFeatures.length > 0) && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Diğer Özellikler</h3>
@@ -641,19 +610,70 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
         </div>
       )}
 
-      {dynamicFeatures.length === 0 && (
+      {allFeatures.length === 0 && (
         <div className="text-center text-gray-500 py-8">
           Bu kategori için tanımlanmış özellik bulunamadı.
-          <div className="mt-2 text-sm">
-            <p>Kategori: {selectedCategory?.name ?? "-"}</p>
-            <p>Alt Kategori: {selectedSubcategory?.name ?? "-"}</p>
-            <p>Feature Values: {Object.keys(featureValues ?? {}).length} adet</p>
-            <p>API Feature'ları: {apiFeatures.length} adet</p>
-          </div>
         </div>
       )}
     </motion.div>
   );
 };
+
+/* ------------------------------------------------------------------ */
+/*  Build Feature[] from a chain of tree nodes                        */
+/* ------------------------------------------------------------------ */
+
+function buildFeaturesFromChain(chain: any[]): any[] {
+  const attrMap = new Map<string, any>();
+  for (const node of chain) {
+    for (const a of safeArr<any>(node?.attributes)) {
+      const key = String(a?.id ?? a?._id ?? "");
+      if (!key) continue;
+      attrMap.set(key, a);
+    }
+  }
+
+  const facMap = new Map<string, Set<string>>();
+  for (const node of chain) {
+    for (const g of safeArr<any>(node?.facilities)) {
+      const title = String(g?.title ?? "");
+      const feats = safeArr<string>(g?.features);
+      if (!title || feats.length === 0) continue;
+      if (!facMap.has(title)) facMap.set(title, new Set<string>());
+      const set = facMap.get(title)!;
+      feats.forEach((x) => set.add(String(x)));
+    }
+  }
+
+  const attrFeatures = Array.from(attrMap.values())
+    .map((a: any) => {
+      const _id = String(a?.id ?? a?._id ?? "");
+      const name = String(a?.name ?? "");
+      if (!_id || !name) return null;
+      return {
+        _id,
+        name,
+        type: mapType(a?.type),
+        options: safeArr<string>(a?.options),
+        required: false,
+        order: typeof a?.order === "number" ? a.order : undefined,
+      };
+    })
+    .filter(Boolean);
+
+  const facilityFeatures = Array.from(facMap.entries()).map(([title, set]) => ({
+    _id: `fac_${slugifyTR(title)}`,
+    name: title,
+    type: "multi_select",
+    options: Array.from(set.values()),
+    required: false,
+  }));
+
+  return [...attrFeatures, ...facilityFeatures].sort((a: any, b: any) => {
+    const ao = typeof a?.order === "number" ? a.order : 9999;
+    const bo = typeof b?.order === "number" ? b.order : 9999;
+    return ao - bo;
+  });
+}
 
 export default EditFeaturesTab;

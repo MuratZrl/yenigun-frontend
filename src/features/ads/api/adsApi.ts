@@ -58,30 +58,12 @@ function unwrapCategories(res: any): Category[] {
  * Bu fonksiyon public UI’ın çökmemesi için hata durumunda [] döner.
  */
 export async function fetchCategoriesApi(signal?: AbortSignal): Promise<Category[]> {
-  const endpoints = ["/admin/categories/list", "/admin/categories/list"];
-
-  for (const ep of endpoints) {
-    try {
-      const res = await api.get(ep, { signal } as any);
-      const arr = unwrapCategories(res);
-      if (arr.length) return arr;
-      // Bazı backend’ler “success: true ama dizi boş” döndürebilir; o durumda diğer endpoint’e geçmek anlamsız.
-      // Ama burada arr boşsa yine de fallback’i deniyoruz; zarar değil.
-    } catch (e: any) {
-      const status = e?.response?.status;
-
-      // /admin/categories 404 veriyorsa zaten biliyoruz; bir sonraki endpoint’e geç
-      if (status === 404) continue;
-
-      // 401/403 public sayfada normal olabilir; direkt boş dön
-      if (status === 401 || status === 403) return [];
-
-      // Diğer hatalarda da public UI’ı kilitlemeyelim
-      return [];
-    }
+  try {
+    const res = await api.get("/categories/list", { signal } as any);
+    return unwrapCategories(res);
+  } catch {
+    return [];
   }
-
-  return [];
 }
 
 /**

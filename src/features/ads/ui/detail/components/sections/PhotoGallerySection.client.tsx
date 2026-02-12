@@ -357,20 +357,6 @@ export default function PhotoGallerySection({
         )}
       </div>
 
-      {/* Foto altı hızlı linkler (DESKTOP) */}
-      <div className="border-t border-gray-300 bg-white py-4">
-        <div className="flex items-center justify-center text-[12px] text-blue-700">
-          {quickLinks.map((x, i) => (
-            <React.Fragment key={x.href}>
-              <Link href={x.href} className="hover:underline underline-offset-4">
-                {x.label}
-              </Link>
-              {i !== quickLinks.length - 1 && <span className="text-gray-300 px-3">|</span>}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-
       {/* MOBILE */}
       <div
         className="lg:hidden relative bg-white border border-gray-200"
@@ -540,20 +526,6 @@ export default function PhotoGallerySection({
                 </div>
               </div>
             )}
-
-            {/* Foto altı hızlı linkler (MOBILE) */}
-            <div className="border-t border-gray-200 bg-white py-4">
-              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[12px] text-blue-700">
-                {quickLinks.map((x, i) => (
-                  <React.Fragment key={x.href}>
-                    <Link href={x.href} className="hover:underline underline-offset-4">
-                      {x.label}
-                    </Link>
-                    {i !== quickLinks.length - 1 && <span className="text-gray-300">|</span>}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
             
           </div>
         </div>

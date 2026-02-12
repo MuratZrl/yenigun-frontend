@@ -1,4 +1,6 @@
+// src/components/tabs/DetailsTab.tsx
 "use client";
+
 import React from "react";
 import { motion } from "framer-motion";
 import {

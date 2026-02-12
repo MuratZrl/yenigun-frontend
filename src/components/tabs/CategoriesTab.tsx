@@ -2,18 +2,18 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, Check, ChevronRight, X } from "lucide-react";
+import { Check } from "lucide-react";
 
 import api from "@/lib/api";
 import type { StepState } from "@/types/property";
 
+/* ───────────────────── Types ───────────────────── */
+
 type Id = string;
 
-// 1) TYPE'ları genişlet (dosyanın üst tarafı)
 type CategoryAttribute = {
   id: string;
-  type: string;          // TEXT, NUMBER, SELECT vs
+  type: string;
   options?: string[];
   required?: boolean;
   name: string;
@@ -30,11 +30,8 @@ type NestedSubCategory = {
   uid: number;
   parentUid: number | null;
   name: string;
-
-  // ✅ Backend’den geliyor, kaybetme
   attributes?: CategoryAttribute[];
   facilities?: CategoryFacilityGroup[];
-
   subcategories?: NestedSubCategory[];
 };
 
@@ -43,20 +40,31 @@ type UiCategory = NestedSubCategory & { value: string };
 interface CombinedCategoryTabProps {
   firstStep: StepState;
   setFirstStep: React.Dispatch<React.SetStateAction<StepState>>;
-
   secondStep: StepState;
   setSecondStep: React.Dispatch<React.SetStateAction<StepState>>;
-
   thirdStep: StepState;
   setThirdStep: React.Dispatch<React.SetStateAction<StepState>>;
-
   onNext?: () => void;
 }
 
-const CATEGORIES_ENDPOINT = "/admin/categories";
+/* ───────────────────── Helpers ───────────────────── */
+
+const CATEGORIES_ENDPOINT = "/admin/categories/tree";
 
 function safeArr<T>(v: any): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
+}
+
+function mapChildrenToSubcategories(nodes: any[]): NestedSubCategory[] {
+  return nodes.map((n: any) => ({
+    _id: String(n._id ?? n.uid ?? ""),
+    uid: n.uid,
+    parentUid: n.parentUid ?? null,
+    name: n.name ?? "",
+    attributes: safeArr<CategoryAttribute>(n.attributes),
+    facilities: safeArr<CategoryFacilityGroup>(n.facilities),
+    subcategories: mapChildrenToSubcategories(safeArr(n.children)),
+  }));
 }
 
 function slugifyTR(input: string) {
@@ -85,108 +93,90 @@ function getSelected(step: StepState): any {
 
 function patchSelected(
   setStep: React.Dispatch<React.SetStateAction<StepState>>,
-  patch: Record<string, any>
+  patch: Record<string, any>,
 ) {
   setStep((prev) => {
     const prevSel = getSelected(prev);
-    return {
-      ...prev,
-      selected: {
-        ...prevSel,
-        ...patch,
-      },
-    } as StepState;
+    return { ...prev, selected: { ...prevSel, ...patch } } as StepState;
   });
 }
 
-/**
- * Backend response'un gerçek şekli:
- * { success:true, data: { categories: [ { _id, uid, parentUid, name, ... } ] } }
- * Buradan tree kuruyoruz.
- */
-function unwrapFlatCategories(resLike: any): any[] {
-  const root = resLike?.data ?? resLike;
-  const arr =
-    root?.data?.categories ??
-    root?.data?.data?.categories ??
-    root?.categories ??
-    root?.data?.categories ??
-    root?.data?.data ??
-    root?.data ??
-    root;
-
-  return Array.isArray(arr) ? arr : [];
-}
-
-// 2) buildTreeFromFlat içinde node oluştururken attributes/facilities'i ekle
-
-function buildTreeFromFlat(flat: any[]): NestedSubCategory[] {
-  const map = new Map<number, NestedSubCategory>();
-
-  for (const c of safeArr<any>(flat)) {
-    const uidRaw = c?.uid;
-    const parentRaw = c?.parentUid;
-
-    const uid = typeof uidRaw === "number" ? uidRaw : Number(uidRaw);
-    const parentUid =
-      parentRaw === null || typeof parentRaw === "undefined" ? null : Number(parentRaw);
-
-    if (!Number.isFinite(uid)) continue;
-
-    map.set(uid, {
-      _id: String(c?._id ?? c?.id ?? ""),
-      uid,
-      parentUid,
-      name: String(c?.name ?? c?.title ?? c?.label ?? "İsimsiz Kategori"),
-
-      // ✅ kritik kısım: metadata’yı taşımak
-      attributes: safeArr<CategoryAttribute>(c?.attributes),
-      facilities: safeArr<CategoryFacilityGroup>(c?.facilities),
-
-      subcategories: [],
-    });
-  }
-
-  const roots: NestedSubCategory[] = [];
-
-  for (const node of map.values()) {
-    if (node.parentUid == null) {
-      roots.push(node);
-      continue;
-    }
-    const parent = map.get(node.parentUid);
-    if (parent) {
-      parent.subcategories = parent.subcategories ?? [];
-      parent.subcategories.push(node);
-    } else {
-      roots.push(node);
-    }
-  }
-
-  const sortRec = (n: NestedSubCategory) => {
-    n.subcategories = safeArr<NestedSubCategory>(n.subcategories).sort((a, b) =>
-      a.name.localeCompare(b.name, "tr")
-    );
-    n.subcategories.forEach(sortRec);
-  };
-  roots.sort((a, b) => a.name.localeCompare(b.name, "tr"));
-  roots.forEach(sortRec);
-
-  return roots;
-}
-
-/**
- * UI'nın 1. kolonu için root'u otomatik “flatten”:
- * Eğer tek root varsa (genelde "Emlak") onun çocuklarını ana kategori gibi göster.
- */
 function pickMainForUI(treeRoots: NestedSubCategory[]): NestedSubCategory[] {
   if (treeRoots.length === 1) {
-    const only = treeRoots[0];
-    const kids = safeArr<NestedSubCategory>(only.subcategories);
+    const kids = safeArr<NestedSubCategory>(treeRoots[0].subcategories);
     if (kids.length > 0) return kids;
   }
   return treeRoots;
 }
+
+/** Find a node by name (case-insensitive) in a flat list */
+function findByName(nodes: NestedSubCategory[], name: string): NestedSubCategory | null {
+  if (!name) return null;
+  const lower = name.toLowerCase().trim();
+  return nodes.find((n) => n.name.toLowerCase().trim() === lower) ?? null;
+}
+
+/** Deep search: find a node by name anywhere in the tree, return the chain [root, ..., match] */
+function findDeepByName(
+  nodes: NestedSubCategory[],
+  name: string,
+  chain: NestedSubCategory[] = [],
+): NestedSubCategory[] | null {
+  if (!name) return null;
+  const lower = name.toLowerCase().trim();
+  for (const n of nodes) {
+    if (n.name.toLowerCase().trim() === lower) return [...chain, n];
+    const kids = safeArr<NestedSubCategory>(n.subcategories);
+    if (kids.length) {
+      const result = findDeepByName(kids, name, [...chain, n]);
+      if (result) return result;
+    }
+  }
+  return null;
+}
+
+/**
+ * Given advert step names (e.g. "Daire", "KİRALIK"), figure out
+ * which tree nodes correspond to columns 1/2/3 in the UI.
+ * Strategy: find the deepest named step in the tree, then use
+ * its chain to fill columns from the top.
+ */
+function resolveStepsToColumns(
+  categories: UiCategory[],
+  stepNames: string[],
+): { col1: NestedSubCategory | null; col2: NestedSubCategory | null; col3: NestedSubCategory | null } {
+  const result = { col1: null as NestedSubCategory | null, col2: null as NestedSubCategory | null, col3: null as NestedSubCategory | null };
+
+  // Collect all non-empty step names
+  const names = stepNames.filter((n) => n && n.trim());
+  if (!names.length) return result;
+
+  // Try to find the deepest step name in the tree — start from the last name
+  let fullChain: NestedSubCategory[] | null = null;
+  for (let i = names.length - 1; i >= 0; i--) {
+    fullChain = findDeepByName(categories, names[i]);
+    if (fullChain) break;
+  }
+
+  if (!fullChain || !fullChain.length) {
+    // Fallback: try first name at top level
+    const top = findByName(categories, names[0]);
+    if (top) fullChain = [top];
+  }
+
+  if (!fullChain) return result;
+
+  // Map the chain to columns (the UI shows categories as pickMainForUI processed them,
+  // so column 1 = categories array level, column 2 = subcategories, column 3 = nested)
+  // fullChain[0] should be in the `categories` array (main column)
+  result.col1 = fullChain[0] ?? null;
+  result.col2 = fullChain[1] ?? null;
+  result.col3 = fullChain[2] ?? null;
+
+  return result;
+}
+
+/* ───────────────────── Component ───────────────────── */
 
 export default function CombinedCategoryTab({
   firstStep,
@@ -198,11 +188,14 @@ export default function CombinedCategoryTab({
   onNext,
 }: CombinedCategoryTabProps) {
   const [categories, setCategories] = useState<UiCategory[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+  const didSyncRef = useRef(false);
 
+  /* ── Fetch ── */
   const loadCategories = useCallback(async () => {
     abortRef.current?.abort();
     const ac = new AbortController();
@@ -213,26 +206,20 @@ export default function CombinedCategoryTab({
       setError(null);
 
       const res = await api.get(CATEGORIES_ENDPOINT, { signal: ac.signal } as any);
-
-      const flat = unwrapFlatCategories(res);
-      const tree = buildTreeFromFlat(flat);
+      const raw = res?.data?.data?.tree || res?.data?.tree || res?.data?.data || [];
+      const tree = mapChildrenToSubcategories(Array.isArray(raw) ? raw : []);
       const main = pickMainForUI(tree);
 
-      const ui: UiCategory[] = main.map((n) => ({
-        ...n,
-        value: slugifyTR(n.name),
-      }));
-
-      setCategories(ui);
+      setCategories(
+        main.map((n) => ({ ...n, value: slugifyTR(n.name) })),
+      );
     } catch (e: any) {
       if (isAbortError(e)) return;
-
       const status = e?.response?.status;
       if (status === 401) setError("Yetkisiz (401). Admin oturumu/token sorunu var.");
       else if (status === 403) setError("Erişim yok (403). Yetki sorunu var.");
       else if (status === 404) setError("Endpoint bulunamadı (404). Route yanlış.");
-      else setError("Kategoriler yüklenemedi. (Network/parse sorunu)");
-
+      else setError("Kategoriler yüklenemedi.");
       setCategories([]);
     } finally {
       setLoading(false);
@@ -244,6 +231,64 @@ export default function CombinedCategoryTab({
     return () => abortRef.current?.abort();
   }, [loadCategories]);
 
+  /* ── Sync pre-existing selection by name → id (for edit page) ── */
+  useEffect(() => {
+    if (didSyncRef.current || !categories.length) return;
+
+    const firstSel = getSelected(firstStep);
+    const secondSel = getSelected(secondStep);
+    const thirdSel = getSelected(thirdStep);
+
+    // Only sync if we have a name but no id (edit page scenario)
+    const hasNameNoId = (firstSel?.value && !firstSel?.id) ||
+                        (secondSel?.value && !secondSel?.id) ||
+                        (thirdSel?.value && !thirdSel?.id);
+    if (!hasNameNoId) return;
+
+    // Collect step names
+    const stepNames = [
+      firstSel?.value || "",
+      secondSel?.value || "",
+      thirdSel?.value || "",
+    ];
+
+    const { col1, col2, col3 } = resolveStepsToColumns(categories, stepNames);
+
+    if (!col1) return;
+
+    didSyncRef.current = true;
+
+    patchSelected(setFirstStep, {
+      isSelect: true,
+      value: col1.name,
+      id: col1._id,
+      uid: col1.uid,
+      name: col1.name,
+      categoryData: col1,
+    });
+
+    if (col2) {
+      patchSelected(setSecondStep, {
+        isSelect: true,
+        value: col2.name,
+        id: col2._id,
+        uid: col2.uid,
+        subcategoryData: col2,
+      });
+    }
+
+    if (col3) {
+      patchSelected(setThirdStep, {
+        isSelect: true,
+        value: col3.name,
+        id: col3._id,
+        uid: col3.uid,
+        subcategoryData: col3,
+      });
+    }
+  }, [categories, firstStep, secondStep, thirdStep, setFirstStep, setSecondStep, setThirdStep]);
+
+  /* ── Selection helpers ── */
   const resetSecond = useCallback(() => {
     patchSelected(setSecondStep, { isSelect: false, value: "", id: "", uid: null, subcategoryData: null });
   }, [setSecondStep]);
@@ -252,74 +297,91 @@ export default function CombinedCategoryTab({
     patchSelected(setThirdStep, { isSelect: false, value: "", id: "", uid: null, subcategoryData: null });
   }, [setThirdStep]);
 
-  const clearSelection = useCallback(
-    (step: "first" | "second" | "third") => {
-      if (step === "first") {
-        patchSelected(setFirstStep, { isSelect: false, value: "", id: "", uid: null, name: "", categoryData: null });
-        resetSecond();
-        resetThird();
-        return;
-      }
-      if (step === "second") {
-        resetSecond();
-        resetThird();
-        return;
-      }
-      resetThird();
-    },
-    [setFirstStep, resetSecond, resetThird]
+  const clearAll = useCallback(() => {
+    didSyncRef.current = false;
+    patchSelected(setFirstStep, { isSelect: false, value: "", id: "", uid: null, name: "", categoryData: null });
+    resetSecond();
+    resetThird();
+  }, [setFirstStep, resetSecond, resetThird]);
+
+  /* ── Derived state ── */
+  const firstSel = getSelected(firstStep);
+  const secondSel = getSelected(secondStep);
+  const thirdSel = getSelected(thirdStep);
+
+  const firstSelected = Boolean(firstSel?.isSelect);
+  const secondSelected = Boolean(secondSel?.isSelect);
+  const thirdSelected = Boolean(thirdSel?.isSelect);
+
+  const selectedMain = useMemo(
+    () => categories.find((c) => c._id === String(firstSel?.id ?? "")) ?? null,
+    [categories, firstSel],
   );
 
-  const selectedMain = useMemo(() => {
-    const firstId = String(getSelected(firstStep)?.id ?? "");
-    return categories.find((c) => c._id === firstId) ?? null;
-  }, [categories, firstStep]);
+  const mainSubs = useMemo(
+    () => safeArr<NestedSubCategory>(selectedMain?.subcategories),
+    [selectedMain],
+  );
 
-  const mainSubs = useMemo(() => safeArr<NestedSubCategory>(selectedMain?.subcategories), [selectedMain]);
+  const selectedSub = useMemo(
+    () => mainSubs.find((s) => s._id === String(secondSel?.id ?? "")) ?? null,
+    [mainSubs, secondSel],
+  );
 
-  const selectedSub = useMemo(() => {
-    const secondId = String(getSelected(secondStep)?.id ?? "");
-    return safeArr<NestedSubCategory>(selectedMain?.subcategories).find((s) => s._id === secondId) ?? null;
-  }, [selectedMain, secondStep]);
+  const nestedSubs = useMemo(
+    () => safeArr<NestedSubCategory>(selectedSub?.subcategories),
+    [selectedSub],
+  );
 
-  const nestedSubs = useMemo(() => safeArr<NestedSubCategory>(selectedSub?.subcategories), [selectedSub]);
+  const isComplete = useMemo(() => {
+    if (!firstSelected) return false;
+    if (mainSubs.length === 0) return true;
+    if (!secondSelected) return false;
+    if (nestedSubs.length === 0) return true;
+    if (!thirdSelected) return false;
+    return true;
+  }, [firstSelected, secondSelected, thirdSelected, mainSubs, nestedSubs]);
 
-  const handleMainCategorySelect = useCallback(
-    (category: UiCategory) => {
+  const breadcrumb = useMemo(() => {
+    const parts: string[] = ["Emlak"];
+    if (firstSel?.value) parts.push(firstSel.value);
+    if (secondSel?.value) parts.push(secondSel.value);
+    if (thirdSel?.value) parts.push(thirdSel.value);
+    return parts;
+  }, [firstSel, secondSel, thirdSel]);
+
+  /* ── Handlers ── */
+  const handleMainSelect = useCallback(
+    (cat: UiCategory) => {
       patchSelected(setFirstStep, {
         isSelect: true,
-        value: category.name,
-        id: category._id,
-        uid: category.uid,
-        name: category.name,
-        categoryData: category,
+        value: cat.name,
+        id: cat._id,
+        uid: cat.uid,
+        name: cat.name,
+        categoryData: cat,
       });
       resetSecond();
       resetThird();
-
-      // Eğer bunun altında hiç çocuk yoksa, kategori seçimi burada bitiyor. Boş 2. kolonla insanı cezalandırma.
-      if (onNext && safeArr(category.subcategories).length === 0) onNext();
     },
-    [setFirstStep, resetSecond, resetThird, onNext]
+    [setFirstStep, resetSecond, resetThird],
   );
 
-  const handleSubCategorySelect = useCallback(
-    (subcategory: NestedSubCategory) => {
+  const handleSubSelect = useCallback(
+    (sub: NestedSubCategory) => {
       patchSelected(setSecondStep, {
         isSelect: true,
-        value: subcategory.name,
-        id: subcategory._id,
-        uid: subcategory.uid,
-        subcategoryData: subcategory,
+        value: sub.name,
+        id: sub._id,
+        uid: sub.uid,
+        subcategoryData: sub,
       });
       resetThird();
-
-      if (onNext && safeArr(subcategory.subcategories).length === 0) onNext();
     },
-    [setSecondStep, resetThird, onNext]
+    [setSecondStep, resetThird],
   );
 
-  const handleNestedSubCategorySelect = useCallback(
+  const handleNestedSelect = useCallback(
     (nested: NestedSubCategory) => {
       patchSelected(setThirdStep, {
         isSelect: true,
@@ -328,23 +390,16 @@ export default function CombinedCategoryTab({
         uid: nested.uid,
         subcategoryData: nested,
       });
-      if (onNext) onNext();
     },
-    [setThirdStep, onNext]
+    [setThirdStep],
   );
 
-  const firstSelected = Boolean(getSelected(firstStep)?.isSelect);
-  const secondSelected = Boolean(getSelected(secondStep)?.isSelect);
-  const thirdSelected = Boolean(getSelected(thirdStep)?.isSelect);
-
-  const firstVal = String(getSelected(firstStep)?.value ?? "");
-  const secondVal = String(getSelected(secondStep)?.value ?? "");
-  const thirdVal = String(getSelected(thirdStep)?.value ?? "");
+  /* ── Render ── */
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-gray-600">Kategoriler yükleniyor...</div>
+        <div className="text-[14px] text-gray-500">Kategoriler yükleniyor...</div>
       </div>
     );
   }
@@ -352,11 +407,11 @@ export default function CombinedCategoryTab({
   if (error) {
     return (
       <div className="flex flex-col justify-center items-center h-64 gap-3">
-        <div className="text-lg text-red-600 text-center">{error}</div>
+        <div className="text-[14px] text-red-600 text-center">{error}</div>
         <button
           type="button"
           onClick={loadCategories}
-          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-sm font-medium"
+          className="px-4 py-1.5 border border-gray-300 text-[13px] hover:bg-gray-50"
         >
           Tekrar Dene
         </button>
@@ -367,11 +422,11 @@ export default function CombinedCategoryTab({
   if (!categories.length) {
     return (
       <div className="flex flex-col justify-center items-center h-64 gap-3">
-        <div className="text-lg text-gray-700 text-center">Kategori bulunamadı.</div>
+        <div className="text-[14px] text-gray-700">Kategori bulunamadı.</div>
         <button
           type="button"
           onClick={loadCategories}
-          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-sm font-medium"
+          className="px-4 py-1.5 border border-gray-300 text-[13px] hover:bg-gray-50"
         >
           Yenile
         </button>
@@ -380,212 +435,145 @@ export default function CombinedCategoryTab({
   }
 
   return (
-    <div className="space-y-6">
-      {(firstSelected || secondSelected || thirdSelected) && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-4">
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-              <Check size={18} className="text-blue-600" />
-              Seçilen Kategoriler
-            </h4>
+    <div>
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-[15px] font-bold text-gray-900">Adım Adım Kategori Seç</h3>
+        {firstSelected && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="text-[12px] text-blue-700 hover:underline"
+          >
+            Temizle
+          </button>
+        )}
+      </div>
 
-            <button
-              type="button"
-              onClick={() => clearSelection("first")}
-              className="text-sm text-blue-700 hover:text-blue-900 flex items-center gap-1"
+      {/* ── Breadcrumb ── */}
+      <div className="mb-3 flex items-center gap-1 text-[13px]">
+        {breadcrumb.map((part, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <span className="text-gray-400 mx-0.5">&gt;</span>}
+            <span
+              className={
+                i === breadcrumb.length - 1 && breadcrumb.length > 1
+                  ? "text-gray-900 font-medium"
+                  : "text-blue-700"
+              }
             >
-              <X size={14} />
-              Temizle
-            </button>
-          </div>
+              {part}
+            </span>
+          </React.Fragment>
+        ))}
+      </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {firstSelected && (
-              <div className="flex items-center gap-2 bg-white border border-blue-200 rounded-lg px-3 py-1.5">
-                <span className="text-sm font-medium text-blue-800">{firstVal}</span>
-                <button
-                  type="button"
-                  onClick={() => clearSelection("first")}
-                  className="text-blue-500 hover:text-blue-700"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-
-            {secondSelected && (
-              <>
-                <ArrowRight size={14} className="text-blue-400" />
-                <div className="flex items-center gap-2 bg-white border border-blue-200 rounded-lg px-3 py-1.5">
-                  <span className="text-sm font-medium text-blue-800">{secondVal}</span>
-                  <button
-                    type="button"
-                    onClick={() => clearSelection("second")}
-                    className="text-blue-500 hover:text-blue-700"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              </>
-            )}
-
-            {thirdSelected && (
-              <>
-                <ArrowRight size={14} className="text-blue-400" />
-                <div className="flex items-center gap-2 bg-white border border-blue-200 rounded-lg px-3 py-1.5">
-                  <span className="text-sm font-medium text-blue-800">{thirdVal}</span>
-                  <button
-                    type="button"
-                    onClick={() => clearSelection("third")}
-                    className="text-blue-500 hover:text-blue-700"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </motion.div>
-      )}
-
-      <div className="flex gap-6 min-h-[400px]">
-        <div className="w-1/3 bg-white rounded-xl border border-gray-200 overflow-hidden flex-shrink-0">
-          <div className="p-4 border-b border-gray-200 bg-gray-50">
-            <h4 className="font-semibold text-gray-900">Ana Kategoriler</h4>
-          </div>
-
-          <div className="overflow-y-auto max-h-[350px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <ul className="divide-y divide-gray-100">
-              {categories.map((category) => {
-                const active = firstSelected && String(getSelected(firstStep)?.id ?? "") === category._id;
-                const subCount = safeArr<NestedSubCategory>(category.subcategories).length;
-
-                return (
-                  <li key={category._id}>
-                    <button
-                      type="button"
-                      onClick={() => handleMainCategorySelect(category)}
-                      className={`w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                        active ? "bg-blue-50 border-r-4 border-blue-500" : ""
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                          {active ? <Check size={16} className="text-blue-500" /> : <span />}
-                        </div>
-
-                        <div className="text-left">
-                          <div className="font-medium text-gray-900">{category.name}</div>
-                          <div className="text-xs text-gray-500">{subCount} alt kategori</div>
-                        </div>
-                      </div>
-
-                      {subCount > 0 && <ChevronRight size={16} className="text-gray-400" />}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+      {/* ── Columns ── */}
+      <div className="flex border border-gray-300 bg-white min-h-[320px]">
+        {/* Column 1 */}
+        <div className="w-1/4 border-r border-gray-300 overflow-y-auto max-h-[360px]">
+          {categories.map((cat) => {
+            const active = firstSelected && String(firstSel?.id ?? "") === cat._id;
+            return (
+              <button
+                key={cat._id}
+                type="button"
+                onClick={() => handleMainSelect(cat)}
+                className={[
+                  "w-full text-left px-3 py-[6px] text-[13px] border-b border-gray-100 transition-colors",
+                  active
+                    ? "bg-[#e8f0fe] font-semibold text-gray-900"
+                    : "text-blue-700 hover:bg-gray-50",
+                ].join(" ")}
+              >
+                {cat.name}
+              </button>
+            );
+          })}
         </div>
 
-        {firstSelected && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.25 }}
-            className="w-1/3 bg-white rounded-xl border border-gray-200 overflow-hidden flex-shrink-0"
-          >
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <h4 className="font-semibold text-gray-900">Alt Kategoriler</h4>
-            </div>
+        {/* Column 2 */}
+        <div className="w-1/4 border-r border-gray-300 overflow-y-auto max-h-[360px]">
+          {firstSelected && mainSubs.length > 0
+            ? mainSubs.map((sub) => {
+                const active = secondSelected && String(secondSel?.id ?? "") === sub._id;
+                return (
+                  <button
+                    key={sub._id}
+                    type="button"
+                    onClick={() => handleSubSelect(sub)}
+                    className={[
+                      "w-full text-left px-3 py-[6px] text-[13px] border-b border-gray-100 transition-colors",
+                      active
+                        ? "bg-[#e8f0fe] font-semibold text-gray-900"
+                        : "text-blue-700 hover:bg-gray-50",
+                    ].join(" ")}
+                  >
+                    {sub.name}
+                  </button>
+                );
+              })
+            : firstSelected && (
+                <div className="p-3 text-[12px] text-gray-400">Alt kategori yok</div>
+              )}
+        </div>
 
-            <div className="overflow-y-auto max-h-[350px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              {mainSubs.length === 0 ? (
-                <div className="p-4 text-sm text-gray-500">
-                  Bu kategorinin alt kategorisi yok. (Backend bu yapıyı parentUid ile flat veriyor; leaf seçimi geçerli.)
-                </div>
-              ) : (
-                <ul className="divide-y divide-gray-100">
-                  {mainSubs.map((subcategory) => {
-                    const active = secondSelected && String(getSelected(secondStep)?.id ?? "") === subcategory._id;
-                    const nestedCount = safeArr<NestedSubCategory>(subcategory.subcategories).length;
+        {/* Column 3 */}
+        <div className="w-1/4 border-r border-gray-300 overflow-y-auto max-h-[360px]">
+          {firstSelected && secondSelected && nestedSubs.length > 0
+            ? nestedSubs.map((nested) => {
+                const active = thirdSelected && String(thirdSel?.id ?? "") === nested._id;
+                return (
+                  <button
+                    key={nested._id}
+                    type="button"
+                    onClick={() => handleNestedSelect(nested)}
+                    className={[
+                      "w-full text-left px-3 py-[6px] text-[13px] border-b border-gray-100 transition-colors",
+                      active
+                        ? "bg-[#e8f0fe] font-semibold text-gray-900"
+                        : "text-blue-700 hover:bg-gray-50",
+                    ].join(" ")}
+                  >
+                    {nested.name}
+                  </button>
+                );
+              })
+            : firstSelected && secondSelected && (
+                <div className="p-3 text-[12px] text-gray-400">Detay kategori yok</div>
+              )}
+        </div>
 
-                    return (
-                      <li key={subcategory._id}>
-                        <button
-                          type="button"
-                          onClick={() => handleSubCategorySelect(subcategory)}
-                          className={`w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                            active ? "bg-blue-50 border-r-4 border-blue-500" : ""
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                              {active ? <Check size={16} className="text-blue-500" /> : <span />}
-                            </div>
-
-                            <div className="text-left">
-                              <div className="font-medium text-gray-900">{subcategory.name}</div>
-                              {nestedCount > 0 && <div className="text-xs text-gray-500">{nestedCount} detay kategori</div>}
-                            </div>
-                          </div>
-
-                          {nestedCount > 0 && <ChevronRight size={16} className="text-gray-400" />}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+        {/* Column 4 */}
+        <div className="w-1/4 flex items-center justify-center p-4">
+          {isComplete ? (
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center">
+                <Check size={32} className="text-white" strokeWidth={3} />
+              </div>  
+              <p className="text-[13px] font-semibold text-gray-900 leading-tight">
+                Kategori seçimi
+                <br />
+                tamamlanmıştır.
+              </p>
+              {onNext && (
+                <button
+                  type="button"
+                  onClick={onNext}
+                  className="px-6 py-2 bg-blue-600 text-white text-[14px] font-semibold rounded hover:bg-blue-700 transition-colors"
+                >
+                  Devam
+                </button>
               )}
             </div>
-          </motion.div>
-        )}
-
-        {firstSelected && secondSelected && nestedSubs.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.25 }}
-            className="w-1/4 bg-white rounded-xl border border-gray-200 overflow-hidden flex-shrink-0"
-          >
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <h4 className="font-semibold text-gray-900">Detay Kategoriler</h4>
+          ) : (
+            <div className="text-center text-[12px] text-gray-400 leading-relaxed">
+              Lütfen kategori seçiminizi
+              <br />
+              tamamlayın.
             </div>
-
-            <div className="overflow-y-auto max-h-[350px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              <ul className="divide-y divide-gray-100">
-                {nestedSubs.map((nested) => {
-                  const active = thirdSelected && String(getSelected(thirdStep)?.id ?? "") === nested._id;
-                  return (
-                    <li key={nested._id}>
-                      <button
-                        type="button"
-                        onClick={() => handleNestedSubCategorySelect(nested)}
-                        className={`w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center gap-3 ${
-                          active ? "bg-blue-50 border-r-4 border-blue-500" : ""
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                          {active ? <Check size={16} className="text-blue-500" /> : <span />}
-                        </div>
-                        <div className="font-medium text-gray-900">{nested.name}</div>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </motion.div>
-        )}
-
-        {!firstSelected && (
-          <>
-            <div className="w-1/3 flex-shrink-0 opacity-0 pointer-events-none" />
-            <div className="w-1/3 flex-shrink-0 opacity-0 pointer-events-none" />
-          </>
-        )}
-        {firstSelected && !secondSelected && <div className="w-1/3 flex-shrink-0 opacity-0 pointer-events-none" />}
+          )}
+        </div>
       </div>
     </div>
   );

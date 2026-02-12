@@ -175,6 +175,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       filters: filters as any,
       selectedCategory,
       selectedSubcategory,
+      categories,
 
       setFilters: setFilters as any,
       setSelectedCategory,
@@ -191,6 +192,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       filters,
       selectedCategory,
       selectedSubcategory,
+      categories,
       setFilters,
       setSelectedCategory,
       setSelectedSubcategory,

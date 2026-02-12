@@ -1,16 +1,12 @@
 // src/features/ads/ui/MapSearchPage.client.tsx
 "use client";
-
 import React, { useMemo } from "react";
 import Link from "next/link";
 import { useCategoryContext } from "@/context/CategoryContext";
-
 import FilterSidebar from "./components/filter/FilterSidebar.client";
 import { turkeyCities } from "../model/turkeyCities";
 import { useAdsController } from "../hooks/useAdsController";
-
 import AdsMap from "./components/map/AdsMap.client";
-
 export default function MapSearchPageClient({
   params,
   initialSearchParams,
@@ -19,18 +15,15 @@ export default function MapSearchPageClient({
   initialSearchParams: { [key: string]: string | string[] | undefined };
 }) {
   const { selectedSubcategory: contextSelectedSubcat } = useCategoryContext();
-
   const listBase = useMemo(
     () => `/haritada-emlak-arama/${params.category}/${params.city}`,
     [params.category, params.city],
   );
-
   const c = useAdsController({
     initialSearchParams,
     contextSelectedSubcat,
-    listBase, // ✅ hook artık map route üzerinde kalacak
+    listBase,
   });
-
   return (
     <div className="w-full bg-white">
       <div className="flex gap-2">
@@ -47,7 +40,6 @@ export default function MapSearchPageClient({
               </Link>
             </div>
           </div>
-
           {/* Sol panel: senin mevcut filtre */}
           <FilterSidebar
             filters={c.filters}
@@ -77,10 +69,11 @@ export default function MapSearchPageClient({
             handleSortChangeDesktop={c.handleSortChangeDesktop}
             setCurrentPage={c.setCurrentPage}
             contextFeatures={c.contextFeatures}
-            showMobileTopBar={false} // map ekranında üst bar istemiyorsan
+            showMobileTopBar={false}
+            autoApply={c.autoApply}
+            setAutoApply={c.setAutoApply}
           />
         </div>
-
         {/* Sağ taraf: harita */}
         <div className="flex-1 min-w-0">
           <div className="border border-gray-200 rounded-sm overflow-hidden">
