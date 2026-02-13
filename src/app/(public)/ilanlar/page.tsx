@@ -1,5 +1,5 @@
 // src/app/(public)/ilanlar/page.tsx
-import AdsPageClient from "@/features/ads/ui/AdsPage.client";
+import AdsPageClient from "@/features/ilanlar/ui/AdsPage.client";
 
 export default function Page({
   searchParams,

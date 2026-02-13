@@ -1,5 +1,5 @@
 // src/app/(public)/haritada-emlak-arama/[category]/[city]/page.tsx
-import MapSearchPageClient from "@/features/ads/ui/MapSearchPage.client";
+import MapSearchPageClient from "@/features/ilanlar/ui/MapSearchPage.client";
 
 export default function Page({
   params,

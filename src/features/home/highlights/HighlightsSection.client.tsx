@@ -24,7 +24,7 @@ const PoppinsFont = Poppins({
 export default function HighlightsSection({ data }: HighlightProps) {
   const router = useRouter();
   const [visibleCount, setVisibleCount] = useState(12);
-  const { copiedId, copy } = useCopyListingLink("/ads", 2000);
+  const { copiedId, copy } = useCopyListingLink("/ilan", 2000);
 
   const safeData: Listing[] = Array.isArray(data) ? data : [];
 
@@ -41,7 +41,7 @@ export default function HighlightsSection({ data }: HighlightProps) {
   const loadMore = () => setVisibleCount((prev) => prev + 12);
 
   const navigateTo = (uid: string) => {
-    router.push(`/ads/${uid}`);
+    router.push(`/ilan/${uid}`);
   };
 
   return (

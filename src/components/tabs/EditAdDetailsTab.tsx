@@ -307,6 +307,28 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
     return buildFeaturesFromChain(chain);
   }, [categories, categoryId, subcategoryId, stepFirst, stepSecond, stepThird]);
 
+  console.log("EDIT allFeatures:", {
+    stepFirst,
+    stepSecond, 
+    stepThird,
+    categoryId,
+    subcategoryId,
+    categoriesLength: categories?.length,
+    featuresCount: allFeatures.length,
+    featureNames: allFeatures.map((f: any) => f.name),
+  });
+
+  console.log("EDIT DEBUG:", {
+    stepFirst,
+    stepSecond,
+    stepThird,
+    categoryId,
+    subcategoryId,
+    categoriesLength: categories?.length,
+    featuresCount: allFeatures.length,
+    featureNames: allFeatures.map((f: any) => f.name),
+  });
+
   useEffect(() => {
     if (!allFeatures.length) return;
     setFeatureValues((prev) => {

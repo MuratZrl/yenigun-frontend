@@ -1,8 +1,8 @@
 // src/app/(public)/ilan/[uid]/page.tsx
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import AdvertDetailClient from "@/features/ads/ui/detail/AdvertDetailClient";
-import { loadAdvertPageData, buildAdvertMetadata, getAdvert } from "@/features/ads/server";
+import AdvertDetailClient from "@/features/ilanlar/ui/detail/AdvertDetailClient";
+import { loadAdvertPageData, buildAdvertMetadata, getAdvert } from "@/features/ilanlar/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

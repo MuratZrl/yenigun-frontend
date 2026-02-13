@@ -1,5 +1,5 @@
 // src/app/(public)/ilanlar/[...slug]/page.tsx
-import AdsPageClient from "@/features/ads/ui/AdsPage.client";
+import AdsPageClient from "@/features/ilanlar/ui/AdsPage.client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
