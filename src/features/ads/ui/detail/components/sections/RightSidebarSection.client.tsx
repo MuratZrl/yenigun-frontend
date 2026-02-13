@@ -1,9 +1,7 @@
 // src/features/ads/ui/detail/components/sections/RightSidebarSection.client.tsx
 "use client";
-
 import React, { useMemo } from "react";
 import { PhoneCall, MessageSquareText } from "lucide-react";
-
 import type { AdvertData } from "@/types/advert";
 import formatPhoneNumber from "@/utils/formatPhoneNumber";
 
@@ -24,22 +22,6 @@ export default function RightSidebarSection({ data, className }: Props) {
     return full || "Danışman";
   }, [data]);
 
-  const accountCreatedText = useMemo(() => {
-    // Backend çoğu zaman bunu vermez. Varsa kullan, yoksa “Bilinmiyor”.
-    const createdAt =
-      (data as any)?.advisor?.createdAt ||
-      (data as any)?.advisor?.created ||
-      (data as any)?.advisor?.registeredAt ||
-      null;
-
-    if (!createdAt) return "Bilinmiyor";
-
-    const d = new Date(createdAt);
-    if (Number.isNaN(d.getTime())) return "Bilinmiyor";
-
-    return d.toLocaleDateString("tr-TR", { month: "long", year: "numeric" });
-  }, [data]);
-
   const phoneRaw = useMemo(() => {
     return (
       safeText((data as any)?.advisor?.gsmNumber) ||
@@ -56,6 +38,13 @@ export default function RightSidebarSection({ data, className }: Props) {
     } catch {
       return phoneRaw;
     }
+  }, [phoneRaw]);
+
+  const phoneDigits = useMemo(() => {
+    const digits = phoneRaw.replace(/\D/g, "");
+    if (!digits) return "";
+    // Ensure 90 country code prefix without doubling
+    return digits.startsWith("90") ? digits : `90${digits}`;
   }, [phoneRaw]);
 
   return (
@@ -76,28 +65,38 @@ export default function RightSidebarSection({ data, className }: Props) {
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              className="mt-3 w-full h-9 border border-gray-300 bg-white text-[13px] font-medium text-blue-700 hover:bg-gray-50 inline-flex items-center justify-center gap-2"
-              onClick={() => {
-                // Şimdilik UI butonu; gerçek mesajlaşma varsa burada route/modal açarsın.
-                console.log("Mesaj gönder");
-              }}
-            >
-              <PhoneCall size={16} />
-              Telefonla Ara
-            </button>
-            <button
-              type="button"
-              className="mt-3 w-full h-9 border border-gray-300 bg-white text-[13px] font-medium text-blue-700 hover:bg-gray-50 inline-flex items-center justify-center gap-2"
-              onClick={() => {
-                // Şimdilik UI butonu; gerçek mesajlaşma varsa burada route/modal açarsın.
-                console.log("Mesaj gönder");
-              }}
-            >
-              <MessageSquareText size={16} />
-              Mesaj gönder
-            </button>
+
+            {phoneDigits ? (
+              <a
+                href={`tel:+${phoneDigits}`}
+                className="mt-3 w-full h-9 border border-gray-300 bg-white text-[13px] font-medium text-blue-700 hover:bg-gray-50 inline-flex items-center justify-center gap-2"
+              >
+                <PhoneCall size={16} />
+                Telefonla Ara
+              </a>
+            ) : (
+              <span className="mt-3 w-full h-9 border border-gray-200 bg-gray-50 text-[13px] font-medium text-gray-400 inline-flex items-center justify-center gap-2 cursor-not-allowed">
+                <PhoneCall size={16} />
+                Telefon Yok
+              </span>
+            )}
+
+            {phoneDigits ? (
+              <a
+                href={`https://wa.me/${phoneDigits}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 w-full h-9 border border-gray-300 bg-white text-[13px] font-medium text-green-600 hover:bg-gray-50 inline-flex items-center justify-center gap-2"
+              >
+                <MessageSquareText size={16} />
+                WhatsApp ile Mesaj Gönder
+              </a>
+            ) : (
+              <span className="mt-3 w-full h-9 border border-gray-200 bg-gray-50 text-[13px] font-medium text-gray-400 inline-flex items-center justify-center gap-2 cursor-not-allowed">
+                <MessageSquareText size={16} />
+                WhatsApp Yok
+              </span>
+            )}
           </div>
         </div>
       </div>

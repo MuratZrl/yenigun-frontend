@@ -754,52 +754,6 @@ export default function IlanDetaylariTab(props: IlanDetaylariTabProps) {
       </Section>
 
       {/* ────────────────────────────────────────────────────── */}
-      {/*  DİĞER BİLGİLER & AYARLAR                             */}
-      {/* ────────────────────────────────────────────────────── */}
-      <Section title="Diğer Bilgiler" defaultOpen={false}>
-        <FieldRow label="Anahtar Kimde">
-          <select value={fourthStep.key.value} onChange={e => updateNestedFourthStep("key" as any, "value", e.target.value)} className={selectCls}>
-            <option value="">Seçiniz</option>
-            {keyOptions.map((o: any, i: number) => <option key={`key-${i}`} value={typeof o === "string" ? o : o.value}>{typeof o === "string" ? o : o.label}</option>)}
-          </select>
-        </FieldRow>
-
-        <FieldRow label="İlan Aktif">
-          <button
-            type="button"
-            onClick={() => setIsActiveAd(!isActiveAd)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${isActiveAd ? "bg-green-500" : "bg-gray-300"}`}
-          >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${isActiveAd ? "translate-x-6" : "translate-x-1"}`} />
-          </button>
-        </FieldRow>
-
-        {[
-          { label: "Danışman Profili", key: "advisor_profile" },
-          { label: "Ajanda Emlak", key: "agenda_emlak" },
-          { label: "Anasayfa Emlak", key: "homepage_emlak" },
-          { label: "Yeni Emlak", key: "new_emlak" },
-          { label: "Şanslı Emlak", key: "chance_emlak" },
-          { label: "Özel Emlak", key: "special_emlak" },
-          { label: "Web'de Yayınla", key: "onweb_emlak" },
-        ].map(({ label, key }) => (
-          <FieldRow key={key} label={label}>
-            <button
-              type="button"
-              onClick={() => {
-                const current = selVal((fourthStep as any)[key]);
-                const next = current === "Evet" ? "Hayır" : "Evet";
-                updateFourthStep(key as any, { ...(fourthStep as any)[key], value: next });
-              }}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${selVal((fourthStep as any)[key]) === "Evet" ? "bg-blue-500" : "bg-gray-300"}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${selVal((fourthStep as any)[key]) === "Evet" ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
-          </FieldRow>
-        ))}
-      </Section>
-
-      {/* ────────────────────────────────────────────────────── */}
       {/*  DEVAM BUTTON                                          */}
       {/* ────────────────────────────────────────────────────── */}
       <div className="flex justify-end pt-6">

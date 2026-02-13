@@ -14,14 +14,14 @@ export interface IUser {
 export interface AuthResponse {
   success: boolean;
   data?: {
-    access_token?: string;   // <- opsiyonel
+    access_token?: string;
     user: IUser;
   };
   message?: string;
 }
 
 export interface AuthData {
-  access_token?: string;     // <- opsiyonel
+  access_token?: string;
   user: IUser;
 }
 
@@ -60,7 +60,9 @@ export const removeClientToken = () => {
 
 export const setClientUser = (user: IUser) => {
   if (!isClient()) return;
-  try { localStorage.setItem(USER_KEY, JSON.stringify(user)); } catch {}
+  try {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch {}
 };
 
 export const getClientUser = (): IUser | null => {
@@ -75,7 +77,9 @@ export const getClientUser = (): IUser | null => {
 
 export const removeClientUser = () => {
   if (!isClient()) return;
-  try { localStorage.removeItem(USER_KEY); } catch {}
+  try {
+    localStorage.removeItem(USER_KEY);
+  } catch {}
 };
 
 export const setAuthData = (data: AuthData) => {
@@ -105,41 +109,85 @@ function normalizeUser(payload: any): IUser | null {
   return u ? (u as IUser) : null;
 }
 
-export const loginUser = async (mail: string, password: string): Promise<AuthResponse> => {
+export const loginUser = async (
+  mail: string,
+  password: string,
+): Promise<AuthResponse> => {
   try {
     const res = await api.post("/user/login", { mail, password });
     const payload = res?.data;
 
     if (!payload?.success) {
-      return { success: false, message: payload?.message || "Giriş başarısız oldu" };
+      return {
+        success: false,
+        message: payload?.message || "Giriş başarısız oldu",
+      };
     }
 
     const token = normalizeToken(payload);
     let user = normalizeUser(payload);
 
-    // Token yoksa bile cookie ile login olabilir. Bu durumda auth endpoint'inden user çek.
+    // Login response has no user object — extract from JWT payload
+    if (!user && token) {
+      try {
+        const base64Payload = token.split(".")[1];
+        const decoded = JSON.parse(atob(base64Payload));
+        if (decoded?.uid || decoded?.name) {
+          user = {
+            _id: String(decoded.uid ?? ""),
+            name: [decoded.name, decoded.surname].filter(Boolean).join(" "),
+            email: "",
+            link: "",
+          };
+        }
+      } catch {
+        // JWT decode failed, try auth endpoint as fallback
+      }
+    }
+
+    // Fallback: try /user/auth endpoint
     if (!user) {
       try {
+        if (token) setClientToken(token);
         const authRes = await api.get("/user/auth");
         const authPayload = authRes?.data;
-        user = normalizeUser(authPayload) ?? (authPayload?.data?.user as IUser) ?? null;
+        user =
+          normalizeUser(authPayload) ??
+          (authPayload?.data?.user as IUser) ??
+          null;
       } catch {
         // auth da patlarsa aşağıda fail döneriz
       }
     }
 
-    // Token varsa client cookie'ye yaz (HttpOnly cookie kullanılıyorsa token zaten gelmez, bu normal)
+    // Token varsa client cookie'ye yaz
     if (token) setClientToken(token);
 
     if (!user) {
-      return { success: false, message: "Sunucudan kullanıcı verisi alınamadı (auth doğrulanamadı)" };
+      return {
+        success: false,
+        message: "Sunucudan kullanıcı verisi alınamadı (auth doğrulanamadı)",
+      };
     }
 
-    return { success: true, data: { access_token: token ?? undefined, user } };
+    return {
+      success: true,
+      data: { access_token: token ?? undefined, user },
+    };
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
-      if (err.response?.status === 401) return { success: false, message: "Kullanıcı adı veya şifre hatalı" };
-      return { success: false, message: (err.response?.data as any)?.message || err.message || "Bir hata oluştu" };
+      if (err.response?.status === 401)
+        return {
+          success: false,
+          message: "Kullanıcı adı veya şifre hatalı",
+        };
+      return {
+        success: false,
+        message:
+          (err.response?.data as any)?.message ||
+          err.message ||
+          "Bir hata oluştu",
+      };
     }
     return { success: false, message: "Beklenmeyen bir hata oluştu" };
   }
@@ -153,12 +201,12 @@ export const logoutUser = () => {
 
 export const checkAuth = async (): Promise<boolean> => {
   try {
-    // token cookie okunamasa bile (HttpOnly) cookie otomatik gidebilir; bu yüzden token şart koşma.
     const res = await api.get("/user/auth");
     const ok = Boolean(res?.data?.success);
 
     if (ok) {
-      const user = normalizeUser(res.data) ?? res.data?.data?.user ?? null;
+      const user =
+        normalizeUser(res.data) ?? res.data?.data?.user ?? null;
       if (user) setClientUser(user);
     }
 

@@ -7,12 +7,6 @@ import api from "@/lib/api";
 
 type Id = string;
 
-interface ApiCategory {
-  _id: Id;
-  name: string;
-  subcategories?: unknown[];
-}
-
 type CategoryVm = {
   id: Id;
   name: string;
@@ -38,21 +32,6 @@ function slugifyTR(input: string) {
     .replace(/^-|-$/g, "");
 }
 
-// API response’un “hangi formatta gelirse gelsin” array çıkar
-function unwrapArray<T>(res: any): T[] {
-  const root = res?.data ?? res;
-
-  // yaygın patternler: {success,data:[]}, {data:{data:[]}}, [] , {items:[]}, {categories:[]}
-  const maybe =
-    root?.data?.data ??
-    root?.data ??
-    root?.items ??
-    root?.categories ??
-    root;
-
-  return Array.isArray(maybe) ? (maybe as T[]) : [];
-}
-
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
@@ -64,10 +43,10 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // selectedCategoryId route’dan geliyorsa bazen whitespace/encode vs olur, normalize edelim
-  const selectedId = useMemo(() => (selectedCategoryId ? String(selectedCategoryId).trim() : ""), [
-    selectedCategoryId,
-  ]);
+  const selectedId = useMemo(
+    () => (selectedCategoryId ? String(selectedCategoryId).trim() : ""),
+    [selectedCategoryId]
+  );
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -77,26 +56,41 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
         setLoading(true);
         setError(null);
 
-        // api client axios tabanlıysa `signal` yeni versiyonlarda çalışır. Çalışmıyorsa bile sorun değil.
-        const res = await api.get("/admin/categories", { signal: ctrl.signal } as any);
-        const data = unwrapArray<ApiCategory>(res);
+        const res = await api.get("/categories/tree", { signal: ctrl.signal } as any);
 
-        const mapped: CategoryVm[] = data.map((c) => ({
-          id: c._id,
+        // Axios wraps in .data, API wraps in {success, data: {tree: [...]}}
+        const root = res?.data ?? res;
+        const tree: any[] =
+          root?.data?.tree ??
+          root?.tree ??
+          root?.data ??
+          (Array.isArray(root) ? root : []);
+
+        // tree is [ {uid:1, name:"Emlak", children:[...]} ]
+        // If single root node, drill into its children (Konut, İş Yeri, Arsa, etc.)
+        let items: any[] = tree;
+        if (
+          items.length === 1 &&
+          Array.isArray(items[0]?.children) &&
+          items[0].children.length > 0
+        ) {
+          items = items[0].children;
+        }
+
+        const mapped: CategoryVm[] = items.map((c: any) => ({
+          id: String(c.uid ?? c._id ?? c.name),
           name: c.name,
-          count: Array.isArray(c.subcategories) ? c.subcategories.length : 0,
+          count: Array.isArray(c.children) ? c.children.length : 0,
         }));
 
         setCategories(mapped);
       } catch (e: any) {
-        // Abort ise sessiz geç
         if (e?.name === "CanceledError" || e?.code === "ERR_CANCELED") return;
         if (e?.message?.toLowerCase?.().includes("canceled")) return;
 
         setCategories([]);
         setError(e?.response?.data?.message || e?.message || "Kategoriler yüklenemedi.");
       } finally {
-        // Abort olduysa loading’i kapatmana gerek yok, ama kapatsan da zarar vermez
         setLoading(false);
       }
     })();
@@ -108,18 +102,23 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
 
   const goCategory = useCallback(
     (id: Id, name: string) => {
-      router.push(`/kategori/${id}/${slugifyTR(name)}`);
+      router.push(`/ilanlar?type=${encodeURIComponent(name)}`);
     },
     [router]
   );
 
   const goAll = useCallback(() => {
-    router.push("/ilan"); // bilinçli: /ads değil
+    router.push("/ilanlar");
   }, [router]);
 
   const itemClass = useCallback(
     (active: boolean) =>
-      cx("block w-full text-left", "text-[13px] leading-6", "text-blue-700 hover:underline", active && "font-semibold"),
+      cx(
+        "block w-full text-left",
+        "text-[13px] leading-6",
+        "text-blue-700 hover:underline",
+        active && "font-semibold"
+      ),
     []
   );
 
@@ -129,9 +128,13 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
         <div className="text-[13px] font-semibold text-gray-900">Emlak</div>
       </div>
 
-      {loading && <div className="px-3 py-2 text-[12px] text-gray-500">Yükleniyor...</div>}
+      {loading && (
+        <div className="px-3 py-2 text-[12px] text-gray-500">Yükleniyor...</div>
+      )}
 
-      {!loading && error && <div className="px-3 py-2 text-[12px] text-red-600">{error}</div>}
+      {!loading && error && (
+        <div className="px-3 py-2 text-[12px] text-red-600">{error}</div>
+      )}
 
       {!loading && !error && categories.length === 0 && (
         <div className="px-3 py-2 text-[12px] text-gray-500">Kategori bulunamadı.</div>
@@ -147,8 +150,14 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
             const active = selectedId === c.id;
 
             return (
-              <button key={c.id} type="button" onClick={() => goCategory(c.id, c.name)} className={itemClass(active)}>
-                {c.name} <span className="text-gray-400 text-[11px]">({c.count})</span>
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => goCategory(c.id, c.name)}
+                className={itemClass(active)}
+              >
+                {c.name}{" "}
+                <span className="text-gray-400 text-[11px]">({c.count})</span>
               </button>
             );
           })}

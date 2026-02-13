@@ -28,21 +28,16 @@ export const metadata: Metadata = {
 };
 
 async function getHomeAdverts() {
-  const base = process.env.NEXT_PUBLIC_BACKEND_API;
+  const base = process.env.BACKEND_API || `http://localhost:3000${process.env.NEXT_PUBLIC_BACKEND_API || ""}`;
   if (!base) return [];
-
   const url = `${base}/advert/adverts?page=1&limit=6`;
-
   try {
-    const res = await fetch(url, {
-      // içerik sık değişiyorsa: revalidate düşür, hiç değişmiyorsa yükselt
-      next: { revalidate: 60 },
-    });
-
+    const res = await fetch(url, { next: { revalidate: 60 } });
     if (!res.ok) return [];
-
     const json = await res.json();
-    return json?.data ?? json?.data?.data ?? [];
+    const root = json?.data;
+    const items = Array.isArray(root) ? root : Array.isArray(root?.data) ? root.data : [];
+    return items;
   } catch {
     return [];
   }
@@ -59,7 +54,6 @@ export default async function Home() {
       <LocationsSection data={data} />
       <TypesSection data={data} />
       <CommentsSection />
-
       <ImageSliderSection />
       <RepresentativesSection />
     </div>

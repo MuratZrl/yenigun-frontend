@@ -45,10 +45,26 @@ export function getLocationText(listing: Listing): string {
 
 export function getFeeText(fee: Listing["fee"]): string | null {
   if (fee === null || fee === undefined) return null;
-  if (typeof fee === "number" && Number.isFinite(fee)) return String(fee);
+  if (typeof fee === "number" && Number.isFinite(fee)) {
+    return new Intl.NumberFormat("tr-TR").format(fee);
+  }
   if (typeof fee === "string") {
     const t = fee.trim();
-    return t ? t : null;
+    if (!t) return null;
+    
+    // Extract digits only
+    const digitsOnly = t.replace(/[^\d]/g, "");
+    // Extract non-digit suffix (currency symbol etc.)
+    const suffix = t.replace(/[\d.,\s]/g, "").trim();
+    
+    // If we have raw digits without thousand separators, format them
+    if (digitsOnly && !t.includes(".") && !t.includes(",")) {
+      const num = Number(digitsOnly);
+      if (Number.isFinite(num)) {
+        return new Intl.NumberFormat("tr-TR").format(num) + (suffix ? ` ${suffix}` : "");
+      }
+    }
+    return t;
   }
   return null;
 }

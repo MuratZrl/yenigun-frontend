@@ -32,6 +32,20 @@ function formatThousandsTR(rawDigits: string) {
   return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
+function findNodeByNameLocal(nodes: any[], name: string): any | null {
+  if (!name) return null;
+  const lower = name.toLowerCase().trim();
+  for (const n of nodes) {
+    if (String(n?.name ?? "").toLowerCase().trim() === lower) return n;
+    const kids = Array.isArray(n?.children ?? n?.subcategories) ? (n?.children ?? n?.subcategories) : [];
+    if (kids.length) {
+      const found = findNodeByNameLocal(kids, name);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 function parseFee(fee: unknown): { value: string; type: string } {
   if (typeof fee === "string") {
     const trimmed = fee.trim();
@@ -143,6 +157,8 @@ export function useEmlakEditController() {
     setThirdStep((prev) => ({ ...prev, selected: { ...(prev.selected as any), isSelect: true, value: ad?.steps?.third ?? "" } }));
 
     const featuresObj: FeatureValues = {};
+    console.log("RAW ad.featureValues from API:", JSON.stringify(ad?.featureValues, null, 2));
+
     if (Array.isArray(ad?.featureValues)) {
       for (const f of ad.featureValues) {
         if (f?.featureId && f?.value !== undefined) featuresObj[String(f.featureId)] = f.value;
@@ -341,9 +357,73 @@ export function useEmlakEditController() {
       const contractTs = fourthStep.contract_date ? new Date(fourthStep.contract_date as any).getTime() : Date.now();
       const feeValue = fourthStep.price?.value || "0";
       const feeType = fourthStep.price?.type || "TL";
-      const fvArr = Object.entries(featureValues)
-        .filter(([, v]) => v !== undefined && v !== null && v !== "")
-        .map(([fid, v]) => ({ featureId: fid, value: v }));
+
+      
+
+
+      // Collect all fac_* section keys being submitted
+const facKeys = new Set(
+  Object.keys(featureValues).filter((k) => k.startsWith("fac_"))
+);
+
+// Build a set of facility section titles (normalized) that fac_* entries cover
+const facTitleSet = new Set<string>();
+for (const k of facKeys) {
+  // fac_ic-ozellikler → "ic-ozellikler" → used as identifier
+  facTitleSet.add(k);
+}
+
+// If we have the category tree, find MongoDB-ID facility entries to exclude
+// (they're stale duplicates of the fac_* entries)
+const staleFacilityIds = new Set<string>();
+if (categories?.length) {
+  const stepNames = [
+    firstStep.selected?.value,
+    secondStep.selected?.value,
+    thirdStep.selected?.value,
+  ].filter(Boolean) as string[];
+
+  // Collect facility feature names from category chain
+  const facilityNames = new Set<string>();
+    for (const name of stepNames) {
+      const node = findNodeByNameLocal(categories, name);
+      if (!node) continue;
+      const facilities = Array.isArray(node.facilities) ? node.facilities : [];
+      for (const g of facilities) {
+        const title = String(g?.title ?? "").trim();
+        if (title) facilityNames.add(title.toLowerCase().trim());
+      }
+    }
+
+    // Find MongoDB-ID entries in current featureValues whose names match facility sections
+    // These are the old duplicates we want to exclude
+    if (facilityNames.size > 0 && advertData?.featureValues) {
+      // Use position-based matching to identify which MongoDB IDs are facility entries
+      // (same logic the server uses)
+      for (const fv of advertData.featureValues) {
+        const fid = String(fv?.featureId ?? "").trim();
+        if (!fid || fid.startsWith("fac_")) continue;
+        const val = fv?.value;
+        // If value is an array, it's likely a multi_select facility entry
+        if (Array.isArray(val)) {
+          staleFacilityIds.add(fid);
+        }
+      }
+    }
+  }
+
+  const fvArr = Object.entries(featureValues)
+    .filter(([fid, v]) => {
+      if (v === undefined || v === null) return false;
+      // Keep fac_* entries (even empty arrays — they represent cleared facilities)
+      if (fid.startsWith("fac_")) return true;
+      // Exclude stale MongoDB-ID facility duplicates
+      if (staleFacilityIds.has(fid)) return false;
+      // Exclude empty strings for non-facility entries
+      if (v === "") return false;
+      return true;
+    })
+    .map(([fid, v]) => ({ featureId: fid, value: v }));
 
       const req: any = {
         uid: Number(advertUid),

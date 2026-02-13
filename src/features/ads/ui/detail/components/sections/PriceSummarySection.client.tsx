@@ -124,13 +124,25 @@ export default function PriceSummarySection({
   }, [data, contract?.date]);
 
   const feeText = useMemo(() => {
-    const fee = toText((data as any)?.fee);
-    if (fee) return fee;
+    const fee = toText((data as any)?.fee).trim();
+
+    if (fee) {
+      // Remove trailing currency symbols/labels to avoid duplication
+      const cleaned = fee
+        .replace(/\s*(TL|₺|USD|\$|EUR|€|GBP|£)\s*/gi, "")
+        .trim();
+      // Extract currency from the fee string
+      const currencyMatch = fee.match(/(TL|₺|USD|\$|EUR|€|GBP|£)/i);
+      const currency = currencyMatch ? currencyMatch[1] : "TL";
+      const label = currency === "₺" ? "TL" : currency;
+      return cleaned ? `${cleaned} ${label}` : fee;
+    }
 
     const amount = (data as any)?.price?.amount;
     const currency = toText((data as any)?.price?.currency) || "TL";
+    const currencyLabel = currency === "₺" ? "TL" : currency;
     if (typeof amount === "number" && Number.isFinite(amount)) {
-      return `${amount.toLocaleString("tr-TR")} ${currency === "₺" ? "TL" : currency}`;
+      return `${amount.toLocaleString("tr-TR")} ${currencyLabel}`;
     }
     return "Fiyat yok";
   }, [data]);

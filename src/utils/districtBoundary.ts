@@ -1,3 +1,4 @@
+// src/utils/districtBoundary.ts
 export interface BoundaryCoord {
     lat: number;
     lng: number;
@@ -90,7 +91,20 @@ export const fetchDistrictFromOverpass = async (
             },
         });
 
-        const data = await response.json();
+        if (!response.ok) {
+					console.warn("Overpass API error:", response.status);
+					return null;
+        }
+
+        const text = await response.text();
+        let data: any;
+				
+        try {
+					data = JSON.parse(text);
+        } catch {
+					console.warn("Overpass API returned non-JSON response");
+					return null;
+        }
 
         if (data.elements && data.elements.length > 0) {
             let bestCoords: BoundaryCoord[] = [];

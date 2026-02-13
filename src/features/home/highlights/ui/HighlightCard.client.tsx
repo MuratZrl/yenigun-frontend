@@ -17,7 +17,6 @@ import {
   getFeeText,
   getFirstPhotoUrl,
   getLocationText,
-  getThoughtPreview,
 } from "../utils/listingUtils";
 
 type Props = {
@@ -56,7 +55,6 @@ export default function HighlightCard({
   const feeText = getFeeText(listing.fee) ?? "Fiyat Yok";
   const locationText = getLocationText(listing);
   const areaSqm = getAreaSqm(listing);
-  const thought = getThoughtPreview(listing, 90);
 
   const hasAnyFeatures =
     Boolean(listing.features?.bedrooms) ||
@@ -207,7 +205,7 @@ export default function HighlightCard({
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-foreground/80 bg-secondary px-3 py-1.5 rounded-full">
             {listing.steps?.second || "Konut"}
           </span>
@@ -215,12 +213,6 @@ export default function HighlightCard({
             {listing.steps?.first || "Satılık"}
           </span>
         </div>
-
-        {thought ? (
-          <p className="text-muted-foreground text-xs md:text-sm leading-relaxed line-clamp-2">
-            {thought}
-          </p>
-        ) : null}
       </div>
     </motion.div>
   );

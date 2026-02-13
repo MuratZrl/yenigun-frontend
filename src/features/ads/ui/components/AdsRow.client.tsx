@@ -155,7 +155,7 @@ export function AdsRowDesktop({
         {/* Fiyat */}
         <div className="px-3 py-2 text-right border-l border-gray-100 flex items-center justify-end">
           <div className="text-[13px] font-medium text-red-600 whitespace-nowrap">
-            {formatTRY((ad as any)?.fee) || "Fiyat Yok"}
+            {formatTRY((ad as any)?.fee, (ad as any)?.price?.currency) || "Fiyat Yok"}
           </div>
         </div>
 
@@ -233,7 +233,7 @@ export function AdsRowMobile({
 
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="text-[13px] font-medium text-red-600 whitespace-nowrap">
-              {formatTRY((ad as any)?.fee) || "Fiyat Yok"}
+              {formatTRY((ad as any)?.fee, (ad as any)?.price?.currency) || "Fiyat Yok"}
             </div>
 
             <div className="text-right leading-tight whitespace-nowrap">
@@ -267,7 +267,7 @@ export function AdsGridCard({
   const { dm, y } = formatTrDayMonth(ts);
 
   const title = (ad as any)?.title || "Başlık Yok";
-  const feeText = formatTRY((ad as any)?.fee) || "Fiyat Yok";
+  const feeText = formatTRY((ad as any)?.fee, (ad as any)?.price?.currency) || "Fiyat Yok";
   const cityDistrict = getCityDistrict(ad as any) || "-";
 
   return (

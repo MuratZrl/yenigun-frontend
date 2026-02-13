@@ -1,5 +1,4 @@
 // src/features/admin/emlak-list/ui/AdvertListPage.client.tsx
-
 "use client";
 
 import React from "react";

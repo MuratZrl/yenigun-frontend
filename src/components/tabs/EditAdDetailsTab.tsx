@@ -55,6 +55,11 @@ interface EditAdDetailsTabProps {
   categoryId: string;
   subcategoryId: string;
 
+  /* step names fallback (edit mode — advert has steps.first/second/third) */
+  stepFirst?: string;
+  stepSecond?: string;
+  stepThird?: string;
+
   /* location */
   marker: any[];
   setMarker: (m: any[]) => void;
@@ -131,6 +136,20 @@ function findNodeInTree(nodes: any[], id: string | number | undefined): any | nu
     if (String(n?.uid ?? "") === s || String(n?._id ?? "") === s) return n;
     const kids = safeArr<any>(n?.children ?? n?.subcategories);
     if (kids.length) { const f = findNodeInTree(kids, id); if (f) return f; }
+  }
+  return null;
+}
+
+function findNodeByName(nodes: any[], name: string): any | null {
+  if (!name) return null;
+  const lower = name.toLowerCase().trim();
+  for (const n of nodes) {
+    if (String(n?.name ?? "").toLowerCase().trim() === lower) return n;
+    const kids = safeArr<any>(n?.children ?? n?.subcategories);
+    if (kids.length) {
+      const found = findNodeByName(kids, name);
+      if (found) return found;
+    }
   }
   return null;
 }
@@ -246,6 +265,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
     heatingOptions, deedStatusOptions, directionOptions, zoningStatusOptions,
     featureValues, setFeatureValues, featuresStep, setFeaturesStep,
     categories, categoryId, subcategoryId,
+    stepFirst, stepSecond, stepThird,
     marker, setMarker, turkeyCities,
     mediaItems, setMediaItems, onPickImages, onRemoveMedia,
     videoFile, setVideoFile, onPickVideo, existingVideoUrl,
@@ -264,16 +284,28 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
   /* ── Dynamic features from category tree ── */
   const allFeatures = useMemo(() => {
     if (!categories?.length) return [];
+
+    // Try ID-based lookup first (works when categories tab was used)
     const targetId = subcategoryId || categoryId;
-    if (!targetId) return [];
-    const chain = collectChainToNode(categories, targetId);
-    if (!chain?.length) {
+    if (targetId) {
+      const chain = collectChainToNode(categories, targetId);
+      if (chain?.length) return buildFeaturesFromChain(chain);
       const node = findNodeInTree(categories, targetId);
-      if (!node) return [];
-      return buildFeaturesFromChain([node]);
+      if (node) return buildFeaturesFromChain([node]);
     }
+
+    // Fallback: find nodes by step names (edit mode — advert has steps.first/second/third)
+    const stepNames = [stepFirst, stepSecond, stepThird].filter(Boolean) as string[];
+    if (!stepNames.length) return [];
+
+    const chain: any[] = [];
+    for (const name of stepNames) {
+      const node = findNodeByName(categories, name);
+      if (node) chain.push(node);
+    }
+    if (!chain.length) return [];
     return buildFeaturesFromChain(chain);
-  }, [categories, categoryId, subcategoryId]);
+  }, [categories, categoryId, subcategoryId, stepFirst, stepSecond, stepThird]);
 
   useEffect(() => {
     if (!allFeatures.length) return;
@@ -801,52 +833,6 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
             </FieldRow>
           </>
         )}
-      </Section>
-
-      {/* ────────────────────────────────────────────────────── */}
-      {/*  DİĞER BİLGİLER & AYARLAR                             */}
-      {/* ────────────────────────────────────────────────────── */}
-      <Section title="Diğer Bilgiler" defaultOpen={false}>
-        <FieldRow label="Anahtar Kimde">
-          <select value={selVal((fourthStep as any).key)} onChange={e => updateNestedFourthStep("key" as any, "value", e.target.value)} className={selectCls}>
-            <option value="">Seçiniz</option>
-            {keyOptions.map((o: any, i: number) => <option key={`key-${i}`} value={typeof o === "string" ? o : o.value}>{typeof o === "string" ? o : o.label}</option>)}
-          </select>
-        </FieldRow>
-
-        <FieldRow label="İlan Aktif">
-          <button
-            type="button"
-            onClick={() => setIsActiveAd(!isActiveAd)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${isActiveAd ? "bg-green-500" : "bg-gray-300"}`}
-          >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${isActiveAd ? "translate-x-6" : "translate-x-1"}`} />
-          </button>
-        </FieldRow>
-
-        {[
-          { label: "Danışman Profili", key: "advisor_profile" },
-          { label: "Ajanda Emlak", key: "agenda_emlak" },
-          { label: "Anasayfa Emlak", key: "homepage_emlak" },
-          { label: "Yeni Emlak", key: "new_emlak" },
-          { label: "Şanslı Emlak", key: "chance_emlak" },
-          { label: "Özel Emlak", key: "special_emlak" },
-          { label: "Web'de Yayınla", key: "onweb_emlak" },
-        ].map(({ label, key }) => (
-          <FieldRow key={key} label={label}>
-            <button
-              type="button"
-              onClick={() => {
-                const current = selVal((fourthStep as any)[key]);
-                const next = current === "Evet" ? "Hayır" : "Evet";
-                updateFourthStep(key as any, { ...(fourthStep as any)[key], value: next });
-              }}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${selVal((fourthStep as any)[key]) === "Evet" ? "bg-blue-500" : "bg-gray-300"}`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${selVal((fourthStep as any)[key]) === "Evet" ? "translate-x-6" : "translate-x-1"}`} />
-            </button>
-          </FieldRow>
-        ))}
       </Section>
 
       {/* ────────────────────────────────────────────────────── */}

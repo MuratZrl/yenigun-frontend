@@ -1,4 +1,6 @@
+// src/components/PublicGoogleMap.tsx
 "use client";
+
 import React from "react";
 import {
   GoogleMap,

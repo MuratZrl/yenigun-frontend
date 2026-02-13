@@ -36,7 +36,7 @@ const Login = () => {
         console.log("Auth result:", isAuthenticated);
 
         if (isAuthenticated) {
-          router.push("/admin/emlak");
+          router.replace("/");
         }
       } catch (error) {
         console.error("Auth check failed:", error);
@@ -74,12 +74,10 @@ const Login = () => {
           return;
         }
 
-        setAuthData(result.data);
+        await setAuthData(result.data);
 
-        console.log("🔄 Redirecting in 1 second...");
-        setTimeout(() => {
-          router.push("/admin/emlak");
-        }, 1000);
+        router.replace("/");
+
       } else {
         console.log("❌ Login failed:", result.message);
         setIsError({

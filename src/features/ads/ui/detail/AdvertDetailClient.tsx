@@ -1,11 +1,9 @@
-// src/features/ads/ui/detail/AdvertDetail.client.tsx
+// src/features/ads/ui/detail/AdvertDetailClient.tsx
 "use client";
 
 import React, { useEffect, useMemo } from "react";
-
 import GoToTop from "@/components/GoToTop";
 import type { AdvertData, SimilarAd } from "@/types/advert";
-
 import HeaderSection from "./components/sections/HeaderSection.client";
 import PhotoGallerySection from "./components/sections/PhotoGallerySection.client";
 import PriceSummarySection from "./components/sections/PriceSummarySection.client";
@@ -13,18 +11,21 @@ import TabsSection from "./components/sections/TabsSection.client";
 import BottomActionBar from "./components/sections/BottomActionBar.client";
 import RightSidebarSection from "./components/sections/RightSidebarSection.client";
 import BottomInfoSection from "./components/sections/BottomInfoSection.client";
-
 import {
   useBreadcrumb,
   type BreadcrumbItem,
   type RightLink,
 } from "@/context/BreadcrumbContext";
 
+import type { FacilitySection } from "@/features/ads/server/loadAdvertPageData";
+
 type Props = {
   data: AdvertData;
   similarAds: SimilarAd[];
   breadcrumbs?: BreadcrumbItem[];
   breadcrumbRightLinks?: RightLink[];
+  featureNameMap?: Record<string, string>;
+  facilitiesSchema?: FacilitySection[];
 };
 
 export default function AdvertDetailClient({
@@ -32,6 +33,8 @@ export default function AdvertDetailClient({
   similarAds: _similarAds,
   breadcrumbs,
   breadcrumbRightLinks,
+  featureNameMap,
+  facilitiesSchema,
 }: Props) {
   const { setBreadcrumb, clearBreadcrumb } = useBreadcrumb();
 
@@ -44,15 +47,12 @@ export default function AdvertDetailClient({
     return v === null || v === undefined ? "" : String(v).trim();
   }, [data]);
 
-  // Title set
   useEffect(() => {
     if (title) document.title = `${title} - Yenigün Emlak`;
   }, [title]);
 
-  // Breadcrumb items: PM zinciri varsa onu kullan, yoksa title fallback
   const itemsToSet = useMemo<BreadcrumbItem[] | null>(() => {
     if (breadcrumbs && breadcrumbs.length > 0) return breadcrumbs;
-
     if (title && uid) {
       return [
         { label: "Anasayfa", href: "/" },
@@ -60,7 +60,6 @@ export default function AdvertDetailClient({
         { label: title, href: `/ilan/${uid}` },
       ];
     }
-
     if (title) {
       return [
         { label: "Anasayfa", href: "/" },
@@ -68,18 +67,15 @@ export default function AdvertDetailClient({
         { label: title },
       ];
     }
-
     return null;
   }, [breadcrumbs, title, uid]);
 
-  // Breadcrumb set (yeniden render oldukça değil, gerçekten değişince)
   useEffect(() => {
     if (itemsToSet && itemsToSet.length > 0) {
       setBreadcrumb(itemsToSet, breadcrumbRightLinks);
     }
   }, [itemsToSet, breadcrumbRightLinks, setBreadcrumb]);
 
-  // Cleanup sadece unmount'ta
   useEffect(() => {
     return () => {
       clearBreadcrumb();
@@ -97,18 +93,20 @@ export default function AdvertDetailClient({
           <div className="lg:col-span-6">
             <PhotoGallerySection data={data} />
           </div>
-
           <div className="lg:col-span-3">
             <PriceSummarySection data={data} />
           </div>
-
           <div className="lg:col-span-3">
             <RightSidebarSection data={data} />
           </div>
         </div>
 
         <div className="mt-4">
-          <TabsSection data={data} />
+          <TabsSection
+            data={data}
+            featureNameMap={featureNameMap}
+            facilitiesSchema={facilitiesSchema}
+          />
         </div>
 
         <div className="mt-4">
@@ -117,7 +115,6 @@ export default function AdvertDetailClient({
 
         <GoToTop />
       </div>
-
       <BottomActionBar data={data} />
     </main>
   );

@@ -100,6 +100,9 @@ export default function EmlakEditPage() {
             categories={c.categories}
             categoryId={c.advertData?.categoryId ?? ""}
             subcategoryId={c.advertData?.subcategoryId ?? ""}
+            stepFirst={c.advertData?.steps?.first ?? ""}
+            stepSecond={c.advertData?.steps?.second ?? ""}
+            stepThird={c.advertData?.steps?.third ?? ""}
             marker={c.marker}
             setMarker={c.setMarker as any}
             turkeyCities={c.turkeyCities as any}

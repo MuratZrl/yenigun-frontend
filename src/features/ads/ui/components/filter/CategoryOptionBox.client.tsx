@@ -27,7 +27,7 @@ type Props = {
   // hiyerarşi indent
   childIndentPx?: number; // default: 10
 
-  // “Emlak seçili” sayılacak filters.type değeri
+  // "Emlak seçili" sayılacak filters.type değeri
   rootTypeValue?: string; // default: "Hepsi"
 
   // opsiyonel: root item (Emlak) listede de görünsün mü?
@@ -152,19 +152,20 @@ export default function CategoryOptionsBox(props: Props) {
     showRootItemInList = false,
   } = props;
 
-  const activeTopName = useMemo(() => {
+  // Extract all parts of the active type path for highlighting
+  const activePathParts = useMemo(() => {
     const t = (filters as any)?.type;
-    if (!t || t === rootTypeValue) return null;
-    return String(t).split(" > ")[0].trim() || null;
+    if (!t || t === rootTypeValue) return [] as string[];
+    return String(t)
+      .split(" > ")
+      .map((p: string) => p.trim())
+      .filter(Boolean);
   }, [filters, rootTypeValue]);
-
-  const selectedName = selectedCategory?.name ?? activeTopName;
-  const selectedId = selectedCategory ? getNodeId(selectedCategory) : null;
 
   const isRootSelected = useMemo(() => {
     const t = (filters as any)?.type;
-    return !selectedName || !t || t === rootTypeValue;
-  }, [filters, selectedName, rootTypeValue]);
+    return !t || t === rootTypeValue || activePathParts.length === 0;
+  }, [filters, rootTypeValue, activePathParts]);
 
   const rootBtn = "w-full text-left px-3 py-1 text-[13px] focus:outline-none cursor-pointer";
   const itemBtn = "w-full text-left px-3 py-[2px] text-[13px] leading-[18px] focus:outline-none cursor-pointer";
@@ -212,7 +213,7 @@ export default function CategoryOptionsBox(props: Props) {
 
       <div className={cls("overflow-y-auto", maxListHeightClassName)}>
         {items.map((it) => {
-          const active = selectedId ? selectedId === it.id : selectedName === it.name;
+          const active = activePathParts.includes(it.name);
           const left = 12 + childIndentPx + it.depth * childIndentPx;
 
           return (

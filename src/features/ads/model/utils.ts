@@ -5,10 +5,14 @@ import { FEATURE_IDS } from "./constants";
 export const decodeURLParam = (param: string): string =>
   decodeURIComponent(param.replace(/\+/g, " "));
 
-export const formatTRY = (v: any) => {
+export const formatTRY = (v: any, currency?: string) => {
   if (!v) return "";
-  if (typeof v === "string") return v;
-  if (typeof v === "number") return new Intl.NumberFormat("tr-TR").format(v) + " TL";
+  const label = currency && currency !== "₺" ? currency : "TL";
+  if (typeof v === "string") {
+    const cleaned = v.replace(/\s*(TL|₺|USD|\$|EUR|€|GBP|£)\s*/gi, "").trim();
+    return cleaned ? `${cleaned} ${label}` : "";
+  }
+  if (typeof v === "number") return new Intl.NumberFormat("tr-TR").format(v) + ` ${label}`;
   return String(v);
 };
 

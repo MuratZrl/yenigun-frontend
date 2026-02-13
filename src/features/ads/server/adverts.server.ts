@@ -32,14 +32,8 @@ async function fetchJson<T>(path: string): Promise<T> {
 
   const res = await fetch(url, { cache: "no-store" });
 
-  console.log("[fetchJson]", { url, status: res.status });
-
   const json = (await res.json()) as any;
   const data = (json?.data?.data ?? json?.data ?? json) as T;
-
-  console.log("[fetchJson] keys:", Object.keys((data as any) ?? {}));
-  console.log("[fetchJson] details keys:", Object.keys(((data as any)?.details ?? {}) as any));
-  console.log("[fetchJson] featureValues length:", ((data as any)?.featureValues ?? []).length);
 
   return data;
 }
