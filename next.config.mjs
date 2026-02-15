@@ -4,6 +4,16 @@
 const nextConfig = {
   devIndicators: false,
 
+  async redirects() {
+    return [
+      {
+        source: "/ads/:uid",
+        destination: "/ilan/:uid",
+        permanent: true,
+      },
+    ];
+  },
+
   async rewrites() {
     return [
       // Frontend her zaman /backend/... çağırır, Next bunu sabit backend’e taşır.
