@@ -28,8 +28,7 @@ export const metadata: Metadata = {
 };
 
 async function getHomeAdverts() {
-  const base = process.env.BACKEND_API || `http://localhost:3000${process.env.NEXT_PUBLIC_BACKEND_API || ""}`;
-  if (!base) return [];
+  const base = process.env.BACKEND_API || "https://api.yenigunemlak.com";
   const url = `${base}/advert/adverts?page=1&limit=6`;
   try {
     const res = await fetch(url, { next: { revalidate: 60 } });
