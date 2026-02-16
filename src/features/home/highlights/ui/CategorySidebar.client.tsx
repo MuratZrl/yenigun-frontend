@@ -123,7 +123,7 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
   );
 
   return (
-    <aside className="w-full bg-white border border-gray-300 rounded-sm">
+    <aside className="w-full bg-white border border-gray-300 rounded-2xl overflow-hidden">
       <div className="px-3 py-2 border-b border-gray-200">
         <div className="text-[13px] font-semibold text-gray-900">Emlak</div>
       </div>

@@ -23,7 +23,7 @@ export default function QualitySection() {
       <div className="absolute top-10 left-10 w-72 h-72 bg-blue-500/5 rounded-full blur-3xl" />
       <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl" />
 
-      <div className="relative z-10 w-full">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}

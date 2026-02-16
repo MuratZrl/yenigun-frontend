@@ -11,8 +11,14 @@ import BreadcrumbBar from "@/components/layout/Breadcrumb.client";
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const isAdmin = pathname.startsWith("/admin");
+  const isLogin = pathname === "/login";
+  const isHome = pathname === "/";
 
   if (isAdmin) {
+    return <>{children}</>;
+  }
+
+  if (isLogin) {
     return <>{children}</>;
   }
 
@@ -20,8 +26,8 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     <>
       <Navbar />
       <div className="pt-14">
-        <BreadcrumbBar className="sticky top-14 z-30" />
-        <main className="mx-auto max-w-6xl px-4 pt-4 pb-4 bg-white min-h-screen">
+        {!isHome && <BreadcrumbBar className="sticky top-14 z-30" />}
+        <main className={isHome ? "min-h-screen" : "mx-auto max-w-6xl px-4 pt-4 pb-4 bg-white min-h-screen"}>
           {children}
         </main>
         <Footer />

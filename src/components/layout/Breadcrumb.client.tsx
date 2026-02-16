@@ -22,6 +22,12 @@ const DEFAULT_LABEL_MAP: Record<string, string> = {
   konut: "Konut",
   satilik: "Satılık",
   kiralik: "Kiralık",
+  about: "Hakkımızda",
+  contact: "İletişim",
+  search: "Arama",
+  map: "Harita",
+  login: "Giriş",
+  category: "Kategori",
 };
 
 function formatSegment(seg: string) {
