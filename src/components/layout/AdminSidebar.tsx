@@ -9,6 +9,7 @@ import { useCookies } from "react-cookie";
 import { Poppins } from "next/font/google";
 import {
   Archive,
+  BarChart3,
   BookA,
   Building,
   ChevronDown,
@@ -133,6 +134,12 @@ export default function AdminSidebar({
         name: "Sözleşmeler",
         url: "/admin/contracts",
         icon: <FileText size={20} />,
+      },
+      {
+        key: "statistics",
+        name: "İstatistikler",
+        url: "/admin/statistics",
+        icon: <BarChart3 size={20} />,
       },
       {
         key: "mail",
