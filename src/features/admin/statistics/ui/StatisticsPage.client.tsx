@@ -4,24 +4,49 @@
 import React, { useState } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useStatisticsData } from "../hooks/useStatisticsData";
+import { useGSCData, type GSCPeriod } from "../hooks/useGSCData";
 
 import MetricCards from "./components/MetricCards.client";
 import AlertBanner from "./components/AlertBanner.client";
 import MoreStatsCard from "./components/MoreStatsCard.client";
 import RecentActivityCard from "./components/RecentActivityCard.client";
-import GSCPlaceholder from "./components/GARequiredOverlay.client";
+
+// GSC components
+import SearchClicksCard from "./components/gsc/SearchClicksCard.client";
+import SearchPerformanceChart from "./components/gsc/SearchPerformanceChart.client";
+import GSCTopPagesCard from "./components/gsc/GSCTopPagesCard.client";
+import GSCDevicesCard from "./components/gsc/GSCDevicesCard.client";
+import GSCQueriesCard from "./components/gsc/GSCQueriesCard.client";
+import GSCCountriesCard from "./components/gsc/GSCCountriesCard.client";
+import GSCAudienceTab from "./components/gsc/GSCAudienceTab.client";
 
 const tabs = ["Ana Sayfa", "Kitle"];
+
+const periodOptions: { label: string; value: GSCPeriod }[] = [
+  { label: "7 gun", value: "7d" },
+  { label: "28 gun", value: "28d" },
+  { label: "90 gun", value: "90d" },
+];
+
+const emptyGSCData = {
+  totals: null,
+  byDate: [],
+  byPage: [],
+  byDevice: [],
+  byQuery: [],
+  byCountry: [],
+};
 
 export default function StatisticsPage() {
   const [activeTab, setActiveTab] = useState(0);
   const { data, loading } = useStatisticsData();
+  const gsc = useGSCData("28d");
 
   return (
     <AdminLayout>
       <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
-        {/* Top bar: tabs */}
-        <div className="flex items-center mb-8">
+        {/* Top bar: tabs + GSC period selector */}
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-6">
             {tabs.map((tab, i) => (
               <button
@@ -37,7 +62,39 @@ export default function StatisticsPage() {
               </button>
             ))}
           </div>
+
+          {/* Period selector */}
+          <div className="flex items-center gap-1">
+            {periodOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => gsc.changePeriod(opt.value)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${
+                  gsc.period === opt.value
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-400 hover:bg-gray-100"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* GSC error banner */}
+        {gsc.error && (
+          <div className="mb-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between">
+            <p className="text-xs text-red-600">
+              Google Search Console verisi yuklenemedi: {gsc.error}
+            </p>
+            <button
+              onClick={() => gsc.refresh()}
+              className="text-xs font-medium text-red-700 hover:text-red-900 transition-colors"
+            >
+              Tekrar dene
+            </button>
+          </div>
+        )}
 
         {/* Tab content */}
         {activeTab === 0 && (
@@ -53,18 +110,18 @@ export default function StatisticsPage() {
               />
             </div>
 
-            {/* Row 2: GSC — Tıklamalar + Gösterimler */}
+            {/* Row 2: GSC — Tiklamalar + Gosterimler */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 mb-3">
               <div className="lg:col-span-3">
-                <GSCPlaceholder
-                  title="Arama Tıklamaları"
-                  description="Toplam tıklama, ortalama CTR ve pozisyon verileri"
+                <SearchClicksCard
+                  totals={gsc.data?.totals ?? null}
+                  loading={gsc.loading}
                 />
               </div>
               <div className="lg:col-span-9">
-                <GSCPlaceholder
-                  title="Arama Performansı"
-                  description="Günlük tıklama ve gösterim trendi grafiği"
+                <SearchPerformanceChart
+                  byDate={gsc.data?.byDate ?? []}
+                  loading={gsc.loading}
                 />
               </div>
             </div>
@@ -74,12 +131,12 @@ export default function StatisticsPage() {
               <AlertBanner />
             </div>
 
-            {/* Row 4: GSC Top Sayfalar + Son İlanlar (REAL) + En İyi Danışmanlar (REAL) */}
+            {/* Row 4: GSC Top Sayfalar + Son Ilanlar (REAL) + En Iyi Danismanlar (REAL) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 mb-3">
               <div className="lg:col-span-4">
-                <GSCPlaceholder
-                  title="En Çok Tıklanan Sayfalar"
-                  description="Arama sonuçlarında en çok tıklanan sayfalar"
+                <GSCTopPagesCard
+                  byPage={gsc.data?.byPage ?? []}
+                  loading={gsc.loading}
                 />
               </div>
               <div className="lg:col-span-5">
@@ -96,24 +153,24 @@ export default function StatisticsPage() {
               </div>
             </div>
 
-            {/* Row 5: GSC — Cihazlar + Arama Sorguları + Ülkeler */}
+            {/* Row 5: GSC — Cihazlar + Arama Sorgulari + Ulkeler */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
               <div className="lg:col-span-4">
-                <GSCPlaceholder
-                  title="Cihaz Dağılımı"
-                  description="Masaüstü, mobil ve tablet arama dağılımı"
+                <GSCDevicesCard
+                  byDevice={gsc.data?.byDevice ?? []}
+                  loading={gsc.loading}
                 />
               </div>
               <div className="lg:col-span-4">
-                <GSCPlaceholder
-                  title="Popüler Arama Sorguları"
-                  description="Sitenizi bulmak için kullanılan arama terimleri"
+                <GSCQueriesCard
+                  byQuery={gsc.data?.byQuery ?? []}
+                  loading={gsc.loading}
                 />
               </div>
               <div className="lg:col-span-4">
-                <GSCPlaceholder
-                  title="Ülkelere Göre Arama"
-                  description="Hangi ülkelerden arama trafiği geliyor"
+                <GSCCountriesCard
+                  byCountry={gsc.data?.byCountry ?? []}
+                  loading={gsc.loading}
                 />
               </div>
             </div>
@@ -121,15 +178,10 @@ export default function StatisticsPage() {
         )}
 
         {activeTab === 1 && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-            <div className="lg:col-span-12">
-              <GSCPlaceholder
-                title="Kitle Verileri"
-                description="Ziyaretçi demografisi, ülke dağılımı ve oturum verileri GSC entegrasyonu ile görüntülenecektir"
-                className="min-h-[300px]"
-              />
-            </div>
-          </div>
+          <GSCAudienceTab
+            data={gsc.data ?? emptyGSCData}
+            loading={gsc.loading}
+          />
         )}
       </div>
     </AdminLayout>

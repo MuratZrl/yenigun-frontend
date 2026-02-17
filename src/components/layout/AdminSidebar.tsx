@@ -114,7 +114,7 @@ export default function AdminSidebar({
       {
         key: "users",
         name: "Müşteri Yönetimi",
-        url: "/admin/users",
+        url: "/admin/customers",
         icon: <Users size={20} />,
       },
       {

@@ -1,4 +1,4 @@
-// src/app/(admin)/admin/users/page.tsx
+// src/app/(admin)/admin/customers/page.tsx
 import { CustomersPage } from "@/features/admin/users";
 
 export default function UsersPage() {

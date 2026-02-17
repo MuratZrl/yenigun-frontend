@@ -18,6 +18,7 @@
     "framer-motion": "^12.33.0",
     "geist": "^1.7.0",
     "google-maps-react-markers": "^2.0.15",
+    "googleapis": "^171.4.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.563.0",
     "next": "^16.1.5",
