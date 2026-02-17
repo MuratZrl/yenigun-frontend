@@ -11,7 +11,7 @@ type Props = {
 
 export default function SliderNav({ prevRef, nextRef }: Props) {
   return (
-    <div className="absolute top-[80%] md:top-1/2 -translate-y-1/2 right-1/4 z-70 flex flex-col items-center justify-center gap-10">
+    <div className="absolute top-[80%] md:top-1/2 -translate-y-1/2 right-4 md:right-1/4 z-70 flex flex-col items-center justify-center gap-6 md:gap-10">
       <button
         ref={prevRef}
         type="button"

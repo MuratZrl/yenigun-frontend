@@ -16,7 +16,7 @@ const PoppinsFont = Poppins({
 export default function QualitySection() {
   return (
     <section
-      className="min-h-screen py-20 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-blue-50"
+      className="min-h-screen py-12 md:py-20 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-blue-50"
       style={PoppinsFont.style}
     >
       <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
@@ -29,7 +29,7 @@ export default function QualitySection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="text-center mb-20"
+          className="text-center mb-10 md:mb-20"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0 }}
@@ -50,7 +50,7 @@ export default function QualitySection() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             viewport={{ once: true }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6"
+            className="text-3xl md:text-4xl lg:text-6xl font-bold text-gray-900 mb-4 md:mb-6"
           >
             Üstün{" "}
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -64,7 +64,7 @@ export default function QualitySection() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             viewport={{ once: true }}
-            className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed"
+            className="text-base md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed"
           >
             Yenigün Emlak ile hayalinizdeki yaşam alanına kavuşun. Profesyonel
             danışmanlık ve güvenilir hizmet anlayışı.
@@ -76,7 +76,7 @@ export default function QualitySection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid xl:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-8 lg:gap-12"
+          className="grid xl:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-5 md:gap-8 lg:gap-12"
         >
           {qualityItems.map((item, index) => (
             <QualityCard key={item.title} item={item} index={index} />
@@ -88,7 +88,7 @@ export default function QualitySection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
           viewport={{ once: true }}
-          className="text-center mt-16"
+          className="text-center mt-10 md:mt-16"
         >
           <motion.div
             whileHover={{ scale: 1.02 }}

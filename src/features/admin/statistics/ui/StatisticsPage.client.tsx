@@ -23,9 +23,10 @@ import GSCAudienceTab from "./components/gsc/GSCAudienceTab.client";
 const tabs = ["Ana Sayfa", "Kitle"];
 
 const periodOptions: { label: string; value: GSCPeriod }[] = [
-  { label: "7 gun", value: "7d" },
-  { label: "28 gun", value: "28d" },
-  { label: "90 gun", value: "90d" },
+  { label: "24 Saat", value: "1d" },
+  { label: "7 Gün", value: "7d" },
+  { label: "28 Gün", value: "28d" },
+  { label: "90 Gün", value: "90d" },
 ];
 
 const emptyGSCData = {
@@ -46,7 +47,7 @@ export default function StatisticsPage() {
     <AdminLayout>
       <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
         {/* Top bar: tabs + GSC period selector */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
           <div className="flex items-center gap-6">
             {tabs.map((tab, i) => (
               <button
@@ -83,13 +84,13 @@ export default function StatisticsPage() {
 
         {/* GSC error banner */}
         {gsc.error && (
-          <div className="mb-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between">
+          <div className="mb-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <p className="text-xs text-red-600">
-              Google Search Console verisi yuklenemedi: {gsc.error}
+              Google Search Console verisi yüklenemedi: {gsc.error}
             </p>
             <button
               onClick={() => gsc.refresh()}
-              className="text-xs font-medium text-red-700 hover:text-red-900 transition-colors"
+              className="text-xs font-medium text-red-700 hover:text-red-900 transition-colors flex-shrink-0"
             >
               Tekrar dene
             </button>
@@ -111,14 +112,14 @@ export default function StatisticsPage() {
             </div>
 
             {/* Row 2: GSC — Tiklamalar + Gosterimler */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 mb-3">
-              <div className="lg:col-span-3">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
+              <div className="md:col-span-4 lg:col-span-3">
                 <SearchClicksCard
                   totals={gsc.data?.totals ?? null}
                   loading={gsc.loading}
                 />
               </div>
-              <div className="lg:col-span-9">
+              <div className="md:col-span-8 lg:col-span-9">
                 <SearchPerformanceChart
                   byDate={gsc.data?.byDate ?? []}
                   loading={gsc.loading}
@@ -128,12 +129,12 @@ export default function StatisticsPage() {
 
             {/* Row 3: Alert banner */}
             <div className="mb-3">
-              <AlertBanner />
+              <AlertBanner gscData={gsc.data} />
             </div>
 
             {/* Row 4: GSC Top Sayfalar + Son Ilanlar (REAL) + En Iyi Danismanlar (REAL) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 mb-3">
-              <div className="lg:col-span-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 mb-3">
+              <div className="sm:col-span-2 lg:col-span-4">
                 <GSCTopPagesCard
                   byPage={gsc.data?.byPage ?? []}
                   loading={gsc.loading}
@@ -154,20 +155,20 @@ export default function StatisticsPage() {
             </div>
 
             {/* Row 5: GSC — Cihazlar + Arama Sorgulari + Ulkeler */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-              <div className="lg:col-span-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="sm:col-span-2 lg:col-span-1">
                 <GSCDevicesCard
                   byDevice={gsc.data?.byDevice ?? []}
                   loading={gsc.loading}
                 />
               </div>
-              <div className="lg:col-span-4">
+              <div>
                 <GSCQueriesCard
                   byQuery={gsc.data?.byQuery ?? []}
                   loading={gsc.loading}
                 />
               </div>
-              <div className="lg:col-span-4">
+              <div>
                 <GSCCountriesCard
                   byCountry={gsc.data?.byCountry ?? []}
                   loading={gsc.loading}

@@ -65,13 +65,13 @@ function formatDate(dateStr: string) {
   const day = d.getDate();
   const months = [
     "Oca",
-    "Sub",
+    "Şub",
     "Mar",
     "Nis",
     "May",
     "Haz",
     "Tem",
-    "Agu",
+    "Ağu",
     "Eyl",
     "Eki",
     "Kas",
@@ -104,7 +104,7 @@ export default function SearchPerformanceChart({ byDate, loading }: Props) {
   if (byDate.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
-        <p className="text-xs text-gray-400">Henuz veri yok</p>
+        <p className="text-xs text-gray-400">Henüz veri yok</p>
       </div>
     );
   }
@@ -112,35 +112,33 @@ export default function SearchPerformanceChart({ byDate, loading }: Props) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <BarChart3 size={14} className="text-gray-400" />
-              <h3 className="text-sm font-semibold text-gray-900">
-                Arama Performansi
-              </h3>
-            </div>
-            <div className="flex items-end gap-1.5">
-              <span className="text-2xl font-bold text-gray-900">
-                {formatNum(totalClicks)}
-              </span>
-              <span className="text-[11px] text-gray-400 mb-0.5">tiklama</span>
-              <span className="text-[11px] text-gray-400 mb-0.5 ml-1">
-                {formatNum(totalImpressions)} gosterim
-              </span>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <BarChart3 size={14} className="text-gray-400" />
+            <h3 className="text-sm font-semibold text-gray-900">
+              Arama Performansı
+            </h3>
           </div>
-          {/* Legend */}
-          <div className="flex items-center gap-3 ml-2">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="text-[11px] text-gray-400">Tiklama</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-indigo-300" />
-              <span className="text-[11px] text-gray-400">Gosterim</span>
-            </div>
+          <div className="flex items-end gap-1.5">
+            <span className="text-2xl font-bold text-gray-900">
+              {formatNum(totalClicks)}
+            </span>
+            <span className="text-[11px] text-gray-400 mb-0.5">tıklama</span>
+            <span className="text-[11px] text-gray-400 mb-0.5 ml-1">
+              {formatNum(totalImpressions)} gösterim
+            </span>
+          </div>
+        </div>
+        {/* Legend */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-blue-500" />
+            <span className="text-[11px] text-gray-400">Tıklama</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-indigo-300" />
+            <span className="text-[11px] text-gray-400">Gösterim</span>
           </div>
         </div>
       </div>

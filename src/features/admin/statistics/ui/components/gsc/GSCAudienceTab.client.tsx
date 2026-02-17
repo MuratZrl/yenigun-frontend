@@ -58,7 +58,7 @@ function areaPath(values: number[], maxVal: number, minVal: number) {
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
   const day = d.getDate();
-  const months = ["Oca", "Sub", "Mar", "Nis", "May", "Haz", "Tem", "Agu", "Eyl", "Eki", "Kas", "Ara"];
+  const months = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
   return `${day} ${months[d.getMonth()]}`;
 }
 
@@ -77,7 +77,7 @@ function CTRPositionChart({ byDate, loading }: { byDate: GSCRow[]; loading?: boo
   if (byDate.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
-        <p className="text-xs text-gray-400">Henuz veri yok</p>
+        <p className="text-xs text-gray-400">Henüz veri yok</p>
       </div>
     );
   }
@@ -94,27 +94,25 @@ function CTRPositionChart({ byDate, loading }: { byDate: GSCRow[]; loading?: boo
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col h-full">
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <Target size={14} className="text-gray-400" />
-              <h3 className="text-sm font-semibold text-gray-900">CTR & Pozisyon Trendi</h3>
-            </div>
-            <div className="flex items-end gap-3">
-              <span className="text-lg font-bold text-green-600">%{avgCtr.toFixed(1)} CTR</span>
-              <span className="text-lg font-bold text-amber-600">{avgPos.toFixed(1)} Poz.</span>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <Target size={14} className="text-gray-400" />
+            <h3 className="text-sm font-semibold text-gray-900">CTR & Pozisyon Trendi</h3>
           </div>
-          <div className="flex items-center gap-3 ml-2">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-[11px] text-gray-400">CTR %</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-amber-500" />
-              <span className="text-[11px] text-gray-400">Pozisyon</span>
-            </div>
+          <div className="flex items-end gap-3">
+            <span className="text-lg font-bold text-green-600">%{avgCtr.toFixed(1)} CTR</span>
+            <span className="text-lg font-bold text-amber-600">{avgPos.toFixed(1)} Poz.</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-green-500" />
+            <span className="text-[11px] text-gray-400">CTR %</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-[11px] text-gray-400">Pozisyon</span>
           </div>
         </div>
       </div>
@@ -155,33 +153,37 @@ function QueryDetailTable({ byQuery, loading }: { byQuery: GSCRow[]; loading?: b
   if (byQuery.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
-        <p className="text-xs text-gray-400">Henuz sorgu verisi yok</p>
+        <p className="text-xs text-gray-400">Henüz sorgu verisi yok</p>
       </div>
     );
   }
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Sorgu Detaylari</h3>
-      {/* Table header */}
-      <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-400 font-medium mb-2 px-1">
-        <div className="col-span-5">Sorgu</div>
-        <div className="col-span-2 text-right">Tiklama</div>
-        <div className="col-span-2 text-right">Gosterim</div>
-        <div className="col-span-1 text-right">CTR</div>
-        <div className="col-span-2 text-right">Pozisyon</div>
-      </div>
-      {/* Table rows */}
-      <div className="flex-1 space-y-1">
-        {byQuery.slice(0, 10).map((row, i) => (
-          <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-            <div className="col-span-5 text-xs text-gray-700 truncate">{row.keys[0]}</div>
-            <div className="col-span-2 text-xs font-semibold text-gray-900 text-right">{formatNum(row.clicks)}</div>
-            <div className="col-span-2 text-xs text-gray-500 text-right">{formatNum(row.impressions)}</div>
-            <div className="col-span-1 text-[10px] text-green-600 font-medium text-right">%{(row.ctr * 100).toFixed(1)}</div>
-            <div className="col-span-2 text-xs text-amber-600 font-medium text-right">{row.position.toFixed(1)}</div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Sorgu Detayları</h3>
+      <div className="flex-1 overflow-x-auto -mx-4 px-4">
+        <div className="min-w-[480px]">
+          {/* Table header */}
+          <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-400 font-medium mb-2 px-1">
+            <div className="col-span-5">Sorgu</div>
+            <div className="col-span-2 text-right">Tıklama</div>
+            <div className="col-span-2 text-right">Gösterim</div>
+            <div className="col-span-1 text-right">CTR</div>
+            <div className="col-span-2 text-right">Pozisyon</div>
           </div>
-        ))}
+          {/* Table rows */}
+          <div className="space-y-1">
+            {byQuery.slice(0, 10).map((row, i) => (
+              <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="col-span-5 text-xs text-gray-700 truncate">{row.keys[0]}</div>
+                <div className="col-span-2 text-xs font-semibold text-gray-900 text-right">{formatNum(row.clicks)}</div>
+                <div className="col-span-2 text-xs text-gray-500 text-right">{formatNum(row.impressions)}</div>
+                <div className="col-span-1 text-[10px] text-green-600 font-medium text-right">%{(row.ctr * 100).toFixed(1)}</div>
+                <div className="col-span-2 text-xs text-amber-600 font-medium text-right">{row.position.toFixed(1)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -200,7 +202,7 @@ function CountryDetailCard({ byCountry, loading }: { byCountry: GSCRow[]; loadin
   if (byCountry.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
-        <p className="text-xs text-gray-400">Henuz ulke verisi yok</p>
+        <p className="text-xs text-gray-400">Henüz ülke verisi yok</p>
       </div>
     );
   }
@@ -214,29 +216,33 @@ function CountryDetailCard({ byCountry, loading }: { byCountry: GSCRow[]; loadin
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Ulke Detaylari</h3>
-      {/* Table header */}
-      <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-400 font-medium mb-2 px-1">
-        <div className="col-span-4">Ulke</div>
-        <div className="col-span-2 text-right">Tiklama</div>
-        <div className="col-span-2 text-right">Gosterim</div>
-        <div className="col-span-2 text-right">CTR</div>
-        <div className="col-span-2 text-right">Poz.</div>
-      </div>
-      <div className="flex-1 space-y-1">
-        {countries.map((c) => (
-          <div key={c.name} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-            <div className="col-span-4 flex items-center gap-2">
-              <span className="text-sm">{c.flag}</span>
-              <span className="text-xs text-gray-700 truncate">{c.name}</span>
-              <span className="text-[10px] text-gray-400">%{c.percent}</span>
-            </div>
-            <div className="col-span-2 text-xs font-semibold text-gray-900 text-right">{formatNum(c.clicks)}</div>
-            <div className="col-span-2 text-xs text-gray-500 text-right">{formatNum(c.impressions)}</div>
-            <div className="col-span-2 text-[10px] text-green-600 font-medium text-right">%{(c.ctr * 100).toFixed(1)}</div>
-            <div className="col-span-2 text-xs text-amber-600 font-medium text-right">{c.position.toFixed(1)}</div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Ülke Detayları</h3>
+      <div className="flex-1 overflow-x-auto -mx-4 px-4">
+        <div className="min-w-[480px]">
+          {/* Table header */}
+          <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-400 font-medium mb-2 px-1">
+            <div className="col-span-4">Ülke</div>
+            <div className="col-span-2 text-right">Tıklama</div>
+            <div className="col-span-2 text-right">Gösterim</div>
+            <div className="col-span-2 text-right">CTR</div>
+            <div className="col-span-2 text-right">Poz.</div>
           </div>
-        ))}
+          <div className="space-y-1">
+            {countries.map((c) => (
+              <div key={c.name} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="col-span-4 flex items-center gap-2">
+                  <span className="text-sm">{c.flag}</span>
+                  <span className="text-xs text-gray-700 truncate">{c.name}</span>
+                  <span className="text-[10px] text-gray-400">%{c.percent}</span>
+                </div>
+                <div className="col-span-2 text-xs font-semibold text-gray-900 text-right">{formatNum(c.clicks)}</div>
+                <div className="col-span-2 text-xs text-gray-500 text-right">{formatNum(c.impressions)}</div>
+                <div className="col-span-2 text-[10px] text-green-600 font-medium text-right">%{(c.ctr * 100).toFixed(1)}</div>
+                <div className="col-span-2 text-xs text-amber-600 font-medium text-right">{c.position.toFixed(1)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -255,38 +261,42 @@ function PagePerformanceTable({ byPage, loading }: { byPage: GSCRow[]; loading?:
   if (byPage.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
-        <p className="text-xs text-gray-400">Henuz sayfa verisi yok</p>
+        <p className="text-xs text-gray-400">Henüz sayfa verisi yok</p>
       </div>
     );
   }
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Sayfa Performansi</h3>
-      <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-400 font-medium mb-2 px-1">
-        <div className="col-span-5">Sayfa</div>
-        <div className="col-span-2 text-right">Tiklama</div>
-        <div className="col-span-2 text-right">Gosterim</div>
-        <div className="col-span-1 text-right">CTR</div>
-        <div className="col-span-2 text-right">Pozisyon</div>
-      </div>
-      <div className="flex-1 space-y-1">
-        {byPage.slice(0, 10).map((row, i) => {
-          let path = row.keys[0] ?? "";
-          try { path = new URL(path).pathname; } catch { /* keep as-is */ }
-          return (
-            <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="col-span-5 flex items-center gap-1.5">
-                <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0" style={{ backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }}>{i + 1}</span>
-                <span className="text-xs text-gray-700 truncate">{path}</span>
-              </div>
-              <div className="col-span-2 text-xs font-semibold text-gray-900 text-right">{formatNum(row.clicks)}</div>
-              <div className="col-span-2 text-xs text-gray-500 text-right">{formatNum(row.impressions)}</div>
-              <div className="col-span-1 text-[10px] text-green-600 font-medium text-right">%{(row.ctr * 100).toFixed(1)}</div>
-              <div className="col-span-2 text-xs text-amber-600 font-medium text-right">{row.position.toFixed(1)}</div>
-            </div>
-          );
-        })}
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Sayfa Performansı</h3>
+      <div className="flex-1 overflow-x-auto -mx-4 px-4">
+        <div className="min-w-[520px]">
+          <div className="grid grid-cols-12 gap-2 text-[10px] text-gray-400 font-medium mb-2 px-1">
+            <div className="col-span-5">Sayfa</div>
+            <div className="col-span-2 text-right">Tıklama</div>
+            <div className="col-span-2 text-right">Gösterim</div>
+            <div className="col-span-1 text-right">CTR</div>
+            <div className="col-span-2 text-right">Pozisyon</div>
+          </div>
+          <div className="space-y-1">
+            {byPage.slice(0, 10).map((row, i) => {
+              let path = row.keys[0] ?? "";
+              try { path = new URL(path).pathname; } catch { /* keep as-is */ }
+              return (
+                <div key={i} className="grid grid-cols-12 gap-2 items-center px-1 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="col-span-5 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0" style={{ backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }}>{i + 1}</span>
+                    <span className="text-xs text-gray-700 truncate">{path}</span>
+                  </div>
+                  <div className="col-span-2 text-xs font-semibold text-gray-900 text-right">{formatNum(row.clicks)}</div>
+                  <div className="col-span-2 text-xs text-gray-500 text-right">{formatNum(row.impressions)}</div>
+                  <div className="col-span-1 text-[10px] text-green-600 font-medium text-right">%{(row.ctr * 100).toFixed(1)}</div>
+                  <div className="col-span-2 text-xs text-amber-600 font-medium text-right">{row.position.toFixed(1)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -314,7 +324,7 @@ export default function GSCAudienceTab({ data, loading }: Props) {
 
   const summaryCards = [
     {
-      label: "Gunluk Ort. Tiklama",
+      label: "Günlük Ort. Tıklama",
       value: loading || !totals ? "\u2014" : formatNum(Math.round(avgDailyClicks)),
       trend: clicksTrend,
       icon: MousePointerClick,
@@ -322,7 +332,7 @@ export default function GSCAudienceTab({ data, loading }: Props) {
       iconColor: "text-blue-600",
     },
     {
-      label: "Gunluk Ort. Gosterim",
+      label: "Günlük Ort. Gösterim",
       value: loading || !totals ? "\u2014" : formatNum(Math.round(avgDailyImpressions)),
       trend: imprTrend,
       icon: Eye,
@@ -369,7 +379,7 @@ export default function GSCAudienceTab({ data, loading }: Props) {
               <p className="text-xl font-bold text-gray-900">{card.value}</p>
               <p className="text-[11px] text-gray-500 mt-0.5">{card.label}</p>
               {trend !== undefined && !loading && (
-                <p className="text-[10px] text-gray-400 mt-0.5">Son 7 gun vs onceki 7 gun</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">Son 7 gün vs önceki 7 gün</p>
               )}
             </div>
           );

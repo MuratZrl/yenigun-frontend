@@ -84,7 +84,7 @@ export default function HighlightsSection({ data }: HighlightProps) {
         </div>
 
         <div className="lg:w-3/4">
-          <div className="space-y-0 mb-8 block md:hidden">
+          <div className="space-y-3 mb-8 block md:hidden">
             {visibleData.map((listing, index) => (
               <HighlightMobileRow
                 key={listing.uid || String(index)}

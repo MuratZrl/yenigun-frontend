@@ -26,19 +26,19 @@ export default function WhyUsSection() {
   }, []);
 
   return (
-    <section className={`min-h-screen py-16 relative bg-white ${PoppinsFont.className}`}>
+    <section className={`min-h-screen py-10 md:py-16 relative bg-white ${PoppinsFont.className}`}>
       <div className="max-w-6xl mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-8 md:mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 md:mb-4">
             {headingNode}
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
             {whyUsContent.subheading}
           </p>
         </motion.div>
@@ -48,7 +48,7 @@ export default function WhyUsSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
-          className="flex flex-col lg:flex-row gap-12 items-center justify-between mb-20"
+          className="flex flex-col lg:flex-row gap-8 md:gap-12 items-center justify-between mb-12 md:mb-20"
         >
           <WhyUsImageBlock
             imageSrc={whyUsContent.image.src}

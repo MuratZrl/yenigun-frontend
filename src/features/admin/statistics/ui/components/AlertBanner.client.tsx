@@ -15,17 +15,18 @@ import {
   MapPin,
   Check,
   Trash2,
+  AlertTriangle,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import type { GSCData } from "../../api/gscApi";
+import {
+  useAlertEvaluator,
+  type AlertRule,
+  type TriggeredAlert,
+} from "../../hooks/useAlertEvaluator";
 
 /* ── Types ── */
-type AlertRule = {
-  id: string;
-  metric: "clicks" | "impressions" | "ctr" | "position";
-  direction: "drop" | "rise";
-  threshold: number; // percentage
-  enabled: boolean;
-};
 
 type SavedAlerts = {
   rules: AlertRule[];
@@ -40,14 +41,14 @@ const METRIC_OPTIONS: {
   icon: typeof MousePointerClick;
   iconColor: string;
 }[] = [
-  { value: "clicks", label: "Tiklama", icon: MousePointerClick, iconColor: "text-blue-600" },
-  { value: "impressions", label: "Gosterim", icon: Eye, iconColor: "text-indigo-600" },
+  { value: "clicks", label: "Tıklama", icon: MousePointerClick, iconColor: "text-blue-600" },
+  { value: "impressions", label: "Gösterim", icon: Eye, iconColor: "text-indigo-600" },
   { value: "ctr", label: "CTR", icon: Target, iconColor: "text-green-600" },
   { value: "position", label: "Pozisyon", icon: MapPin, iconColor: "text-amber-600" },
 ];
 
 const DIRECTION_OPTIONS: { value: AlertRule["direction"]; label: string }[] = [
-  { value: "drop", label: "duserse" },
+  { value: "drop", label: "düşerse" },
   { value: "rise", label: "artarsa" },
 ];
 
@@ -116,8 +117,8 @@ function AlertSettingsModal({
     onClose();
     toast.success(
       enabledRules.length > 0
-        ? `${enabledRules.length} uyari kurali kaydedildi`
-        : "Tum uyarilar kaldirildi"
+        ? `${enabledRules.length} uyarı kuralı kaydedildi`
+        : "Tüm uyarılar kaldırıldı"
     );
   }, [rules, onSave, onClose]);
 
@@ -137,7 +138,7 @@ function AlertSettingsModal({
             initial={{ opacity: 0, scale: 0.97, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 16 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-xl shadow-xl z-50 max-h-[85vh] flex flex-col"
+            className="fixed inset-x-3 sm:inset-x-auto sm:left-1/2 top-1/2 sm:-translate-x-1/2 -translate-y-1/2 w-auto sm:w-full sm:max-w-lg bg-white rounded-xl shadow-xl z-50 max-h-[85vh] flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-gray-200">
@@ -146,8 +147,8 @@ function AlertSettingsModal({
                   <Bell size={16} className="text-amber-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Uyari Ayarlari</h2>
-                  <p className="text-[11px] text-gray-500">GSC metriklerinde degisiklik olursa bildirim alin</p>
+                  <h2 className="text-lg font-semibold text-gray-900">Uyarı Ayarları</h2>
+                  <p className="text-[11px] text-gray-500">GSC metriklerinde değişiklik olursa bildirim alın</p>
                 </div>
               </div>
               <button
@@ -165,8 +166,8 @@ function AlertSettingsModal({
               {rules.length === 0 && (
                 <div className="text-center py-8">
                   <Bell size={32} className="text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Henuz uyari kurali yok</p>
-                  <p className="text-[11px] text-gray-400">Asagidaki butona tiklayarak yeni kural ekleyin</p>
+                  <p className="text-sm text-gray-500">Henüz uyarı kuralı yok</p>
+                  <p className="text-[11px] text-gray-400">Aşağıdaki butona tıklayarak yeni kural ekleyin</p>
                 </div>
               )}
 
@@ -249,12 +250,12 @@ function AlertSettingsModal({
                         ))}
                       </select>
 
-                      <span className="text-[11px] text-gray-400">bildirim gonder</span>
+                      <span className="text-[11px] text-gray-400">bildirim gönder</span>
                     </div>
 
                     {/* Preview text */}
                     <p className="text-[10px] text-gray-400 mt-2">
-                      &ldquo;{metricOpt?.label} %{rule.threshold} {rule.direction === "drop" ? "duserse" : "artarsa"} beni bilgilendir&rdquo;
+                      &ldquo;{metricOpt?.label} %{rule.threshold} {rule.direction === "drop" ? "düşerse" : "artarsa"} beni bilgilendir&rdquo;
                     </p>
                   </div>
                 );
@@ -277,7 +278,7 @@ function AlertSettingsModal({
                 onClick={onClose}
                 className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
               >
-                Iptal
+                İptal
               </button>
               <button
                 type="button"
@@ -296,7 +297,12 @@ function AlertSettingsModal({
 }
 
 /* ── Main AlertBanner Component ── */
-export default function AlertBanner() {
+
+type AlertBannerProps = {
+  gscData?: GSCData | null;
+};
+
+export default function AlertBanner({ gscData = null }: AlertBannerProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [savedRules, setSavedRules] = useState<AlertRule[]>([]);
   const [mounted, setMounted] = useState(false);
@@ -314,28 +320,59 @@ export default function AlertBanner() {
     saveAlerts({ rules, updatedAt: new Date().toISOString() });
   }, []);
 
+  // Evaluate alerts against real GSC data
+  const triggeredAlerts = useAlertEvaluator(gscData, savedRules);
+
   const activeCount = savedRules.filter((r) => r.enabled).length;
-  const hasAlerts = activeCount > 0;
+  const hasRules = activeCount > 0;
+  const hasTriggered = triggeredAlerts.length > 0;
 
   if (!mounted) return null;
+
+  // Determine banner state
+  // State 1: No rules → amber
+  // State 2: Rules active, no triggers → green
+  // State 3: Rules active, alerts triggered → red/orange
+  const bannerState = !hasRules ? "no-rules" : hasTriggered ? "triggered" : "all-clear";
+
+  const bannerColors = {
+    "no-rules": "bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/50",
+    "all-clear": "bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 border border-green-200/50",
+    triggered: "bg-gradient-to-r from-red-50 via-orange-50 to-red-50 border border-red-200/50",
+  };
+
+  const iconColors = {
+    "no-rules": { bg: "bg-amber-100", icon: "text-amber-600" },
+    "all-clear": { bg: "bg-green-100", icon: "text-green-600" },
+    triggered: { bg: "bg-red-100", icon: "text-red-600" },
+  };
+
+  const buttonColors = {
+    "no-rules": "bg-amber-600 hover:bg-amber-700",
+    "all-clear": "bg-green-600 hover:bg-green-700",
+    triggered: "bg-red-600 hover:bg-red-700",
+  };
 
   return (
     <>
       <div
-        className={`rounded-xl p-3.5 flex items-center justify-between group hover:shadow-sm transition-shadow ${
-          hasAlerts
-            ? "bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 border border-green-200/50"
-            : "bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/50"
-        }`}
+        className={`rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group hover:shadow-sm transition-shadow ${bannerColors[bannerState]}`}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-9 h-9 rounded-lg flex items-center justify-center relative ${
-              hasAlerts ? "bg-green-100" : "bg-amber-100"
-            }`}
+            className={`w-9 h-9 rounded-lg flex items-center justify-center relative flex-shrink-0 ${iconColors[bannerState].bg}`}
           >
-            <Bell className={`w-4 h-4 ${hasAlerts ? "text-green-600" : "text-amber-600"}`} />
-            {hasAlerts ? (
+            {bannerState === "triggered" ? (
+              <AlertTriangle className={`w-4 h-4 ${iconColors[bannerState].icon}`} />
+            ) : (
+              <Bell className={`w-4 h-4 ${iconColors[bannerState].icon}`} />
+            )}
+
+            {bannerState === "triggered" ? (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-[8px] text-white font-bold">{triggeredAlerts.length}</span>
+              </div>
+            ) : bannerState === "all-clear" ? (
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                 <Check size={8} className="text-white" strokeWidth={3} />
               </div>
@@ -345,44 +382,77 @@ export default function AlertBanner() {
               </div>
             )}
           </div>
-          <div>
-            {hasAlerts ? (
+
+          <div className="min-w-0">
+            {bannerState === "triggered" ? (
               <>
-                <p className="text-sm font-semibold text-gray-900">
-                  {activeCount} uyari aktif
+                <p className="text-sm font-semibold text-red-800">
+                  {triggeredAlerts.length} uyarı tetiklendi
                 </p>
-                <p className="text-[11px] text-gray-500">
-                  {savedRules
-                    .filter((r) => r.enabled)
-                    .map((r) => {
-                      const m = METRIC_OPTIONS.find((o) => o.value === r.metric);
-                      return `${m?.label ?? r.metric} %${r.threshold} ${r.direction === "drop" ? "\u2193" : "\u2191"}`;
+                <p className="text-[11px] text-red-600 truncate">
+                  {triggeredAlerts
+                    .map((a) => {
+                      const dir = a.direction === "drop" ? "\u2193" : "\u2191";
+                      return `${a.metricLabel} %${Math.abs(a.actualChange).toFixed(1)} ${dir}`;
                     })
                     .join(" \u2022 ")}
                 </p>
               </>
+            ) : bannerState === "all-clear" ? (
+              <>
+                <p className="text-sm font-semibold text-gray-900">
+                  {activeCount} uyarı aktif
+                </p>
+                <p className="text-[11px] text-green-600 flex items-center gap-1">
+                  <ShieldCheck size={10} />
+                  Tüm metrikler normal aralıkta
+                </p>
+              </>
             ) : (
               <>
-                <p className="text-sm font-semibold text-gray-900">Uyari ayarlanmadi</p>
+                <p className="text-sm font-semibold text-gray-900">Uyarı ayarlanmadı</p>
                 <p className="text-[11px] text-gray-500">
-                  Verileriniz buyuk olcude degistiginde bildirim alin
+                  Verileriniz büyük ölçüde değiştiğinde bildirim alın
                 </p>
               </>
             )}
           </div>
         </div>
+
         <button
           onClick={() => setModalOpen(true)}
-          className={`px-4 py-2 rounded-lg text-[11px] font-medium text-white transition-colors flex items-center gap-1.5 ${
-            hasAlerts
-              ? "bg-green-600 hover:bg-green-700"
-              : "bg-amber-600 hover:bg-amber-700"
-          }`}
+          className={`px-4 py-2 rounded-lg text-[11px] font-medium text-white transition-colors flex items-center justify-center gap-1.5 flex-shrink-0 w-full sm:w-auto ${buttonColors[bannerState]}`}
         >
-          {hasAlerts ? "Uyarilari Duzenle" : "Uyari Ayarla"}
+          {bannerState === "triggered"
+            ? "Detayları Gör"
+            : hasRules
+              ? "Uyarıları Düzenle"
+              : "Uyarı Ayarla"}
           <ChevronRight size={12} />
         </button>
       </div>
+
+      {/* Triggered alerts detail row */}
+      {bannerState === "triggered" && (
+        <div className="mt-2 space-y-1.5">
+          {triggeredAlerts.map((alert) => (
+            <div
+              key={alert.ruleId}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-red-50/60 border border-red-100"
+            >
+              <AlertTriangle size={12} className="text-red-500 flex-shrink-0" />
+              <span className="text-[11px] text-red-700">
+                <span className="font-semibold">{alert.metricLabel}</span>
+                {" "}%{Math.abs(alert.actualChange).toFixed(1)}{" "}
+                {alert.direction === "drop" ? "düştü" : "arttı"}
+                <span className="text-red-400 ml-1">
+                  (eşik: %{alert.threshold})
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <AlertSettingsModal
         isOpen={modalOpen}

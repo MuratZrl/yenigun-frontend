@@ -65,7 +65,7 @@ export default function MoreStatsCard({ advisors, loading }: MoreStatsCardProps)
       <div className="relative">
         <div className="flex items-center gap-2 mb-4">
           <Crown size={14} className="text-amber-300" />
-          <h3 className="text-sm font-semibold">En İyi Danışmanlar</h3>
+          <h3 className="text-sm font-semibold">Danışman Aktifliği</h3>
         </div>
 
         {loading ? (
