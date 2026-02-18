@@ -45,7 +45,7 @@ export interface GSCResponse {
  * CORS sorunu yasamaz ve cookie otomatik gider.
  */
 export async function fetchGSCData(
-  period: "7d" | "28d" | "90d" = "28d"
+  period: "1d" | "7d" | "28d" | "90d" = "28d"
 ): Promise<GSCData> {
   const res = await axios.get<GSCResponse>("/api/gsc", {
     params: { period },

@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchGSCData, type GSCData } from "../api/gscApi";
 
-export type GSCPeriod = "7d" | "28d" | "90d";
+export type GSCPeriod = "1d" | "7d" | "28d" | "90d";
 
 export interface GSCState {
   data: GSCData | null;

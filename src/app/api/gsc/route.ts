@@ -62,7 +62,8 @@ function getDateRange(period: string): { startDate: string; endDate: string } {
   end.setDate(end.getDate() - 2); // GSC data has ~2-day lag
 
   let daysBack = 28;
-  if (period === "7d") daysBack = 7;
+  if (period === "1d") daysBack = 1;
+  else if (period === "7d") daysBack = 7;
   else if (period === "90d") daysBack = 90;
   else if (period === "28d") daysBack = 28;
 
