@@ -12,6 +12,7 @@ export interface Address {
 }
 
 export interface Advisor {
+  uid?: number | string;
   name: string;
   surname: string;
   gsmNumber?: string;
@@ -107,6 +108,7 @@ export interface Advert {
     roomCount?: string;
     floor?: string;
     netArea?: string;
+    grossArea?: string;
     acre?: string;
   };
   fee?: string;

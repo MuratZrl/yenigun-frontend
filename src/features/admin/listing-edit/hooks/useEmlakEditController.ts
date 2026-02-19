@@ -210,6 +210,8 @@ export function useEmlakEditController() {
       heating: createSelectionItem(ad?.details?.heating ?? ad?.heating ?? "", heatingOptions),
       deedStatus: createSelectionItem(ad?.details?.deed ?? ad?.deedStatus ?? "", deedStatusOptions),
       zoningStatus: createSelectionItem(ad?.details?.zoningStatus ?? ad?.zoningStatus ?? "", zoningStatusOptions),
+      bathroomCount: ad?.details?.bathroomCount ?? ad?.bathroomCount ?? "",
+      parking: ad?.details?.parking ?? ad?.parking ?? "",
       agenda_emlak: createSelectionItem(ad?.questions?.agendaEmlak ? "Evet" : "Hayır", yesNoOptions),
       homepage_emlak: createSelectionItem(ad?.questions?.homepageEmlak ? "Evet" : "Hayır", yesNoOptions),
       new_emlak: createSelectionItem(ad?.questions?.new_emlak ? "Evet" : "Hayır", yesNoOptions),

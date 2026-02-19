@@ -114,6 +114,8 @@ export interface FormData {
   heating: SelectionItem;
   deedStatus: SelectionItem;
   zoningStatus: SelectionItem;
+  bathroomCount: string;
+  parking: string;
 }
 
 export interface SelectedItem {
@@ -123,14 +125,14 @@ export interface SelectedItem {
   name?: string;  
   type?: string;    
   options?: string[]; 
-  categoryData?:any
-  subcategoryData?: any;
+  categoryData?: Category | SubCategory | null;
+  subcategoryData?: SubCategory | null;
  featureData?: Feature | null;
 }
 
 export interface StepState {
   selected: SelectedItem;
-  selections?: any;
+  selections?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
 export interface CustomerPhone {
@@ -198,6 +200,8 @@ export interface PropertyDetails {
   heating?: string;
   deed?: string;
   zoningStatus?: string;
+  bathroomCount?: string;
+  parking?: string;
 }
  
 export interface PropertyData {

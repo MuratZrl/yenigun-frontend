@@ -1,7 +1,7 @@
 // src/features/admin/emlak-create/hooks/useEmlakCreateController.ts
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type SyntheticEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
@@ -161,8 +161,8 @@ export function useEmlakCreateController() {
   }, []);
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
+    async (e?: SyntheticEvent) => {
+      e?.preventDefault();
       setIsSubmitting(true);
 
       try {

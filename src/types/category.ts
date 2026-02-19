@@ -27,6 +27,4 @@ export interface Feature {
   __v?: number;
 }
 
-export interface FeatureValues {
-  [featureId: string]: any;
-}
+export type FeatureValues = Record<string, string | number | boolean | string[]>;

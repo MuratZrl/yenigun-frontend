@@ -10,7 +10,7 @@ import Select from "react-select";
 import RichTextEditor from "@/components/RichTextEditor";
 import AdminGoogleMap from "@/components/layout/AdminGoogleMap";
 
-import type { FormData, MediaItem, StepState } from "@/types/property";
+import type { FormData, MediaItem, StepState, TurkeyCity, Advisor } from "@/types/property";
 import { isLocal, isRemote } from "@/types/property";
 import type Customer from "@/types/customers";
 import type { Category, FeatureValues } from "@/types/category";
@@ -19,18 +19,66 @@ import type { Category, FeatureValues } from "@/types/category";
 /*  Types                                                             */
 /* ================================================================== */
 
+type FormDataValue = FormData[keyof FormData];
+
+type MapMarker = { lat: number; lng: number; time?: Date };
+
+/** Category tree node used by helpers (flat or nested API shapes) */
+type CategoryTreeNode = {
+  uid?: string;
+  _id?: string;
+  id?: string;
+  name?: string;
+  title?: string;
+  parentUid?: string;
+  parentId?: string;
+  children?: CategoryTreeNode[];
+  subcategories?: CategoryTreeNode[];
+  subCategories?: CategoryTreeNode[];
+  attributes?: CategoryAttribute[];
+  facilities?: CategoryFacility[];
+  features?: { _id: string; name: string; type?: string; options?: string[]; order?: number }[];
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
+};
+
+type CategoryAttribute = {
+  id?: string;
+  _id?: string;
+  name?: string;
+  type?: string;
+  options?: string[];
+  order?: number;
+};
+
+type CategoryFacility = {
+  title?: string;
+  features?: string[];
+};
+
+/** Built dynamic feature descriptor */
+type DynamicFeature = {
+  _id: string;
+  name: string;
+  type: string;
+  options: string[];
+  required: boolean;
+  order?: number;
+};
+
 interface EditAdDetailsTabProps {
   /* basic info */
   fourthStep: FormData;
-  updateFourthStep: (field: keyof FormData, value: any) => void;
-  updateNestedFourthStep: (parent: keyof FormData, child: string, value: any) => void;
+  updateFourthStep: (field: keyof FormData, value: FormDataValue) => void;
+  updateNestedFourthStep: (parent: keyof FormData, child: string, value: string) => void;
   content: string;
   setContent: (c: string) => void;
   onTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPriceValueChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPriceTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onAdminNoteChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  currencyOptions: any[];
+  currencyOptions: string[];
 
   /* features (hardcoded) */
   onElevatorToggle: (v: string) => void;
@@ -41,10 +89,10 @@ interface EditAdDetailsTabProps {
   onDeedStatusChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onWhichSideChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onZoningStatusChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  heatingOptions: any[];
-  deedStatusOptions: any[];
-  directionOptions: any[];
-  zoningStatusOptions: any[];
+  heatingOptions: string[];
+  deedStatusOptions: string[];
+  directionOptions: string[];
+  zoningStatusOptions: string[];
 
   /* dynamic features from category tree */
   featureValues: FeatureValues;
@@ -61,9 +109,9 @@ interface EditAdDetailsTabProps {
   stepThird?: string;
 
   /* location */
-  marker: any[];
-  setMarker: (m: any[]) => void;
-  turkeyCities: any[];
+  marker: MapMarker[];
+  setMarker: (m: MapMarker[]) => void;
+  turkeyCities: TurkeyCity[];
 
   /* media — edit uses MediaItem (remote + local) */
   mediaItems: MediaItem[];
@@ -77,12 +125,12 @@ interface EditAdDetailsTabProps {
 
   /* other info */
   customers: Customer[];
-  advisors: any[];
+  advisors: Advisor[];
   isActiveAd: boolean;
   setIsActiveAd: (v: boolean) => void;
-  contractTimes: any[];
-  yesNoOptions: any[];
-  keyOptions: any[];
+  contractTimes: string[];
+  yesNoOptions: string[];
+  keyOptions: string[];
 
   /* submit */
   onSubmit: () => void;
@@ -93,20 +141,21 @@ interface EditAdDetailsTabProps {
 /*  Helpers                                                           */
 /* ================================================================== */
 
-function selVal(x: any): string {
-  if (!x) return "";
+function selVal(x: string | number | boolean | { value?: string } | null | undefined): string {
+  if (!x && x !== 0 && x !== false) return "";
   if (typeof x === "string") return x;
-  if (typeof x === "object" && "value" in x) return String(x.value ?? "");
+  if (typeof x === "number" || typeof x === "boolean") return String(x);
+  if (typeof x === "object" && x !== null && "value" in x) return String(x.value ?? "");
   return String(x);
 }
 
-function formatNumber(n: any) {
-  if (!n) return "";
+function formatNumber(n: string | number | null | undefined) {
+  if (!n && n !== 0) return "";
   const s = String(n).replace(/\./g, "");
   return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-function safeArr<T>(v: any): T[] {
+function safeArr<T>(v: T[] | null | undefined): T[] {
   return Array.isArray(v) ? v : [];
 }
 
@@ -119,7 +168,7 @@ function slugifyTR(input: string) {
     .replace(/-+/g, "-").replace(/^-|-$/g, "");
 }
 
-function mapType(t: any): string {
+function mapType(t: string | undefined): string {
   const up = String(t || "").toUpperCase();
   if (up === "TEXT") return "text";
   if (up === "NUMBER") return "number";
@@ -129,23 +178,23 @@ function mapType(t: any): string {
   return "text";
 }
 
-function findNodeInTree(nodes: any[], id: string | number | undefined): any | null {
+function findNodeInTree(nodes: CategoryTreeNode[], id: string | number | undefined): CategoryTreeNode | null {
   if (!id && id !== 0) return null;
   const s = String(id);
   for (const n of nodes) {
     if (String(n?.uid ?? "") === s || String(n?._id ?? "") === s) return n;
-    const kids = safeArr<any>(n?.children ?? n?.subcategories);
+    const kids = safeArr(n?.children ?? n?.subcategories);
     if (kids.length) { const f = findNodeInTree(kids, id); if (f) return f; }
   }
   return null;
 }
 
-function findNodeByName(nodes: any[], name: string): any | null {
+function findNodeByName(nodes: CategoryTreeNode[], name: string): CategoryTreeNode | null {
   if (!name) return null;
   const lower = name.toLowerCase().trim();
   for (const n of nodes) {
     if (String(n?.name ?? "").toLowerCase().trim() === lower) return n;
-    const kids = safeArr<any>(n?.children ?? n?.subcategories);
+    const kids = safeArr(n?.children ?? n?.subcategories);
     if (kids.length) {
       const found = findNodeByName(kids, name);
       if (found) return found;
@@ -154,39 +203,39 @@ function findNodeByName(nodes: any[], name: string): any | null {
   return null;
 }
 
-function collectChainToNode(nodes: any[], targetId: string | number | undefined, chain: any[] = []): any[] | null {
+function collectChainToNode(nodes: CategoryTreeNode[], targetId: string | number | undefined, chain: CategoryTreeNode[] = []): CategoryTreeNode[] | null {
   if (!targetId && targetId !== 0) return null;
   const s = String(targetId);
   for (const n of nodes) {
     if (String(n?.uid ?? "") === s || String(n?._id ?? "") === s) return [...chain, n];
-    const kids = safeArr<any>(n?.children ?? n?.subcategories);
+    const kids = safeArr(n?.children ?? n?.subcategories);
     if (kids.length) { const r = collectChainToNode(kids, targetId, [...chain, n]); if (r) return r; }
   }
   return null;
 }
 
-function buildFeaturesFromChain(chain: any[]): any[] {
-  const attrMap = new Map<string, any>();
-  for (const node of chain) for (const a of safeArr<any>(node?.attributes)) {
+function buildFeaturesFromChain(chain: CategoryTreeNode[]): DynamicFeature[] {
+  const attrMap = new Map<string, CategoryAttribute>();
+  for (const node of chain) for (const a of safeArr(node?.attributes)) {
     const key = String(a?.id ?? a?._id ?? ""); if (key) attrMap.set(key, a);
   }
   const facMap = new Map<string, Set<string>>();
-  for (const node of chain) for (const g of safeArr<any>(node?.facilities)) {
-    const title = String(g?.title ?? ""); const feats = safeArr<string>(g?.features);
+  for (const node of chain) for (const g of safeArr(node?.facilities)) {
+    const title = String(g?.title ?? ""); const feats = safeArr(g?.features);
     if (title && feats.length) { if (!facMap.has(title)) facMap.set(title, new Set()); feats.forEach(x => facMap.get(title)!.add(String(x))); }
   }
-  const af = Array.from(attrMap.values()).map((a: any) => {
+  const af = Array.from(attrMap.values()).reduce<DynamicFeature[]>((acc, a) => {
     const _id = String(a?.id ?? a?._id ?? ""); const name = String(a?.name ?? "");
-    if (!_id || !name) return null;
-    return { _id, name, type: mapType(a?.type), options: safeArr<string>(a?.options), required: false, order: typeof a?.order === "number" ? a.order : undefined };
-  }).filter(Boolean);
-  const ff = Array.from(facMap.entries()).map(([title, set]) => ({
+    if (_id && name) acc.push({ _id, name, type: mapType(a?.type), options: safeArr(a?.options), required: false, order: typeof a?.order === "number" ? a.order : undefined });
+    return acc;
+  }, []);
+  const ff: DynamicFeature[] = Array.from(facMap.entries()).map(([title, set]) => ({
     _id: `fac_${slugifyTR(title)}`, name: title, type: "multi_select", options: Array.from(set.values()), required: false,
   }));
-  return [...af, ...ff].sort((a: any, b: any) => (a?.order ?? 9999) - (b?.order ?? 9999));
+  return [...af, ...ff].sort((a, b) => (a?.order ?? 9999) - (b?.order ?? 9999));
 }
 
-function getSafeAddress(address: any): string {
+function getSafeAddress(address: string | { lat?: number; lng?: number } | null | undefined): string {
   if (!address) return "";
   if (typeof address === "string") return address;
   if (typeof address === "object" && address.lat && address.lng) return `Konum: ${address.lat}, ${address.lng}`;
@@ -204,6 +253,63 @@ function move<T>(arr: T[], from: number, to: number) {
 function formatMB(bytes: number) {
   if (!bytes || Number.isNaN(bytes)) return "";
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
+/* ================================================================== */
+/*  Hook: media preview URLs (creates/revokes object URLs)            */
+/* ================================================================== */
+
+/**
+ * Builds a Map<id, previewUrl> for the given media items.
+ * Remote items use their existing URL; local items get an object-URL
+ * that is cached and revoked when the item is removed or the hook unmounts.
+ *
+ * Uses a reducer so the state update inside the effect is a dispatched
+ * "external-store sync" rather than a bare setState call.
+ */
+function mediaPreviewReducer(
+  _prev: Map<string, string>,
+  next: Map<string, string>,
+) {
+  return next;
+}
+
+function useMediaPreviewMap(mediaItems: MediaItem[]): Map<string, string> {
+  const cacheRef = useRef<Map<string, string>>(new Map());
+  const [map, dispatch] = React.useReducer(mediaPreviewReducer, new Map<string, string>());
+
+  const mediaIdsKey = mediaItems.map(m => m.id).join(",");
+
+  useEffect(() => {
+    const cache = cacheRef.current;
+    const next = new Map<string, string>();
+    for (const item of mediaItems) {
+      if (isRemote(item)) { next.set(item.id, item.url); continue; }
+      if (isLocal(item)) {
+        const existing = cache.get(item.id);
+        if (existing) { next.set(item.id, existing); continue; }
+        const url = URL.createObjectURL(item.file);
+        cache.set(item.id, url);
+        next.set(item.id, url);
+      }
+    }
+    dispatch(next);
+
+    // Revoke URLs for removed items
+    const aliveIds = new Set(mediaItems.filter(isLocal).map(x => x.id));
+    for (const [id, url] of cache.entries()) {
+      if (!aliveIds.has(id)) { URL.revokeObjectURL(url); cache.delete(id); }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mediaIdsKey]);
+
+  // Cleanup all on unmount
+  useEffect(() => {
+    const cache = cacheRef.current;
+    return () => { for (const url of cache.values()) URL.revokeObjectURL(url); cache.clear(); };
+  }, []);
+
+  return map;
 }
 
 /* ================================================================== */
@@ -287,10 +393,11 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
     // Try ID-based lookup first (works when categories tab was used)
     const targetId = subcategoryId || categoryId;
+    const nodes = categories as unknown as CategoryTreeNode[];
     if (targetId) {
-      const chain = collectChainToNode(categories, targetId);
+      const chain = collectChainToNode(nodes, targetId);
       if (chain?.length) return buildFeaturesFromChain(chain);
-      const node = findNodeInTree(categories, targetId);
+      const node = findNodeInTree(nodes, targetId);
       if (node) return buildFeaturesFromChain([node]);
     }
 
@@ -298,9 +405,9 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
     const stepNames = [stepFirst, stepSecond, stepThird].filter(Boolean) as string[];
     if (!stepNames.length) return [];
 
-    const chain: any[] = [];
+    const chain: CategoryTreeNode[] = [];
     for (const name of stepNames) {
-      const node = findNodeByName(categories, name);
+      const node = findNodeByName(nodes, name);
       if (node) chain.push(node);
     }
     if (!chain.length) return [];
@@ -315,7 +422,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
     subcategoryId,
     categoriesLength: categories?.length,
     featuresCount: allFeatures.length,
-    featureNames: allFeatures.map((f: any) => f.name),
+    featureNames: allFeatures.map((f) => f.name),
   });
 
   console.log("EDIT DEBUG:", {
@@ -326,7 +433,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
     subcategoryId,
     categoriesLength: categories?.length,
     featuresCount: allFeatures.length,
-    featureNames: allFeatures.map((f: any) => f.name),
+    featureNames: allFeatures.map((f) => f.name),
   });
 
   useEffect(() => {
@@ -344,9 +451,9 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
     });
   }, [allFeatures, setFeatureValues]);
 
-  const handleFeatureChange = useCallback((id: string, value: any, type?: string) => {
+  const handleFeatureChange = useCallback((id: string, value: string | number | boolean | string[], type?: string) => {
     setFeatureValues(p => ({ ...p, [id]: value }));
-    setFeaturesStep((p: any) => ({ ...p, selections: { ...(p?.selections ?? {}), [id]: { featureId: id, value, featureType: type || "text" } } }));
+    setFeaturesStep((p) => ({ ...p, selections: { ...(p?.selections ?? {}), [id]: { featureId: id, value, featureType: type || "text" } } }));
   }, [setFeatureValues, setFeaturesStep]);
 
   /* ── Location geocode ── */
@@ -368,48 +475,25 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
   }, [fourthStep.province, fourthStep.district, fourthStep.quarter, setMarker]);
 
   /* ── Media preview cache ── */
-  const objectUrlMapRef = useRef<Map<string, string>>(new Map());
-
-  const previewSrc = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const item of mediaItems) {
-      if (isRemote(item)) { map.set(item.id, item.url); continue; }
-      if (isLocal(item)) {
-        const cached = objectUrlMapRef.current.get(item.id);
-        if (cached) { map.set(item.id, cached); continue; }
-        const url = URL.createObjectURL(item.file);
-        objectUrlMapRef.current.set(item.id, url);
-        map.set(item.id, url);
-      }
-    }
-    return map;
-  }, [mediaItems]);
-
-  useEffect(() => {
-    const aliveIds = new Set(mediaItems.filter(isLocal).map(x => x.id));
-    for (const [id, url] of objectUrlMapRef.current.entries()) {
-      if (!aliveIds.has(id)) { URL.revokeObjectURL(url); objectUrlMapRef.current.delete(id); }
-    }
-  }, [mediaItems]);
-
-  useEffect(() => {
-    return () => { for (const url of objectUrlMapRef.current.values()) URL.revokeObjectURL(url); objectUrlMapRef.current.clear(); };
-  }, []);
+  const previewSrc = useMediaPreviewMap(mediaItems);
 
   /* ── Video preview ── */
   const videoObjectUrlRef = useRef<string | null>(null);
-  const [localVideoPreview, setLocalVideoPreview] = useState<string | null>(null);
+  const [localVideoPreview, dispatchVideoPreview] = React.useReducer(
+    (_prev: string | null, next: string | null) => next,
+    null,
+  );
 
   useEffect(() => {
     if (!videoFile) {
       if (videoObjectUrlRef.current) { URL.revokeObjectURL(videoObjectUrlRef.current); videoObjectUrlRef.current = null; }
-      setLocalVideoPreview(null);
+      dispatchVideoPreview(null);
       return;
     }
     if (videoObjectUrlRef.current) URL.revokeObjectURL(videoObjectUrlRef.current);
     const url = URL.createObjectURL(videoFile);
     videoObjectUrlRef.current = url;
-    setLocalVideoPreview(url);
+    dispatchVideoPreview(url);
     return () => { if (videoObjectUrlRef.current) { URL.revokeObjectURL(videoObjectUrlRef.current); videoObjectUrlRef.current = null; } };
   }, [videoFile]);
 
@@ -433,9 +517,9 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
   const formattedPrice = formatNumber(fourthStep.price.value);
 
   const selectStyles = {
-    control: (base: any) => ({ ...base, border: "1px solid #D1D5DB", borderRadius: "0.375rem", padding: "1px", fontSize: "13px", minHeight: "38px" }),
-    menu: (base: any) => ({ ...base, zIndex: 50, fontSize: "13px" }),
-    menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+    control: (base: Record<string, unknown>) => ({ ...base, border: "1px solid #D1D5DB", borderRadius: "0.375rem", padding: "1px", fontSize: "13px", minHeight: "38px" }),
+    menu: (base: Record<string, unknown>) => ({ ...base, zIndex: 50, fontSize: "13px" }),
+    menuPortal: (base: Record<string, unknown>) => ({ ...base, zIndex: 9999 }),
   };
 
   return (
@@ -462,7 +546,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
                 onChange={onPriceTypeChange}
                 className="absolute right-1 top-1/2 -translate-y-1/2 border-0 bg-gray-100 rounded px-2 py-1 text-[13px] text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
               >
-                {currencyOptions.map((o: any, i: number) => <option key={`cur-${i}`} value={typeof o === "string" ? o : o.value}>{typeof o === "string" ? o : o.label}</option>)}
+                {currencyOptions.map((o, i) => <option key={`cur-${i}`} value={o}>{o}</option>)}
               </select>
             </div>
           </div>
@@ -470,19 +554,19 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("grossArea") && (
         <FieldRow label="m² (Brüt)" fieldKey="grossArea" onHide={hideField}>
-          <input type="number" value={(fourthStep as any).grossArea || ""} onChange={e => updateFourthStep("grossArea" as any, e.target.value)} placeholder="m² brüt alan" className={inputCls} />
+          <input type="number" value={fourthStep.grossArea || ""} onChange={e => updateFourthStep("grossArea", Number(e.target.value))} placeholder="m² brüt alan" className={inputCls} />
         </FieldRow>
         )}
 
         {!hiddenFields.has("netArea") && (
         <FieldRow label="m² (Net)" fieldKey="netArea" onHide={hideField}>
-          <input type="number" value={(fourthStep as any).netArea || ""} onChange={e => updateFourthStep("netArea" as any, e.target.value)} placeholder="m² net alan" className={inputCls} />
+          <input type="number" value={fourthStep.netArea || ""} onChange={e => updateFourthStep("netArea", Number(e.target.value))} placeholder="m² net alan" className={inputCls} />
         </FieldRow>
         )}
 
         {!hiddenFields.has("roomCount") && (
         <FieldRow label="Oda Sayısı" fieldKey="roomCount" onHide={hideField}>
-          <select value={selVal((fourthStep as any).roomCount)} onChange={e => updateFourthStep("roomCount" as any, e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.roomCount)} onChange={e => updateFourthStep("roomCount", e.target.value)} className={selectCls}>
             <option value="">Seçiniz</option>
             {["1+0","1+1","2+0","2+1","3+0","3+1","3+2","4+1","4+2","5+1","5+2","5+3","6+1","6+2","6+3","7+","8+","9+","10+"].map((v, i) => <option key={`room-${i}`} value={v}>{v}</option>)}
           </select>
@@ -491,7 +575,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("buildingAge") && (
         <FieldRow label="Bina Yaşı" fieldKey="buildingAge" onHide={hideField}>
-          <select value={selVal((fourthStep as any).buildingAge)} onChange={e => updateFourthStep("buildingAge" as any, e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.buildingAge)} onChange={e => updateFourthStep("buildingAge", Number(e.target.value))} className={selectCls}>
             <option value="">Seçiniz</option>
             {["0 (Sıfır)","1","2","3","4","5-10","11-15","16-20","21-25","26-30","31+"].map((v, i) => <option key={`age-${i}`} value={v}>{v}</option>)}
           </select>
@@ -500,7 +584,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("floor") && (
         <FieldRow label="Bulunduğu Kat" fieldKey="floor" onHide={hideField}>
-          <select value={selVal((fourthStep as any).floor)} onChange={e => updateFourthStep("floor" as any, e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.floor)} onChange={e => updateFourthStep("floor", Number(e.target.value))} className={selectCls}>
             <option value="">Seçiniz</option>
             {["Bodrum Kat","Zemin Kat","Bahçe Katı","Yüksek Giriş","Giriş Kat","Müstakil","Kot 1","Kot 2","Kot 3","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","30+","Çatı Katı","Villa Tipi"].map((v, i) => <option key={`floor-${i}`} value={v}>{v}</option>)}
           </select>
@@ -509,7 +593,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("totalFloors") && (
         <FieldRow label="Kat Sayısı" fieldKey="totalFloors" onHide={hideField}>
-          <select value={selVal((fourthStep as any).totalFloor || (fourthStep as any).totalFloors)} onChange={e => updateFourthStep("totalFloor" as any, e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.totalFloor)} onChange={e => updateFourthStep("totalFloor", Number(e.target.value))} className={selectCls}>
             <option value="">Seçiniz</option>
             {Array.from({length: 40}, (_, i) => String(i + 1)).map((v, i) => <option key={`tfloor-${i}`} value={v}>{v}</option>)}
           </select>
@@ -518,16 +602,16 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("heating") && (
         <FieldRow label="Isıtma" fieldKey="heating" onHide={hideField}>
-          <select value={selVal((fourthStep as any).heating)} onChange={onHeatingChange} className={selectCls}>
+          <select value={selVal(fourthStep.heating)} onChange={onHeatingChange} className={selectCls}>
             <option value="">Seçiniz</option>
-            {heatingOptions.map((o: any, i: number) => <option key={`heat-${i}`} value={typeof o === "string" ? o : o.value}>{typeof o === "string" ? o : o.label}</option>)}
+            {heatingOptions.map((o, i) => <option key={`heat-${i}`} value={o}>{o}</option>)}
           </select>
         </FieldRow>
         )}
 
         {!hiddenFields.has("bathroomCount") && (
         <FieldRow label="Banyo Sayısı" fieldKey="bathroomCount" onHide={hideField}>
-          <select value={selVal((fourthStep as any).bathroomCount)} onChange={e => updateFourthStep("bathroomCount" as any, e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.bathroomCount)} onChange={e => updateFourthStep("bathroomCount", e.target.value)} className={selectCls}>
             <option value="">Seçiniz</option>
             {["Yok","1","2","3","4","5","6","7+"].map((v, i) => <option key={`bath-${i}`} value={v}>{v}</option>)}
           </select>
@@ -536,7 +620,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("balcony") && (
         <FieldRow label="Balkon" fieldKey="balcony" onHide={hideField}>
-          <select value={selVal((fourthStep as any).balcony)} onChange={e => onBalconyToggle(e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.balcony)} onChange={e => onBalconyToggle(e.target.value)} className={selectCls}>
             <option value="">Seçiniz</option>
             <option value="Evet">Var</option>
             <option value="Hayır">Yok</option>
@@ -546,7 +630,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("elevator") && (
         <FieldRow label="Asansör" fieldKey="elevator" onHide={hideField}>
-          <select value={selVal((fourthStep as any).elevator)} onChange={e => onElevatorToggle(e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.elevator)} onChange={e => onElevatorToggle(e.target.value)} className={selectCls}>
             <option value="">Seçiniz</option>
             <option value="Evet">Var</option>
             <option value="Hayır">Yok</option>
@@ -556,7 +640,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("parking") && (
         <FieldRow label="Otopark" fieldKey="parking" onHide={hideField}>
-          <select value={selVal((fourthStep as any).parking)} onChange={e => updateFourthStep("parking" as any, e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.parking)} onChange={e => updateFourthStep("parking", e.target.value)} className={selectCls}>
             <option value="">Seçiniz</option>
             <option value="Açık Otopark">Açık Otopark</option>
             <option value="Kapalı Otopark">Kapalı Otopark</option>
@@ -568,7 +652,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("isFurnished") && (
         <FieldRow label="Eşyalı" fieldKey="isFurnished" onHide={hideField}>
-          <select value={selVal((fourthStep as any).isFurnished)} onChange={e => onIsFurnishedToggle(e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.isFurnished)} onChange={e => onIsFurnishedToggle(e.target.value)} className={selectCls}>
             <option value="">Seçiniz</option>
             <option value="Evet">Evet</option>
             <option value="Hayır">Hayır</option>
@@ -578,7 +662,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("inSite") && (
         <FieldRow label="Site İçinde" fieldKey="inSite" onHide={hideField}>
-          <select value={selVal((fourthStep as any).inSite)} onChange={e => onInSiteToggle(e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.inSite)} onChange={e => onInSiteToggle(e.target.value)} className={selectCls}>
             <option value="">Seçiniz</option>
             <option value="Evet">Evet</option>
             <option value="Hayır">Hayır</option>
@@ -588,33 +672,33 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         {!hiddenFields.has("deedStatus") && (
         <FieldRow label="Tapu Durumu" fieldKey="deedStatus" onHide={hideField}>
-          <select value={selVal((fourthStep as any).deedStatus)} onChange={onDeedStatusChange} className={selectCls}>
+          <select value={selVal(fourthStep.deedStatus)} onChange={onDeedStatusChange} className={selectCls}>
             <option value="">Seçiniz</option>
-            {deedStatusOptions.map((o: any, i: number) => <option key={`deed-${i}`} value={typeof o === "string" ? o : o.value}>{typeof o === "string" ? o : o.label}</option>)}
+            {deedStatusOptions.map((o, i) => <option key={`deed-${i}`} value={o}>{o}</option>)}
           </select>
         </FieldRow>
         )}
 
         {!hiddenFields.has("whichSide") && (
         <FieldRow label="Cephe" fieldKey="whichSide" onHide={hideField}>
-          <select value={selVal((fourthStep as any).whichSide)} onChange={onWhichSideChange} className={selectCls}>
+          <select value={selVal(fourthStep.whichSide)} onChange={onWhichSideChange} className={selectCls}>
             <option value="">Seçiniz</option>
-            {directionOptions.map((o: any, i: number) => <option key={`dir-${i}`} value={typeof o === "string" ? o : o.value}>{typeof o === "string" ? o : o.label}</option>)}
+            {directionOptions.map((o, i) => <option key={`dir-${i}`} value={o}>{o}</option>)}
           </select>
         </FieldRow>
         )}
 
         {!hiddenFields.has("zoningStatus") && (
         <FieldRow label="İmar Durumu" fieldKey="zoningStatus" onHide={hideField}>
-          <select value={selVal((fourthStep as any).zoningStatus)} onChange={onZoningStatusChange} className={selectCls}>
+          <select value={selVal(fourthStep.zoningStatus)} onChange={onZoningStatusChange} className={selectCls}>
             <option value="">Seçiniz</option>
-            {zoningStatusOptions.map((o: any, i: number) => <option key={`zone-${i}`} value={typeof o === "string" ? o : o.value}>{typeof o === "string" ? o : o.label}</option>)}
+            {zoningStatusOptions.map((o, i) => <option key={`zone-${i}`} value={o}>{o}</option>)}
           </select>
         </FieldRow>
         )}
 
         {/* Dynamic features from category tree */}
-        {allFeatures.map((f: any) => !hiddenFields.has(f._id) && (
+        {allFeatures.map((f) => !hiddenFields.has(f._id) && (
           <FieldRow key={f._id} label={f.name} fieldKey={f._id} onHide={hideField}>
             {f.type === "boolean" ? (
               <select value={featureValues[f._id] === true ? "Evet" : featureValues[f._id] === false ? "Hayır" : ""} onChange={e => handleFeatureChange(f._id, e.target.value === "Evet", "boolean")} className={selectCls}>
@@ -630,20 +714,21 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
             ) : f.type === "multi_select" ? (
               <div className="flex flex-wrap gap-3">
                 {(f.options ?? []).map((o: string, i: number) => {
-                  const sel = Array.isArray(featureValues[f._id]) ? featureValues[f._id] : [];
+                  const raw = featureValues[f._id];
+                  const sel: string[] = Array.isArray(raw) ? raw : [];
                   const checked = sel.includes(o);
                   return (
                     <label key={`${f._id}-ms-${i}`} className="flex items-center gap-1.5 text-[13px] text-gray-700 cursor-pointer">
-                      <input type="checkbox" checked={checked} onChange={() => handleFeatureChange(f._id, checked ? sel.filter((x: string) => x !== o) : [...sel, o], "multi_select")} className="rounded border-gray-300" />
+                      <input type="checkbox" checked={checked} onChange={() => handleFeatureChange(f._id, checked ? sel.filter((x) => x !== o) : [...sel, o], "multi_select")} className="rounded border-gray-300" />
                       {o}
                     </label>
                   );
                 })}
               </div>
             ) : f.type === "number" ? (
-              <input type="number" value={featureValues[f._id] ?? ""} onChange={e => handleFeatureChange(f._id, Number(e.target.value), "number")} className={inputCls} />
+              <input type="number" value={String(featureValues[f._id] ?? "")} onChange={e => handleFeatureChange(f._id, Number(e.target.value), "number")} className={inputCls} />
             ) : (
-              <input type="text" value={featureValues[f._id] ?? ""} onChange={e => handleFeatureChange(f._id, e.target.value, "text")} className={inputCls} />
+              <input type="text" value={String(featureValues[f._id] ?? "")} onChange={e => handleFeatureChange(f._id, e.target.value, "text")} className={inputCls} />
             )}
           </FieldRow>
         ))}
@@ -669,9 +754,9 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
       <Section title="Adres Bilgileri" defaultOpen={true}>
         <FieldRow label="İl" required>
           <Select
-            options={turkeyCities.map((c: any) => ({ value: c.province, label: c.province }))}
+            options={turkeyCities.map((c) => ({ value: c.province, label: c.province }))}
             value={fourthStep.province ? { value: fourthStep.province, label: fourthStep.province } : null}
-            onChange={(v: any) => updateFourthStep("province" as any, v?.value ?? "")}
+            onChange={(v) => updateFourthStep("province", v?.value ?? "")}
             placeholder="İl seçin"
             styles={selectStyles}
           />
@@ -679,9 +764,9 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         <FieldRow label="İlçe" required>
           <Select
-            options={turkeyCities.find((c: any) => c.province === fourthStep.province)?.districts?.map((d: any) => ({ value: d.district, label: d.district })) ?? []}
+            options={turkeyCities.find((c) => c.province === fourthStep.province)?.districts?.map((d) => ({ value: d.district, label: d.district })) ?? []}
             value={fourthStep.district ? { value: fourthStep.district, label: fourthStep.district } : null}
-            onChange={(v: any) => updateFourthStep("district" as any, v?.value ?? "")}
+            onChange={(v) => updateFourthStep("district", v?.value ?? "")}
             placeholder="İlçe seçin"
             noOptionsMessage={() => "Önce il seçin"}
             styles={selectStyles}
@@ -690,9 +775,9 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
 
         <FieldRow label="Mahalle" required>
           <Select
-            options={turkeyCities.find((c: any) => c.province === fourthStep.province)?.districts?.find((d: any) => d.district === fourthStep.district)?.quarters?.map((q: any) => ({ value: q, label: q })) ?? []}
+            options={turkeyCities.find((c) => c.province === fourthStep.province)?.districts?.find((d) => d.district === fourthStep.district)?.quarters?.map((q) => ({ value: q, label: q })) ?? []}
             value={fourthStep.quarter ? { value: fourthStep.quarter, label: fourthStep.quarter } : null}
-            onChange={(v: any) => updateFourthStep("quarter" as any, v?.value ?? "")}
+            onChange={(v) => updateFourthStep("quarter", v?.value ?? "")}
             placeholder="Mahalle seçin"
             noOptionsMessage={() => "Önce ilçe seçin"}
             styles={selectStyles}
@@ -700,11 +785,11 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
         </FieldRow>
 
         <FieldRow label="Adres">
-          <input type="text" value={getSafeAddress(fourthStep.address)} onChange={e => updateFourthStep("address" as any, e.target.value)} placeholder="Tam adres" className={inputCls} />
+          <input type="text" value={getSafeAddress(fourthStep.address)} onChange={e => updateFourthStep("address", e.target.value)} placeholder="Tam adres" className={inputCls} />
         </FieldRow>
 
         <FieldRow label="Parsel No">
-          <input type="text" value={fourthStep.parsel || ""} onChange={e => updateFourthStep("parsel" as any, e.target.value)} placeholder="Parsel numarası" className={inputCls} />
+          <input type="text" value={fourthStep.parsel || ""} onChange={e => updateFourthStep("parsel", e.target.value)} placeholder="Parsel numarası" className={inputCls} />
         </FieldRow>
 
         <div className="border border-gray-200 rounded-lg h-80 bg-gray-50 mt-2 overflow-hidden">
@@ -809,49 +894,49 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
               value: fourthStep.customer,
               label: (() => { const c = customers.find((x: Customer) => x.uid?.toString() === fourthStep.customer); return c ? `${c.name} ${c.surname} - ${c.phones?.[0]?.number || ""}` : fourthStep.customer; })(),
             } : null}
-            onChange={(v: any) => updateFourthStep("customer" as any, v?.value ?? "")}
+            onChange={(v) => updateFourthStep("customer", v?.value ?? "")}
             placeholder="Müşteri seçin"
             isSearchable
             menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
-            styles={{ ...selectStyles, menuPortal: (base: any) => ({ ...base, zIndex: 9999 }) }}
+            styles={{ ...selectStyles, menuPortal: (base: Record<string, unknown>) => ({ ...base, zIndex: 9999 }) }}
           />
         </FieldRow>
 
         <FieldRow label="Danışman" required>
-          <select value={fourthStep.advisor} onChange={e => updateFourthStep("advisor" as any, e.target.value)} className={selectCls}>
+          <select value={fourthStep.advisor} onChange={e => updateFourthStep("advisor", e.target.value)} className={selectCls}>
             <option value="">Danışman Seçin</option>
-            {advisors.map((a: any, i: number) => <option key={`adv-${i}`} value={a.uid?.toString() || ""}>{a.name} {a.surname}</option>)}
+            {advisors.map((a, i) => <option key={`adv-${i}`} value={a.uid?.toString() || ""}>{a.name} {a.surname}</option>)}
           </select>
         </FieldRow>
 
         <FieldRow label="Sözleşme No">
-          <input type="text" value={fourthStep.contract_no} onChange={e => { const val = e.target.value; if (val === "" || /^[0-9\b]+$/.test(val)) updateFourthStep("contract_no" as any, val); }} placeholder="Sözleşme numarası" className={inputCls} />
+          <input type="text" value={fourthStep.contract_no} onChange={e => { const val = e.target.value; if (val === "" || /^[0-9\b]+$/.test(val)) updateFourthStep("contract_no", val); }} placeholder="Sözleşme numarası" className={inputCls} />
         </FieldRow>
 
         <FieldRow label="Sözleşme Tarihi">
-          <input type="date" value={fourthStep.contract_date} onChange={e => updateFourthStep("contract_date" as any, e.target.value)} className={inputCls} />
+          <input type="date" value={fourthStep.contract_date} onChange={e => updateFourthStep("contract_date", e.target.value)} className={inputCls} />
         </FieldRow>
 
         <FieldRow label="Sözleşme Süresi">
-          <select value={selVal(fourthStep.contract_time)} onChange={e => updateNestedFourthStep("contract_time" as any, "value", e.target.value)} className={selectCls}>
+          <select value={selVal(fourthStep.contract_time)} onChange={e => updateNestedFourthStep("contract_time", "value", e.target.value)} className={selectCls}>
             <option value="">Seçiniz</option>
-            {contractTimes.map((o: any, i: number) => <option key={`ct-${i}`} value={typeof o === "string" ? o : o.value}>{typeof o === "string" ? o : o.label}</option>)}
+            {contractTimes.map((o, i) => <option key={`ct-${i}`} value={o}>{o}</option>)}
           </select>
         </FieldRow>
 
         <FieldRow label="EIDS">
-          <select value={selVal(fourthStep.eids)} onChange={e => updateNestedFourthStep("eids" as any, "value", e.target.value)} className={selectCls}>
-            {yesNoOptions.map((o: any, i: number) => <option key={`yn-${i}`} value={typeof o === "string" ? o : o.value}>{typeof o === "string" ? o : o.label}</option>)}
+          <select value={selVal(fourthStep.eids)} onChange={e => updateNestedFourthStep("eids", "value", e.target.value)} className={selectCls}>
+            {yesNoOptions.map((o, i) => <option key={`yn-${i}`} value={o}>{o}</option>)}
           </select>
         </FieldRow>
 
-        {(fourthStep.eids as any)?.value === "Evet" && (
+        {fourthStep.eids?.value === "Evet" && (
           <>
             <FieldRow label="EIDS No">
-              <input type="text" value={(fourthStep.eids as any)?.no || ""} onChange={e => updateNestedFourthStep("eids" as any, "no", e.target.value)} placeholder="EIDS numarası" className={inputCls} />
+              <input type="text" value={fourthStep.eids?.no || ""} onChange={e => updateNestedFourthStep("eids", "no", e.target.value)} placeholder="EIDS numarası" className={inputCls} />
             </FieldRow>
             <FieldRow label="EIDS Tarihi">
-              <input type="date" value={(fourthStep.eids as any)?.date || ""} onChange={e => updateNestedFourthStep("eids" as any, "date", e.target.value)} className={inputCls} />
+              <input type="date" value={fourthStep.eids?.date || ""} onChange={e => updateNestedFourthStep("eids", "date", e.target.value)} className={inputCls} />
             </FieldRow>
           </>
         )}

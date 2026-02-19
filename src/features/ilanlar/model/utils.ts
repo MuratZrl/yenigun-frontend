@@ -20,19 +20,30 @@ export const isValidM2 = (v: string | number | undefined | null) =>
   v !== undefined && v !== null && String(v).trim() !== "" && String(v).trim() !== "0";
 
 export const getM2Text = (ad: Advert) => {
-  if (!ad.isFeatures || !Array.isArray(ad.featureValues)) return "";
-
-  const gross = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.GROSS_M2);
-  const net = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.NET_M2);
-  const alt = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.ALT_M2);
-  const donum = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.DONUM);
-
   const fmt = (n: number) => n.toLocaleString("tr-TR");
-  const grossVal = isValidM2(gross?.value) ? Number(gross!.value) : null;
-  const netVal = isValidM2(net?.value) ? Number(net!.value) : null;
-  const altVal = isValidM2(alt?.value) ? Number(alt!.value) : null;
-  const donumVal = isValidM2(donum?.value) ? Number(donum!.value) : null;
-  
+
+  let grossVal: number | null = null;
+  let netVal: number | null = null;
+  let altVal: number | null = null;
+  let donumVal: number | null = null;
+
+  // 1) Try featureValues (new dynamic feature system)
+  if (ad.isFeatures && Array.isArray(ad.featureValues)) {
+    const gross = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.GROSS_M2);
+    const net = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.NET_M2);
+    const alt = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.ALT_M2);
+    const donum = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.DONUM);
+
+    grossVal = isValidM2(gross?.value) ? Number(gross!.value) : null;
+    netVal = isValidM2(net?.value) ? Number(net!.value) : null;
+    altVal = isValidM2(alt?.value) ? Number(alt!.value) : null;
+    donumVal = isValidM2(donum?.value) ? Number(donum!.value) : null;
+  }
+
+  // 2) Fallback to details (legacy) if featureValues didn't have them
+  if (!grossVal && isValidM2(ad.details?.grossArea)) grossVal = Number(ad.details!.grossArea);
+  if (!netVal && isValidM2(ad.details?.netArea)) netVal = Number(ad.details!.netArea);
+
   if (grossVal && netVal) return `${fmt(grossVal)} • ${fmt(netVal)}`;
   if (grossVal) return fmt(grossVal);
   if (netVal) return fmt(netVal);
@@ -43,18 +54,28 @@ export const getM2Text = (ad: Advert) => {
 };
 
 export const getGrossM2Text = (ad: Advert) => {
-  if (!ad.isFeatures || !Array.isArray(ad.featureValues)) return "";
-  const gross = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.GROSS_M2);
-  const grossVal = isValidM2(gross?.value) ? Number(gross!.value) : null;
-  if (grossVal) return grossVal.toLocaleString("tr-TR");
+  // 1) Try featureValues first (new dynamic feature system)
+  if (ad.isFeatures && Array.isArray(ad.featureValues)) {
+    const gross = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.GROSS_M2);
+    const grossVal = isValidM2(gross?.value) ? Number(gross!.value) : null;
+    if (grossVal) return grossVal.toLocaleString("tr-TR");
+  }
+  // 2) Fallback to details.grossArea (legacy)
+  const legacy = ad.details?.grossArea;
+  if (isValidM2(legacy)) return Number(legacy).toLocaleString("tr-TR");
   return "";
 };
 
 export const getNetM2Text = (ad: Advert) => {
-  if (!ad.isFeatures || !Array.isArray(ad.featureValues)) return "";
-  const net = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.NET_M2);
-  const netVal = isValidM2(net?.value) ? Number(net!.value) : null;
-  if (netVal) return netVal.toLocaleString("tr-TR");
+  // 1) Try featureValues first (new dynamic feature system)
+  if (ad.isFeatures && Array.isArray(ad.featureValues)) {
+    const net = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.NET_M2);
+    const netVal = isValidM2(net?.value) ? Number(net!.value) : null;
+    if (netVal) return netVal.toLocaleString("tr-TR");
+  }
+  // 2) Fallback to details.netArea (legacy)
+  const legacy = ad.details?.netArea;
+  if (isValidM2(legacy)) return Number(legacy).toLocaleString("tr-TR");
   return "";
 };
 

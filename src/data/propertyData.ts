@@ -531,4 +531,6 @@ export const defaultFormData = {
     value: "Tarla",
     selections: zoningStatusOptions
   },
+  bathroomCount: "",
+  parking: "",
 };
