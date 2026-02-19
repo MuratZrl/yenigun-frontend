@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Flame, MapPin } from "lucide-react";
+import { Flame, MapPin, Bed, Bath } from "lucide-react";
 import type { Listing } from "../types";
 import {
   getAreaSqm,
@@ -28,7 +28,7 @@ export default function HighlightMobileRow({ listing, onNavigate }: Props) {
   return (
     <div
       onClick={() => onNavigate(listing.uid)}
-      className="cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-md active:scale-[0.99] transition"
+      className="cursor-pointer flex overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100 active:scale-[0.99] active:ring-indigo-200 transition-all duration-200"
       aria-label={listing.title || "İlan"}
       role="button"
       tabIndex={0}
@@ -36,8 +36,8 @@ export default function HighlightMobileRow({ listing, onNavigate }: Props) {
         if (e.key === "Enter" || e.key === " ") onNavigate(listing.uid);
       }}
     >
-      {/* ÜST: Görsel + overlay */}
-      <div className="relative aspect-[4/3]">
+      {/* Left: Image */}
+      <div className="relative w-32 shrink-0">
         <img
           src={imgSrc}
           alt={listing.title || "İlan görseli"}
@@ -47,50 +47,56 @@ export default function HighlightMobileRow({ listing, onNavigate }: Props) {
             e.currentTarget.src = "/logo.png";
             e.currentTarget.alt = "Logo";
             e.currentTarget.className =
-              "absolute inset-0 w-full h-full object-contain p-10 bg-gray-100";
+              "absolute inset-0 w-full h-full object-contain p-4 bg-gray-50";
           }}
         />
 
-        {/* gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
-
-        {/* Öne çıkan */}
         {listing.isHighlight ? (
-          <div className="absolute top-3 left-3">
-            <div className="inline-flex items-center gap-1.5 py-1 px-2 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white text-[11px] font-semibold shadow">
-              <Flame size={12} />
+          <div className="absolute top-1.5 left-1.5">
+            <div className="flex items-center gap-1 py-0.5 px-1.5 rounded-full bg-gradient-to-r from-orange-500 to-rose-500 text-white text-[9px] font-bold shadow-sm">
+              <Flame size={8} />
               <span>Öne Çıkan</span>
             </div>
           </div>
         ) : null}
-
-        {/* Fiyat */}
-        <div className="absolute bottom-3 left-3 right-3">
-          <div className="inline-flex max-w-full py-1.5 px-3 rounded-lg bg-white/95 backdrop-blur-sm text-gray-900 text-sm font-bold shadow">
-            <span className="truncate">{feeText}</span>
-          </div>
-        </div>
       </div>
 
-      {/* ALT: Bilgi */}
-      <div className="p-3">
-        <div className="text-sm font-bold text-gray-900 line-clamp-2">
-          {listing.title || "Başlık Yok"}
-        </div>
-
-        <div className="mt-1 flex items-center gap-2 text-xs text-gray-600 min-w-0">
-          <MapPin size={14} className="shrink-0 text-gray-500" />
-          <span className="truncate">{locationText}</span>
-        </div>
-
-        {/* küçük meta satırı */}
-        {(areaSqm || bedrooms || bathrooms) ? (
-          <div className="mt-2 flex items-center gap-2 text-[11px] text-gray-600">
-            {areaSqm ? <span>{areaSqm} m²</span> : null}
-            {bedrooms ? <span>• {bedrooms} oda</span> : null}
-            {bathrooms ? <span>• {bathrooms} banyo</span> : null}
+      {/* Right: Info */}
+      <div className="flex-1 p-2.5 flex flex-col justify-between min-w-0">
+        <div>
+          <div className="text-xs font-bold text-gray-900 line-clamp-2 leading-tight">
+            {listing.title || "Başlık Yok"}
           </div>
-        ) : null}
+
+          <div className="mt-1 flex items-center gap-1 min-w-0">
+            <MapPin className="text-indigo-500 shrink-0" size={10} />
+            <span className="text-[10px] font-medium text-gray-500 truncate">{locationText}</span>
+          </div>
+        </div>
+
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <div className="inline-flex py-1 px-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-blue-500 text-white text-[11px] font-bold shadow-sm">
+            <span className="truncate">{feeText}</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {areaSqm ? (
+              <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full">
+                {areaSqm}m²
+              </span>
+            ) : null}
+            {bedrooms ? (
+              <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                <Bed size={8} />{bedrooms}
+              </span>
+            ) : null}
+            {bathrooms ? (
+              <span className="text-[9px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                <Bath size={8} />{bathrooms}
+              </span>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );

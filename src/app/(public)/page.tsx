@@ -1,4 +1,4 @@
-// src/app/page.tsx
+// src/app/(public)/page.tsx
 import type { Metadata } from "next";
 
 import { HighlightsSection } from "@/features/home/highlights";

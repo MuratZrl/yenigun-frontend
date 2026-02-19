@@ -47,36 +47,26 @@ export default function HighlightsSection({ data }: HighlightProps) {
   return (
     <section
       id="highlights"
-      className="min-h-screen py-12 md:py-16 flex flex-col px-4 md:px-6 xl:w-[90%] mx-auto gap-12 md:gap-16 relative overflow-hidden"
+      className="min-h-screen w-full bg-gradient-to-b from-slate-50 via-white to-slate-50 relative overflow-hidden"
     >
-      <div className="absolute top-0 left-0 w-72 h-72 bg-blue-50 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl opacity-60" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-50 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl opacity-40" />
+      {/* Full-width background blobs */}
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-50 rounded-full -translate-x-1/3 -translate-y-1/3 blur-[120px] opacity-50" />
+      <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-cyan-50 rounded-full translate-x-1/4 -translate-y-1/2 blur-[100px] opacity-40" />
+      <div className="absolute bottom-0 left-1/3 w-[350px] h-[350px] bg-blue-50 rounded-full translate-y-1/3 blur-[100px] opacity-30" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="flex flex-col gap-4 md:gap-6 text-center relative z-10 px-4"
-      >
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <div className="w-8 md:w-12 h-0.5 bg-linear-to-r from-transparent to-blue-500" />
-          <span className="text-blue-500 font-semibold tracking-wider uppercase text-xs md:text-sm">
-            Öne Çıkan İlanlar
-          </span>
-          <div className="w-8 md:w-12 h-0.5 bg-linear-to-l from-transparent to-blue-500" />
-        </div>
+      {/* Content container */}
+      <div className="relative z-10 py-12 md:py-16 flex flex-col px-4 md:px-6 xl:w-[90%] mx-auto gap-12 md:gap-16">
 
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-sm md:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed px-4"
-        >
-          Özenle seçilmiş en değerli mülkler. Hayalinizdeki yaşam alanını keşfedin.
-        </motion.p>
-      </motion.div>
+      <div className="flex flex-col items-center gap-3">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">
+          Öne Çıkan İlanlar
+        </h2>
+        <p className="text-sm text-gray-500 text-center">
+          Özenle seçilmiş mülkler arasından hayalinizdeki yaşam alanını keşfedin.
+        </p>
+      </div>
 
-      <div className="relative z-10 flex flex-col lg:flex-row gap-6 md:gap-8 w-full">
+      <div className="flex flex-col lg:flex-row gap-6 md:gap-8 w-full">
         <div className="lg:w-1/4">
           <div className="sticky top-6">
             <CategorySidebar />
@@ -110,8 +100,8 @@ export default function HighlightsSection({ data }: HighlightProps) {
           {filteredData.length === 0 ? (
             <div className="text-center py-12 md:py-16">
               <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="text-blue-500" size={32} />
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-indigo-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="text-indigo-500" size={32} />
                 </div>
                 <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
                   İlan Bulunamadı
@@ -132,7 +122,7 @@ export default function HighlightsSection({ data }: HighlightProps) {
             >
               <button
                 onClick={loadMore}
-                className="group flex items-center gap-2 md:gap-3 px-6 md:px-8 py-3 md:py-4 bg-linear-to-r from-blue-600 to-blue-800 text-white rounded-lg md:rounded-xl font-semibold text-sm md:text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:gap-3 md:hover:gap-4"
+                className="group flex items-center gap-2 md:gap-3 px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 text-white rounded-full font-bold text-sm md:text-base shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all duration-300 hover:gap-3 md:hover:gap-4"
               >
                 <span>Daha Fazla Göster ({remaining} ilan kaldı)</span>
                 <ExternalLink
@@ -154,7 +144,7 @@ export default function HighlightsSection({ data }: HighlightProps) {
         <div className="w-full flex justify-center">
           <Link
             href="/ilanlar"
-            className="group flex items-center gap-2 md:gap-3 px-6 md:px-8 py-2.5 md:py-3 bg-linear-to-r from-blue-500 to-blue-900 text-white rounded-full font-semibold text-sm md:text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:gap-3 md:hover:gap-4"
+            className="group flex items-center gap-2 md:gap-3 px-6 md:px-8 py-2.5 md:py-3 bg-white text-indigo-700 rounded-full font-bold text-sm md:text-base shadow-lg ring-1 ring-indigo-200 hover:bg-gradient-to-r hover:from-indigo-600 hover:via-blue-600 hover:to-cyan-500 hover:text-white hover:ring-0 hover:shadow-xl hover:shadow-indigo-500/25 transition-all duration-300 hover:gap-3 md:hover:gap-4"
           >
             <span>Tüm İlanları Görüntüle</span>
             <ExternalLink
@@ -164,6 +154,7 @@ export default function HighlightsSection({ data }: HighlightProps) {
           </Link>
         </div>
       </motion.div>
+      </div>
     </section>
   );
 }

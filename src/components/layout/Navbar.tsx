@@ -26,6 +26,7 @@ const Navbar: React.FC = () => {
   const [q, setQ] = useState("");
   const [openUserMenu, setOpenUserMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -88,6 +89,14 @@ const Navbar: React.FC = () => {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
+  // Scroll shadow
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const handleSubmitSearch = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
@@ -122,9 +131,13 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#2f3b4a] text-white">
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 bg-white border-b transition-shadow duration-300 ${
+          scrolled ? "shadow-sm border-gray-200" : "border-transparent"
+        }`}
+      >
         <div className="mx-auto max-w-6xl px-4">
-          <div className="h-14 flex items-center gap-3">
+          <div className="flex items-center gap-5 h-16">
             {/* Logo */}
             <Link href="/" className="shrink-0 flex items-center">
               <Image
@@ -133,22 +146,22 @@ const Navbar: React.FC = () => {
                 width={140}
                 height={32}
                 priority
-                className="h-8 w-auto"
+                className="h-7 w-auto"
               />
             </Link>
 
             {/* Desktop: Search + Nav Links */}
-            <div className="hidden md:flex flex-1 items-center gap-4">
-              <form onSubmit={handleSubmitSearch} className="w-full max-w-sm">
+            <div className="hidden md:flex flex-1 items-center gap-1">
+              <form onSubmit={handleSubmitSearch} className="w-full max-w-xs mr-4">
                 <div className="relative">
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Search className="w-4 h-4" />
                   </span>
                   <input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Kelime, ilan no veya mağaza adı ile ara"
-                    className="w-full h-9 rounded-sm bg-white text-black pl-3 pr-9 text-sm outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-gray-400"
+                    placeholder="İlan ara..."
+                    className="w-full h-9 rounded-lg bg-gray-100 text-gray-900 pl-9 pr-3 text-sm outline-none transition-colors duration-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-400"
                   />
                 </div>
               </form>
@@ -157,10 +170,10 @@ const Navbar: React.FC = () => {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`text-sm transition-colors ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
                     isActive(link.href)
-                      ? "text-white font-semibold"
-                      : "text-white/80 hover:text-white"
+                      ? "bg-indigo-50 text-indigo-700"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
                   {link.label}
@@ -172,11 +185,11 @@ const Navbar: React.FC = () => {
             <div className="flex-1 md:hidden" />
 
             {/* Auth (desktop) */}
-            <div className="hidden md:flex shrink-0 items-center gap-3">
+            <div className="hidden md:flex shrink-0 items-center gap-2">
               {!loadingUser && !isLoggedIn && (
                 <Link
                   href="/login"
-                  className="text-sm text-white/90 hover:text-white"
+                  className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors duration-150"
                 >
                   Giriş Yap
                 </Link>
@@ -186,37 +199,45 @@ const Navbar: React.FC = () => {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setOpenUserMenu((v) => !v)}
-                    className="h-9 flex items-center gap-2 px-2 rounded-sm hover:bg-white/10"
+                    className="h-9 flex items-center gap-2 px-2 rounded-lg hover:bg-gray-50 transition-colors duration-150"
                   >
-                    <span className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold">
+                    <span className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
                       {userInitials || <User className="w-4 h-4" />}
                     </span>
-                    <span className="hidden lg:inline text-sm">
+                    <span className="hidden lg:inline text-sm font-medium text-gray-700">
                       {user.name} {user.surname}
                     </span>
-                    <ChevronDown className="w-4 h-4 opacity-80" />
+                    <ChevronDown
+                      className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                        openUserMenu ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
 
-                  {openUserMenu && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-sm bg-[#1f2933] border border-white/10 shadow-xl overflow-hidden">
-                      <Link
-                        href="/admin/emlak"
-                        onClick={() => setOpenUserMenu(false)}
-                        className="flex items-center gap-2 px-4 py-3 text-sm text-white hover:bg-white/10"
-                      >
-                        <User className="w-4 h-4" />
-                        Yönetim Paneli
-                      </Link>
-                      <div className="border-t border-white/10" />
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left px-4 py-3 text-sm text-red-300 hover:bg-white/10 flex items-center gap-2"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Çıkış Yap
-                      </button>
-                    </div>
-                  )}
+                  <div
+                    className={`absolute right-0 mt-2 w-52 rounded-lg bg-white shadow-lg border border-gray-200 overflow-hidden transition-all duration-200 origin-top-right ${
+                      openUserMenu
+                        ? "opacity-100 scale-100"
+                        : "opacity-0 scale-95 pointer-events-none"
+                    }`}
+                  >
+                    <Link
+                      href="/admin/emlak"
+                      onClick={() => setOpenUserMenu(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                    >
+                      <User className="w-4 h-4" />
+                      Yönetim Paneli
+                    </Link>
+                    <div className="border-t border-gray-100" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors duration-150"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Çıkış Yap
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -224,7 +245,7 @@ const Navbar: React.FC = () => {
             {/* Mobile hamburger button */}
             <button
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors"
+              className="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors duration-150 text-gray-600"
               aria-label={mobileMenuOpen ? "Menüyü kapat" : "Menüyü aç"}
             >
               {mobileMenuOpen ? (
@@ -240,45 +261,45 @@ const Navbar: React.FC = () => {
       {/* Mobile menu overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/30 md:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
       {/* Mobile menu panel */}
       <div
-        className={`fixed top-14 right-0 z-40 h-[calc(100dvh-3.5rem)] w-72 bg-[#2f3b4a] shadow-2xl transform transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed right-0 top-16 z-40 w-72 h-[calc(100dvh-4rem)] bg-white border-l border-gray-200 shadow-lg transform transition-transform duration-300 ease-in-out md:hidden ${
           mobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Mobile search */}
-          <div className="p-4 border-b border-white/10">
+          <div className="p-4">
             <form onSubmit={handleSubmitSearch}>
               <div className="relative">
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                   <Search className="w-4 h-4" />
                 </span>
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="Ara..."
-                  className="w-full h-10 rounded-sm bg-white text-black pl-3 pr-9 text-sm outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-gray-400"
+                  placeholder="İlan ara..."
+                  className="w-full h-10 rounded-lg bg-gray-100 text-gray-900 pl-9 pr-3 text-sm outline-none transition-colors duration-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-400"
                 />
               </div>
             </form>
           </div>
 
           {/* Mobile nav links */}
-          <nav className="flex-1 overflow-y-auto py-2">
+          <nav className="flex-1 overflow-y-auto px-3 space-y-0.5">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center px-4 py-3 text-sm transition-colors ${
+                className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors duration-150 ${
                   isActive(link.href)
-                    ? "text-white bg-white/10 font-semibold"
-                    : "text-white/80 hover:text-white hover:bg-white/5"
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 {link.label}
@@ -287,11 +308,11 @@ const Navbar: React.FC = () => {
           </nav>
 
           {/* Mobile auth section */}
-          <div className="border-t border-white/10 p-4">
+          <div className="p-4 border-t border-gray-100">
             {!loadingUser && !isLoggedIn && (
               <Link
                 href="/login"
-                className="flex items-center justify-center gap-2 w-full h-10 rounded-sm bg-white/10 text-sm text-white hover:bg-white/20 transition-colors"
+                className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors duration-150"
               >
                 <User className="w-4 h-4" />
                 Giriş Yap
@@ -299,25 +320,25 @@ const Navbar: React.FC = () => {
             )}
 
             {!loadingUser && isLoggedIn && user && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 px-1 py-2">
-                  <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold shrink-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-gray-50">
+                  <span className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
                     {userInitials || <User className="w-4 h-4" />}
                   </span>
-                  <span className="text-sm truncate">
+                  <span className="text-sm font-medium text-gray-900 truncate">
                     {user.name} {user.surname}
                   </span>
                 </div>
                 <Link
                   href="/admin/emlak"
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-sm text-sm text-white hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                 >
                   <User className="w-4 h-4" />
                   Yönetim Paneli
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-sm text-sm text-red-300 hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors duration-150"
                 >
                   <LogOut className="w-4 h-4" />
                   Çıkış Yap

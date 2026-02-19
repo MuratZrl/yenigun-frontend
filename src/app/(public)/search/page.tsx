@@ -1,4 +1,4 @@
-// src/app/search/page.tsx
+// src/app/(public)/search/page.tsx
 import type { Metadata } from "next";
 import SearchClient from "./SearchClient";
 

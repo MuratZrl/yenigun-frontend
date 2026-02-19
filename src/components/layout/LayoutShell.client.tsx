@@ -25,8 +25,8 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   return (
     <>
       <Navbar />
-      <div className="pt-14">
-        {!isHome && <BreadcrumbBar className="sticky top-14 z-30" />}
+      <div className="pt-16">
+        {!isHome && <BreadcrumbBar className="sticky top-16 z-30" />}
         <main className={isHome ? "min-h-screen" : "mx-auto max-w-6xl px-4 pt-4 pb-4 bg-white min-h-screen"}>
           {children}
         </main>

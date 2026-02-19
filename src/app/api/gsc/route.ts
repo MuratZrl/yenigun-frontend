@@ -230,13 +230,13 @@ export async function GET(req: NextRequest) {
     let userMessage = message;
     if (status === 403) {
       userMessage =
-        "Erisim reddedildi (403). Servis hesabi Google Search Console'a eklenmemis olabilir.";
+        "Erişim reddedildi (403). Servis hesabı Google Search Console'a eklenmemiş olabilir.";
     } else if (status === 401) {
       userMessage =
-        "Kimlik dogrulamasi basarisiz (401). Servis hesabi bilgileri hatali olabilir.";
+        "Kimlik doğrulaması başarısız (401). Servis hesabı bilgileri hatalı olabilir.";
     } else if (message.includes("error:1E08010C") || message.includes("DECODER")) {
       userMessage =
-        "Private key formati hatali. .env.local dosyasindaki GSC_PRIVATE_KEY degerini kontrol edin.";
+        "Private key formatı hatalı. .env.local dosyasındaki GSC_PRIVATE_KEY değerini kontrol edin.";
     }
 
     return NextResponse.json(
