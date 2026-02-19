@@ -1,4 +1,4 @@
-// src/features/ads/ui/components/fliter/types.ts
+// src/features/ads/ui/components/filter/types.ts
 import type React from "react";
 import type { Category, Feature, FilterState, Subcategory } from "@/types/advert";
 
@@ -10,11 +10,24 @@ export interface CityData {
   }>;
 }
 
-export type ExtendedFilterState = FilterState & Record<string, any>;
+/** Possible value types stored per feature filter. */
+export type FeatureFilterValue =
+  | string
+  | string[]
+  | boolean
+  | { min: number | null; max: number | null };
+
+export type FeatureFiltersMap = Record<string, FeatureFilterValue>;
+
+export type ExtendedFilterState = FilterState & {
+  category?: string;
+  subcategory?: string;
+  subsubcategory?: string;
+};
+
 export type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
 
 export type CategoryHandlerDeps = {
-  // ✅ EKLE: path bulmak için tüm ağaç lazım
   categories: Category[];
 
   filters: ExtendedFilterState;
@@ -31,6 +44,6 @@ export type CategoryHandlerDeps = {
   setAvailableSubcategories: SetState<Subcategory[]>;
   setAvailableSubSubcategories: SetState<Subcategory[]>;
 
-  setFeatureFilters: SetState<Record<string, any>>;
+  setFeatureFilters: SetState<FeatureFiltersMap>;
   setCurrentFeatures: SetState<Feature[]>;
 };

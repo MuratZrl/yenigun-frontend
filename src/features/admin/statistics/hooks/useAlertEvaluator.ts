@@ -32,8 +32,8 @@ export type TriggeredAlert = {
 const DEDUP_KEY = "gsc-alert-last-fingerprint";
 
 const METRIC_LABELS: Record<AlertMetric, string> = {
-  clicks: "Tiklama",
-  impressions: "Gosterim",
+  clicks: "Tıklama",
+  impressions: "Gösterim",
   ctr: "CTR",
   position: "Pozisyon",
 };
@@ -201,13 +201,13 @@ export function useAlertEvaluator(
 
       // Show a single summary toast
       const lines = alerts.map((a) => {
-        const dir = a.direction === "drop" ? "dustu" : "artti";
+        const dir = a.direction === "drop" ? "düştü" : "arttı";
         const absChange = Math.abs(a.actualChange).toFixed(1);
-        return `${a.metricLabel} %${absChange} ${dir} (esik: %${a.threshold})`;
+        return `${a.metricLabel} %${absChange} ${dir} (eşik: %${a.threshold})`;
       });
 
       toast.warning(
-        `⚠ ${alerts.length} uyari tetiklendi:\n${lines.join("\n")}`,
+        `⚠ ${alerts.length} uyarı tetiklendi:\n${lines.join("\n")}`,
         {
           autoClose: 8000,
           style: { whiteSpace: "pre-line" },

@@ -18,7 +18,7 @@ function formatNum(n: number) {
 const metrics = [
   {
     key: "clicks",
-    label: "Toplam Tiklama",
+    label: "Toplam Tıklama",
     icon: MousePointerClick,
     iconBg: "bg-blue-50",
     iconColor: "text-blue-600",
@@ -26,7 +26,7 @@ const metrics = [
   },
   {
     key: "impressions",
-    label: "Toplam Gosterim",
+    label: "Toplam Gösterim",
     icon: Eye,
     iconBg: "bg-indigo-50",
     iconColor: "text-indigo-600",
@@ -58,7 +58,7 @@ export default function SearchClicksCard({ totals, loading }: Props) {
       }`}
     >
       <h3 className="text-sm font-semibold text-gray-900 mb-3">
-        Arama Tiklamalari
+        Arama Tıklamaları
       </h3>
 
       <div className="space-y-3 flex-1">

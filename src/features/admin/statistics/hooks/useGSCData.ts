@@ -31,8 +31,8 @@ export function useGSCData(initialPeriod: GSCPeriod = "28d") {
         setState({ data, loading: false, error: null, period: targetPeriod });
       } catch (err: unknown) {
         const message =
-          err instanceof Error ? err.message : "GSC verisi yuklenirken hata olustu";
-        console.error("GSC verisi yuklenemedi:", err);
+          err instanceof Error ? err.message : "GSC verisi yüklenirken hata oluştu";
+        console.error("GSC verisi yüklenemedi:", err);
         setState((s) => ({
           ...s,
           loading: false,

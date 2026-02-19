@@ -152,13 +152,13 @@ export async function GET(req: NextRequest) {
           dimensions: ["date"],
         }),
 
-        // 3. By page — top clicked pages
+        // 3. By page — top clicked pages (fetch more so client can filter for advert pages)
         querySearchAnalytics({
           siteUrl: resolvedSiteUrl,
           startDate,
           endDate,
           dimensions: ["page"],
-          rowLimit: 10,
+          rowLimit: 100,
         }),
 
         // 4. By device — device distribution

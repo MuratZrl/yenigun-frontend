@@ -47,7 +47,7 @@ export default function GSCCountriesCard({ byCountry, loading }: Props) {
   if (byCountry.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
-        <p className="text-xs text-gray-400">Henuz ulke verisi yok</p>
+        <p className="text-xs text-gray-400">Henüz ülke verisi yok</p>
       </div>
     );
   }
@@ -71,11 +71,11 @@ export default function GSCCountriesCard({ byCountry, loading }: Props) {
     <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">
-          Ulkelere Gore Arama
+          Ülkelere Göre Arama
         </h3>
         <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
           <Globe size={12} />
-          <span>{formatNum(totalClicks)} tiklama</span>
+          <span>{formatNum(totalClicks)} tıklama</span>
         </div>
       </div>
 
@@ -107,7 +107,7 @@ export default function GSCCountriesCard({ byCountry, loading }: Props) {
                   {country.name}
                 </p>
                 <p className="text-[10px] text-gray-400">
-                  {country.clicks.toLocaleString("tr-TR")} tiklama
+                  {country.clicks.toLocaleString("tr-TR")} tıklama
                 </p>
               </div>
             </div>

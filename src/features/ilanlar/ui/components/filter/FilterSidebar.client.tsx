@@ -1,7 +1,7 @@
 // src/features/ads/ui/components/filter/FilterSidebar.client.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Building,
   Navigation,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import type { FilterState, Category, Subcategory, Feature } from "@/types/advert";
+import type { CategoryHandlerDeps, FeatureFilterValue, FeatureFiltersMap } from "./types";
 import DesktopFiltersPanel from "./DesktopFiltersPanel.client";
 import FeatureInput from "./FeatureInput.client";
 
@@ -63,8 +64,8 @@ interface FilterSidebarProps {
   availableSubSubcategories: Subcategory[];
   setAvailableSubSubcategories: React.Dispatch<React.SetStateAction<Subcategory[]>>;
 
-  featureFilters: Record<string, any>;
-  setFeatureFilters: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+  featureFilters: FeatureFiltersMap;
+  setFeatureFilters: React.Dispatch<React.SetStateAction<FeatureFiltersMap>>;
 
   handleFilter: () => Promise<void>;
   clearFilters: () => Promise<void>;
@@ -72,7 +73,7 @@ interface FilterSidebarProps {
   totalItems: number;
 
   showUrlDebug?: boolean;
-  urlParams?: Record<string, any>;
+  urlParams?: Record<string, string>;
 
   isMobileSidebarOpen?: boolean;
   onCloseMobileSidebar?: () => void;
@@ -88,7 +89,7 @@ interface FilterSidebarProps {
 
   contextFeatures?: Feature[];
 
-  // ✅ Dinamik filtreleme (controller’dan gelir)
+  // ✅ Dinamik filtreleme (controller'dan gelir)
   autoApply: boolean;
   setAutoApply: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -149,35 +150,47 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   });
 
   const [mobileActiveSection, setMobileActiveSection] = useState<string | null>(null);
-  const [currentFeatures, setCurrentFeatures] = useState<Feature[]>([]);
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  useEffect(() => {
-    if (contextFeatures.length > 0) return setCurrentFeatures(contextFeatures);
-    if (selectedSubSubcategory?.features?.length) return setCurrentFeatures(selectedSubSubcategory.features);
-    if (selectedSubcategory?.features?.length) return setCurrentFeatures(selectedSubcategory.features);
-    if (selectedCategory?.features?.length) return setCurrentFeatures(selectedCategory.features);
-    setCurrentFeatures([]);
-  }, [selectedCategory?._id, selectedSubcategory?._id, selectedSubSubcategory?._id, contextFeatures]);
+  /* Derive currentFeatures from the deepest selected category that has features. */
+  const currentFeatures = useMemo<Feature[]>(() => {
+    if (contextFeatures.length > 0) return contextFeatures;
+    if (selectedSubSubcategory?.features?.length) return selectedSubSubcategory.features;
+    if (selectedSubcategory?.features?.length) return selectedSubcategory.features;
+    if (selectedCategory?.features?.length) return selectedCategory.features;
+    return [];
+  }, [contextFeatures, selectedSubSubcategory, selectedSubcategory, selectedCategory]);
+
+  /* categoryHandlers calls setCurrentFeatures, but the value is now derived
+     from the selected category/subcategory. Provide a no-op to satisfy the deps type. */
+  const setCurrentFeatures = useCallback<React.Dispatch<React.SetStateAction<Feature[]>>>(
+    () => { /* no-op: currentFeatures is derived via useMemo */ },
+    [],
+  );
+
+  /* Sync missing feature filter defaults when currentFeatures change.
+     We use a stable key to avoid re-running the effect when featureFilters
+     change for unrelated reasons. */
+  const featureIdsKey = currentFeatures.map((f) => f._id).join(",");
 
   useEffect(() => {
-    if (!currentFeatures || currentFeatures.length === 0) return;
+    if (!currentFeatures.length) return;
     const missing = buildMissingFeatureDefaults({ currentFeatures, featureFilters });
     if (Object.keys(missing).length === 0) return;
     setFeatureFilters((prev) => ({ ...prev, ...missing }));
-  }, [currentFeatures, featureFilters, setFeatureFilters]);
+  }, [featureIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const deps = useMemo(
+  const deps = useMemo<CategoryHandlerDeps>(
     () => ({
-      filters: filters as any,
+      filters,
       selectedCategory,
       selectedSubcategory,
       categories,
 
-      setFilters: setFilters as any,
+      setFilters: setFilters as CategoryHandlerDeps["setFilters"],
       setSelectedCategory,
       setSelectedSubcategory,
       setSelectedSubSubcategory,
@@ -200,17 +213,18 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       setAvailableSubcategories,
       setAvailableSubSubcategories,
       setFeatureFilters,
+      setCurrentFeatures,
     ],
   );
 
-  const onCategorySelect = (category: Category | null) => handleCategorySelectCore(category, deps as any);
+  const onCategorySelect = (category: Category | null) => handleCategorySelectCore(category, deps);
 
-  const onSubcategorySelect = (subcategory: Subcategory | null) => handleSubcategorySelectCore(subcategory, deps as any);
+  const onSubcategorySelect = (subcategory: Subcategory | null) => handleSubcategorySelectCore(subcategory, deps);
 
   const onSubSubcategorySelect = (subsub: Subcategory | null) =>
-    handleSubSubcategorySelectCore(subsub, deps as any);
+    handleSubSubcategorySelectCore(subsub, deps);
 
-  const handleFeatureFilterChange = (featureId: string, value: any) => {
+  const handleFeatureFilterChange = (featureId: string, value: FeatureFilterValue) => {
     setFeatureFilters((prev) => ({ ...prev, [featureId]: value }));
   };
 
@@ -409,10 +423,10 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">İl</label>
                         <select
-                          value={(filters as any).location}
+                          value={filters.location}
                           onChange={(e) => {
                             setFilters({
-                              ...(filters as any),
+                              ...filters,
                               location: e.target.value,
                               district: "Hepsi",
                               quarter: "Hepsi",
@@ -432,23 +446,23 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">İlçe</label>
                         <select
-                          value={(filters as any).district}
+                          value={filters.district}
                           onChange={(e) => {
                             setFilters({
-                              ...(filters as any),
+                              ...filters,
                               district: e.target.value,
                               quarter: "Hepsi",
                             });
                           }}
-                          disabled={(filters as any).location === "Hepsi"}
+                          disabled={filters.location === "Hepsi"}
                           className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                         >
                           <option value="Hepsi">
-                            {(filters as any).location === "Hepsi" ? "Önce il seçiniz" : "Tüm İlçeler"}
+                            {filters.location === "Hepsi" ? "Önce il seçiniz" : "Tüm İlçeler"}
                           </option>
 
                           {citiesData
-                            .find((city) => city.province === (filters as any).location)
+                            .find((city) => city.province === filters.location)
                             ?.districts.map((district) => (
                               <option key={district.district} value={district.district}>
                                 {district.district}
@@ -488,11 +502,11 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                           <input
                             type="number"
                             placeholder="Min"
-                            value={(filters as any).minPrice || ""}
+                            value={filters.minPrice || ""}
                             className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             onChange={(e) =>
                               setFilters({
-                                ...(filters as any),
+                                ...filters,
                                 minPrice: e.target.value ? Number(e.target.value) : null,
                               })
                             }
@@ -504,11 +518,11 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                           <input
                             type="number"
                             placeholder="Max"
-                            value={(filters as any).maxPrice || ""}
+                            value={filters.maxPrice || ""}
                             className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             onChange={(e) =>
                               setFilters({
-                                ...(filters as any),
+                                ...filters,
                                 maxPrice: e.target.value ? Number(e.target.value) : null,
                               })
                             }

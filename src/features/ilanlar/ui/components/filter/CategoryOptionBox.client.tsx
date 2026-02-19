@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import type { Category, Subcategory, FilterState } from "@/types/advert";
+import type { Category, Subcategory, Feature, FilterState } from "@/types/advert";
 import api from "@/lib/api";
 
 type Props = {
@@ -25,15 +25,33 @@ type Props = {
 
 /* ── Helpers ── */
 
-function toStr(v: any): string {
+/** A loose shape that covers both Category & Subcategory (and nested variants). */
+type RawCategoryNode = {
+  uid?: string;
+  _id?: string;
+  id?: string;
+  name?: string;
+  title?: string;
+  parentUid?: string;
+  parentId?: string;
+  subcategories?: RawCategoryNode[];
+  subCategories?: RawCategoryNode[];
+  children?: RawCategoryNode[];
+  features?: Feature[];
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
+};
+
+function toStr(v: string | number | undefined | null): string {
   return String(v ?? "").trim();
 }
 
-function nodeUid(n: any): string {
+function nodeUid(n: RawCategoryNode | null | undefined): string {
   return toStr(n?.uid) || toStr(n?._id) || toStr(n?.id) || "";
 }
 
-function nodeName(n: any): string {
+function nodeName(n: RawCategoryNode | null | undefined): string {
   return toStr(n?.name) || toStr(n?.title) || "";
 }
 
@@ -43,10 +61,10 @@ type TreeNode = {
   uid: string;
   name: string;
   children: TreeNode[];
-  raw: any;
+  raw: RawCategoryNode;
 };
 
-function buildTree(flatList: any[]): TreeNode[] {
+function buildTree(flatList: RawCategoryNode[]): TreeNode[] {
   if (!Array.isArray(flatList) || !flatList.length) return [];
 
   const hasNested = flatList.some(
@@ -89,7 +107,7 @@ function buildTree(flatList: any[]): TreeNode[] {
   return roots;
 }
 
-function convertNestedNode(n: any): TreeNode {
+function convertNestedNode(n: RawCategoryNode): TreeNode {
   const kids = n?.subcategories || n?.children || n?.subCategories || [];
   return {
     uid: nodeUid(n),
@@ -151,11 +169,15 @@ function getPathForNode(node: TreeNode, parents: TreeNode[]): string[] {
   return [...parents.map((p) => p.name), node.name];
 }
 
+interface SearchResponse {
+  pagination?: { totalItems?: number };
+}
+
 async function fetchCountForParams(params: Record<string, string>): Promise<number> {
   try {
     const qs = new URLSearchParams(params).toString();
-    const res = await api.get(`/advert/search?${qs}`);
-    const data = res?.data ?? res;
+    const res = await api.get<SearchResponse>(`/advert/search?${qs}`);
+    const data: SearchResponse = res?.data ?? res;
     return data?.pagination?.totalItems ?? 0;
   } catch {
     return 0;
@@ -163,22 +185,17 @@ async function fetchCountForParams(params: Record<string, string>): Promise<numb
 }
 
 function useCategoryCounts(nodes: TreeNode[], parents: TreeNode[]): Map<string, number | null> {
-  const [counts, setCounts] = useState<Map<string, number | null>>(new Map());
+  const [fetchedCounts, setFetchedCounts] = useState<Map<string, number | null>>(new Map());
   const abortRef = useRef<AbortController | null>(null);
 
   const nodesKey = nodes.map((n) => n.uid).join(",");
 
   useEffect(() => {
-    if (!nodes.length) {
-      setCounts(new Map());
-      return;
-    }
+    if (!nodes.length) return;
 
     if (abortRef.current) abortRef.current.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-
-    setCounts(new Map(nodes.map((n) => [n.uid, null])));
 
     const fetchAll = async () => {
       const results = await Promise.allSettled(
@@ -198,7 +215,7 @@ function useCategoryCounts(nodes: TreeNode[], parents: TreeNode[]): Map<string, 
           next.set(r.value.uid, r.value.count);
         }
       }
-      setCounts(next);
+      setFetchedCounts(next);
     };
 
     fetchAll();
@@ -207,6 +224,17 @@ function useCategoryCounts(nodes: TreeNode[], parents: TreeNode[]): Map<string, 
       ctrl.abort();
     };
   }, [nodesKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* Derive the final counts: if nodes are empty return empty map,
+     otherwise show loading (null) for nodes not yet fetched. */
+  const counts = useMemo<Map<string, number | null>>(() => {
+    if (!nodes.length) return new Map();
+    const merged = new Map<string, number | null>();
+    for (const n of nodes) {
+      merged.set(n.uid, fetchedCounts.get(n.uid) ?? null);
+    }
+    return merged;
+  }, [nodes, fetchedCounts]);
 
   return counts;
 }
@@ -243,31 +271,23 @@ export default function CategoryOptionsBox({
     return { topLevel: tree };
   }, [tree, title]);
 
-  const [selectedL0, setSelectedL0] = useState<TreeNode | null>(null);
-  const [selectedL1, setSelectedL1] = useState<TreeNode | null>(null);
-
   const activePathParts = useMemo(() => {
-    const t = (filters as any)?.type;
+    const t = filters.type;
     if (!t || t === "Hepsi") return [] as string[];
-    return String(t).split(" > ").map((p: string) => p.trim()).filter(Boolean);
+    return t.split(" > ").map((p) => p.trim()).filter(Boolean);
   }, [filters]);
 
-  useEffect(() => {
-    if (activePathParts.length === 0) {
-      setSelectedL0(null);
-      setSelectedL1(null);
-      return;
-    }
+  const { selectedL0, selectedL1 } = useMemo<{
+    selectedL0: TreeNode | null;
+    selectedL1: TreeNode | null;
+  }>(() => {
+    if (activePathParts.length === 0) return { selectedL0: null, selectedL1: null };
 
-    const l0Match = topLevel.find((n) => activePathParts.includes(n.name));
-    if (l0Match) {
-      setSelectedL0(l0Match);
-      const l1Match = l0Match.children.find((n) => activePathParts.includes(n.name));
-      setSelectedL1(l1Match || null);
-    } else {
-      setSelectedL0(null);
-      setSelectedL1(null);
-    }
+    const l0Match = topLevel.find((n) => activePathParts.includes(n.name)) ?? null;
+    if (!l0Match) return { selectedL0: null, selectedL1: null };
+
+    const l1Match = l0Match.children.find((n) => activePathParts.includes(n.name)) ?? null;
+    return { selectedL0: l0Match, selectedL1: l1Match };
   }, [activePathParts, topLevel]);
 
   const visibleNodes = useMemo(() => {
@@ -285,48 +305,12 @@ export default function CategoryOptionsBox({
   const counts = useCategoryCounts(visibleNodes, parentPath);
 
   const handleRootClick = useCallback(() => {
-    setSelectedL0(null);
-    setSelectedL1(null);
     onCategorySelect(null);
   }, [onCategorySelect]);
 
-  const handleL0Click = useCallback(
+  const handleNodeClick = useCallback(
     (node: TreeNode) => {
-      setSelectedL0(node);
-      setSelectedL1(null);
-      onCategorySelect(node.raw as Category);
-    },
-    [onCategorySelect],
-  );
-
-  const handleL0LabelClick = useCallback(
-    (node: TreeNode) => {
-      setSelectedL0(node);
-      setSelectedL1(null);
-      onCategorySelect(node.raw as Category);
-    },
-    [onCategorySelect],
-  );
-
-  const handleL1Click = useCallback(
-    (node: TreeNode) => {
-      setSelectedL1(node);
-      onCategorySelect(node.raw as Category);
-    },
-    [onCategorySelect],
-  );
-
-  const handleL1LabelClick = useCallback(
-    (node: TreeNode) => {
-      setSelectedL1(node);
-      onCategorySelect(node.raw as Category);
-    },
-    [onCategorySelect],
-  );
-
-  const handleL2Click = useCallback(
-    (node: TreeNode) => {
-      onCategorySelect(node.raw as Category);
+      onCategorySelect(node.raw as unknown as Category);
     },
     [onCategorySelect],
   );
@@ -359,7 +343,7 @@ export default function CategoryOptionsBox({
             <button
               key={l0.uid}
               type="button"
-              onClick={() => handleL0Click(l0)}
+              onClick={() => handleNodeClick(l0)}
               className="w-full text-left px-3 py-[3px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
               style={{ paddingLeft: 20 }}
             >
@@ -375,7 +359,7 @@ export default function CategoryOptionsBox({
               className="px-3 py-[3px] text-[13px] leading-[20px]"
               style={{ paddingLeft: 20 }}
             >
-              <span className={labelStyle} onClick={() => handleL0LabelClick(selectedL0)} role="button" tabIndex={0}>
+              <span className={labelStyle} onClick={() => handleNodeClick(selectedL0)} role="button" tabIndex={0}>
                 {selectedL0.name}
               </span>
             </div>
@@ -384,7 +368,7 @@ export default function CategoryOptionsBox({
               <button
                 key={l1.uid}
                 type="button"
-                onClick={() => handleL1Click(l1)}
+                onClick={() => handleNodeClick(l1)}
                 className="w-full text-left px-3 py-[3px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
                 style={{ paddingLeft: 36 }}
               >
@@ -400,7 +384,7 @@ export default function CategoryOptionsBox({
           <>
             <button
               type="button"
-              onClick={() => handleL0LabelClick(selectedL0)}
+              onClick={() => handleNodeClick(selectedL0)}
               className="w-full text-left px-3 py-[3px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
               style={{ paddingLeft: 20 }}
             >
@@ -409,7 +393,7 @@ export default function CategoryOptionsBox({
 
             <button
               type="button"
-              onClick={() => handleL1LabelClick(selectedL1)}
+              onClick={() => handleNodeClick(selectedL1)}
               className="w-full text-left px-3 py-[3px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
               style={{ paddingLeft: 36 }}
             >
@@ -420,7 +404,7 @@ export default function CategoryOptionsBox({
               <button
                 key={l2.uid}
                 type="button"
-                onClick={() => handleL2Click(l2)}
+                onClick={() => handleNodeClick(l2)}
                 className="w-full text-left px-3 py-[3px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
                 style={{ paddingLeft: 52 }}
               >

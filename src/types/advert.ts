@@ -150,7 +150,7 @@ export interface Category {
 export interface Subcategory {
   name: string;
   features: Feature[];
-  subcategories: any[];
+  subcategories: Subcategory[];
   _id: string;
 }
 

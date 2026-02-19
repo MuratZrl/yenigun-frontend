@@ -32,7 +32,7 @@ export default function GSCQueriesCard({ byQuery, loading }: Props) {
   if (byQuery.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
-        <p className="text-xs text-gray-400">Henuz sorgu verisi yok</p>
+        <p className="text-xs text-gray-400">Henüz sorgu verisi yok</p>
       </div>
     );
   }
@@ -44,7 +44,7 @@ export default function GSCQueriesCard({ byQuery, loading }: Props) {
     <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">
-          Populer Arama Sorgulari
+          Popüler Arama Sorguları
         </h3>
         <Search size={14} className="text-gray-300" />
       </div>

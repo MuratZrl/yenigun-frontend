@@ -13,7 +13,7 @@ const DEVICE_META: Record<
   string,
   { name: string; color: string; icon: typeof Monitor }
 > = {
-  DESKTOP: { name: "Masaustu", color: "#1f2937", icon: Monitor },
+  DESKTOP: { name: "Masaüstü", color: "#1f2937", icon: Monitor },
   MOBILE: { name: "Mobil", color: "#3b82f6", icon: Smartphone },
   TABLET: { name: "Tablet", color: "#93c5fd", icon: Tablet },
 };
@@ -63,7 +63,7 @@ export default function GSCDevicesCard({ byDevice, loading }: Props) {
   if (byDevice.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
-        <p className="text-xs text-gray-400">Henuz cihaz verisi yok</p>
+        <p className="text-xs text-gray-400">Henüz cihaz verisi yok</p>
       </div>
     );
   }
@@ -91,7 +91,7 @@ export default function GSCDevicesCard({ byDevice, loading }: Props) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 h-full">
       <h3 className="text-sm font-semibold text-gray-900 mb-3">
-        Cihaz Dagilimi
+        Cihaz Dağılımı
       </h3>
 
       {/* Donut + legend */}

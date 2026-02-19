@@ -111,7 +111,7 @@ export default function StatisticsPage() {
               />
             </div>
 
-            {/* Row 2: GSC — Tiklamalar + Gosterimler */}
+            {/* Row 2: GSC — Tıklamalar + Gösterimler */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3">
               <div className="md:col-span-4 lg:col-span-3">
                 <SearchClicksCard
@@ -132,29 +132,31 @@ export default function StatisticsPage() {
               <AlertBanner gscData={gsc.data} />
             </div>
 
-            {/* Row 4: GSC Top Sayfalar + Son Ilanlar (REAL) + En Iyi Danismanlar (REAL) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 mb-3">
-              <div className="sm:col-span-2 lg:col-span-4">
+            {/* Row 4: GSC Top Sayfalar + Son Ilanlar (REAL) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3 items-stretch">
+              <div className="flex">
                 <GSCTopPagesCard
                   byPage={gsc.data?.byPage ?? []}
                   loading={gsc.loading}
                 />
               </div>
-              <div className="lg:col-span-5">
+              <div className="flex">
                 <RecentActivityCard
                   recentAdverts={data?.recentAdverts ?? []}
                   loading={loading}
                 />
               </div>
-              <div className="lg:col-span-3">
-                <MoreStatsCard
-                  advisors={data?.advisors ?? []}
-                  loading={loading}
-                />
-              </div>
             </div>
 
-            {/* Row 5: GSC — Cihazlar + Arama Sorgulari + Ulkeler */}
+            {/* Row 5: En Iyi Danismanlar (REAL) */}
+            <div className="mb-3">
+              <MoreStatsCard
+                advisors={data?.advisors ?? []}
+                loading={loading}
+              />
+            </div>
+
+            {/* Row 5: GSC — Cihazlar + Arama Sorguları + Ülkeler */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="sm:col-span-2 lg:col-span-1">
                 <GSCDevicesCard

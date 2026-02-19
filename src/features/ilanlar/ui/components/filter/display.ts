@@ -1,6 +1,7 @@
 // src/features/ads/ui/components/filter/display.ts
 
 import type { FilterState, Feature, Category, Subcategory } from "@/types/advert";
+import type { FeatureFilterValue, FeatureFiltersMap } from "./types";
 import { getActiveSortOption } from "./sortOptions";
 
 export function getCategoryDisplayName(args: {
@@ -62,19 +63,19 @@ export function findAreaFeature(currentFeatures: Feature[]) {
 
 export function getAreaDisplayValue(args: {
   currentFeatures: Feature[];
-  featureFilters: Record<string, any>;
+  featureFilters: FeatureFiltersMap;
 }) {
   const { currentFeatures, featureFilters } = args;
 
   const areaFeature = findAreaFeature(currentFeatures);
   if (!areaFeature) return "Seçiniz";
 
-  const v = featureFilters[areaFeature._id];
+  const v: FeatureFilterValue | undefined = featureFilters[areaFeature._id];
   if (!v) return "Seçiniz";
 
-  if (areaFeature.type === "range") {
-    const min = v?.min ?? null;
-    const max = v?.max ?? null;
+  if (areaFeature.type === "range" && typeof v === "object" && !Array.isArray(v)) {
+    const min = v.min ?? null;
+    const max = v.max ?? null;
     if (min === null && max === null) return "Seçiniz";
     return `${min ?? "Min"} - ${max ?? "Max"} m²`;
   }
@@ -88,10 +89,10 @@ export function getAreaDisplayValue(args: {
 
 export function getFeatureDisplayValue(args: {
   feature: Feature;
-  featureFilters: Record<string, any>;
+  featureFilters: FeatureFiltersMap;
 }) {
   const { feature, featureFilters } = args;
-  const v = featureFilters[feature._id];
+  const v: FeatureFilterValue | undefined = featureFilters[feature._id];
 
   if (v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0)) {
     return "Seçiniz";
@@ -103,9 +104,9 @@ export function getFeatureDisplayValue(args: {
     return Array.isArray(v) && v.length > 0 ? `${v.length} seçenek` : "Seçiniz";
   }
 
-  if (feature.type === "range") {
-    const min = v?.min ?? null;
-    const max = v?.max ?? null;
+  if (feature.type === "range" && typeof v === "object" && !Array.isArray(v)) {
+    const min = v.min ?? null;
+    const max = v.max ?? null;
     if (min === null && max === null) return "Seçiniz";
     return `${min ?? "Min"} - ${max ?? "Max"}`;
   }

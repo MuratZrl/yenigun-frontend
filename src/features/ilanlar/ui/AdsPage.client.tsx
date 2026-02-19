@@ -60,25 +60,26 @@ export default function AdsPageClient({
 
   const [viewMode, setViewMode] = React.useState<"list" | "grid">("list");
 
-  // ✅ Hook’lar asla if/return altına inmez.
+  // ✅ Hook'lar asla if/return altına inmez.
   const didMountRef = React.useRef(false);
   const lastCatKeyRef = React.useRef<string | null>(null);
 
+  const filterType = c.filters.type ?? "";
+  const { handleFilter } = c;
+
   // ✅ Kategoriye tıklar tıklamaz filtre uygula (Ara butonu gereksiz)
   React.useEffect(() => {
-    const typeKey = (c.filters as any)?.type ?? "";
-
     if (!didMountRef.current) {
       didMountRef.current = true;
-      lastCatKeyRef.current = typeKey || null;
+      lastCatKeyRef.current = filterType || null;
       return;
     }
 
-    if ((typeKey || null) === lastCatKeyRef.current) return;
-    lastCatKeyRef.current = typeKey || null;
+    if ((filterType || null) === lastCatKeyRef.current) return;
+    lastCatKeyRef.current = filterType || null;
 
-    void c.handleFilter();
-  }, [(c.filters as any)?.type, c.handleFilter]);
+    void handleFilter();
+  }, [filterType, handleFilter]);
 
   const totalPagesLabel = (c.totalPages || 1).toLocaleString("tr-TR");
   const currentPageLabel = (c.currentPage || 1).toLocaleString("tr-TR");
@@ -272,7 +273,7 @@ export default function AdsPageClient({
                   <AdsTableHeader />
 
                   {c.data.map((ad: Advert, index: number) => (
-                    <div key={(ad as any)?.uid || index}>
+                    <div key={ad.uid || index}>
                       <AdsRowDesktop
                         ad={ad}
                         fallbackKey={index}
@@ -290,7 +291,7 @@ export default function AdsPageClient({
                 <div className="grid grid-cols-2 divide-x divide-y divide-gray-200 border border-gray-200 bg-white">
                   {c.data.map((ad, i) => (
                     <AdsGridCard
-                      key={(ad as any)?.uid || i}
+                      key={ad.uid || i}
                       ad={ad}
                       fallbackKey={i}
                     />

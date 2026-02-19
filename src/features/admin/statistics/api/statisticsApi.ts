@@ -72,7 +72,7 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   const [advisorRes, customerCount, recentRes, advertCount] = await Promise.all([
     fetchAdvisorStats(1, 100),
     fetchCustomerCount(),
-    fetchRecentAdverts(6),
+    fetchRecentAdverts(10),
     fetchAdvertCount(),
   ]);
 

@@ -1,11 +1,34 @@
 // src/features/ads/ui/components/filter/categoryHandlers.ts
 
 import type { Category, Feature, Subcategory } from "@/types/advert";
-import type { CategoryHandlerDeps, ExtendedFilterState } from "./types";
+import type { CategoryHandlerDeps, ExtendedFilterState, FeatureFilterValue, FeatureFiltersMap } from "./types";
+
+/* ----------------------------- Node type ----------------------------- */
+
+/** Generic shape covering Category, Subcategory, and flat-list variants. */
+type CategoryNode = {
+  uid?: string;
+  _id?: string;
+  id?: string;
+  slug?: string;
+  name?: string;
+  title?: string;
+  parentUid?: string;
+  parentId?: string;
+  subcategories?: CategoryNode[];
+  subCategories?: CategoryNode[];
+  children?: CategoryNode[];
+  features?: Feature[];
+  /** Internal id added by buildTreeFromFlat */
+  __id?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
+};
 
 /* ----------------------------- Helpers ----------------------------- */
 
-function getChildren(node: any): any[] {
+function getChildren(node: CategoryNode): CategoryNode[] {
   const a = node?.children;
   if (Array.isArray(a)) return a;
   const b = node?.subcategories;
@@ -15,15 +38,15 @@ function getChildren(node: any): any[] {
   return [];
 }
 
-function nodeId(node: any): string {
+function nodeId(node: CategoryNode): string {
   return String(node?.uid ?? node?._id ?? node?.id ?? node?.slug ?? "").trim();
 }
 
-function nodeName(node: any): string {
+function nodeName(node: CategoryNode): string {
   return String(node?.name ?? node?.title ?? "").trim();
 }
 
-function looksLikeFlatCategoryList(list: any[]): boolean {
+function looksLikeFlatCategoryList(list: CategoryNode[]): boolean {
   return (list || []).some(
     (x) =>
       x &&
@@ -32,18 +55,18 @@ function looksLikeFlatCategoryList(list: any[]): boolean {
   );
 }
 
-function buildTreeFromFlat(rawList: any[]) {
-  const byId = new Map<string, any>();
-  const roots: any[] = [];
+function buildTreeFromFlat(rawList: CategoryNode[]): CategoryNode[] {
+  const byId = new Map<string, CategoryNode>();
+  const roots: CategoryNode[] = [];
 
   for (const raw of rawList || []) {
     const id = String(raw?.uid ?? raw?._id ?? raw?.id ?? "").trim();
     if (!id) continue;
 
     if (!byId.has(id)) {
-      byId.set(id, { ...raw, __id: id, children: [] as any[] });
+      byId.set(id, { ...raw, __id: id, children: [] as CategoryNode[] });
     } else {
-      const prev = byId.get(id);
+      const prev = byId.get(id)!;
       byId.set(id, {
         ...prev,
         ...raw,
@@ -56,7 +79,7 @@ function buildTreeFromFlat(rawList: any[]) {
   for (const node of byId.values()) {
     const parentId = String(node?.parentUid ?? node?.parentId ?? "").trim();
     if (parentId && byId.has(parentId)) {
-      byId.get(parentId)!.children.push(node);
+      byId.get(parentId)!.children!.push(node);
     } else {
       roots.push(node);
     }
@@ -65,7 +88,7 @@ function buildTreeFromFlat(rawList: any[]) {
   return roots;
 }
 
-function normalizeRoots(categories: any[]): any[] {
+function normalizeRoots(categories: CategoryNode[]): CategoryNode[] {
   const list = Array.isArray(categories) ? categories : [];
   if (!list.length) return [];
   const hasNested = list.some((x) => getChildren(x).length > 0);
@@ -74,7 +97,7 @@ function normalizeRoots(categories: any[]): any[] {
 }
 
 // target node'a giden NODE path'i bul (root -> ... -> target)
-function findPathNodes(nodes: any[], targetId: string, trail: any[] = []): any[] | null {
+function findPathNodes(nodes: CategoryNode[], targetId: string, trail: CategoryNode[] = []): CategoryNode[] | null {
   for (const n of nodes || []) {
     const nextTrail = [...trail, n];
     const id = nodeId(n) || String(n?.__id ?? "").trim();
@@ -104,7 +127,7 @@ function resolveActionFromTypeParts(parts: string[]) {
   return "Tümü";
 }
 
-function defaultFeatureValue(feature: Feature) {
+function defaultFeatureValue(feature: Feature): FeatureFilterValue {
   if (!feature) return "";
   if (feature.type === "multi_select") return [];
   if (feature.type === "boolean") return false;
@@ -112,9 +135,8 @@ function defaultFeatureValue(feature: Feature) {
   return "";
 }
 
-function reconcileFeatureFilters(prevFF: Record<string, any>, features: Feature[]) {
-  const next: Record<string, any> = {};
-  const ids = new Set((features || []).map((f) => f?._id).filter(Boolean) as string[]);
+function reconcileFeatureFilters(prevFF: FeatureFiltersMap, features: Feature[]): FeatureFiltersMap {
+  const next: FeatureFiltersMap = {};
 
   for (const f of features || []) {
     const id = f?._id;
@@ -127,8 +149,8 @@ function reconcileFeatureFilters(prevFF: Record<string, any>, features: Feature[
   return next;
 }
 
-// ✅ En güvenlisi: tıklanan node’un ağaçtaki TAM path’i
-export function buildTypePathFromNode(clickedNode: any, categories: any[]): string {
+// ✅ En güvenlisi: tıklanan node'un ağaçtaki TAM path'i
+export function buildTypePathFromNode(clickedNode: CategoryNode, categories: CategoryNode[]): string {
   const roots = normalizeRoots(categories);
   const id = nodeId(clickedNode);
   const name = nodeName(clickedNode);
@@ -144,20 +166,20 @@ export function buildTypePathFromNode(clickedNode: any, categories: any[]): stri
   return parts.join(" > ") || name || "Hepsi";
 }
 
-function pickFeaturesFromPath(pathNodes: any[]) {
-  // en derindeki node’da feature varsa onu al, yoksa yukarı doğru çık
+function pickFeaturesFromPath(pathNodes: CategoryNode[]): Feature[] {
+  // en derindeki node'da feature varsa onu al, yoksa yukarı doğru çık
   for (let i = (pathNodes?.length || 0) - 1; i >= 0; i--) {
-    const f = (pathNodes[i] as any)?.features;
-    if (Array.isArray(f) && f.length > 0) return f as Feature[];
+    const f = pathNodes[i]?.features;
+    if (Array.isArray(f) && f.length > 0) return f;
   }
-  return [] as Feature[];
+  return [];
 }
 
 /* ------------------------ One true handler ------------------------- */
 
-function handleNodeSelect(clickedNode: any | null, deps: CategoryHandlerDeps) {
+function handleNodeSelect(clickedNode: CategoryNode | null, deps: CategoryHandlerDeps) {
   const {
-    categories, // ✅ deps’e ekleyeceksin
+    categories,
 
     setSelectedCategory,
     setSelectedSubcategory,
@@ -169,7 +191,7 @@ function handleNodeSelect(clickedNode: any | null, deps: CategoryHandlerDeps) {
     setFeatureFilters,
     setCurrentFeatures,
     setFilters,
-  } = deps as any;
+  } = deps;
 
   // Reset state if null
   if (!clickedNode) {
@@ -193,7 +215,7 @@ function handleNodeSelect(clickedNode: any | null, deps: CategoryHandlerDeps) {
     return;
   }
 
-  const roots = normalizeRoots(categories);
+  const roots = normalizeRoots(categories as unknown as CategoryNode[]);
   const id = nodeId(clickedNode);
 
   // Path bulunamazsa en azından nodeName ile devam et
@@ -211,16 +233,16 @@ function handleNodeSelect(clickedNode: any | null, deps: CategoryHandlerDeps) {
   const level3 = pathNodes[2] ?? null;
 
   // selected states
-  setSelectedCategory(level1 as Category | null);
-  setSelectedSubcategory((level2 as Subcategory | null) ?? null);
-  setSelectedSubSubcategory((level3 as Subcategory | null) ?? null);
+  setSelectedCategory(level1 as unknown as Category | null);
+  setSelectedSubcategory((level2 as unknown as Subcategory | null) ?? null);
+  setSelectedSubSubcategory((level3 as unknown as Subcategory | null) ?? null);
 
   // available lists
   const subs = level1 ? getChildren(level1) : [];
-  setAvailableSubcategories(Array.isArray(subs) ? subs : []);
+  setAvailableSubcategories(Array.isArray(subs) ? (subs as unknown as Subcategory[]) : []);
 
   const subsubs = level2 ? getChildren(level2) : [];
-  setAvailableSubSubcategories(Array.isArray(subsubs) ? subsubs : []);
+  setAvailableSubSubcategories(Array.isArray(subsubs) ? (subsubs as unknown as Subcategory[]) : []);
 
   // Filters (category/subcategory/subsubcategory alanları breadcrumb için şart değil ama UI için yararlı)
   const categoryName = parts[0];
@@ -240,21 +262,21 @@ function handleNodeSelect(clickedNode: any | null, deps: CategoryHandlerDeps) {
   const nextFeatures = pickFeaturesFromPath(pathNodes);
   setCurrentFeatures(nextFeatures);
 
-  setFeatureFilters((prevFF: Record<string, any>) => reconcileFeatureFilters(prevFF || {}, nextFeatures));
+  setFeatureFilters((prevFF: FeatureFiltersMap) => reconcileFeatureFilters(prevFF || {}, nextFeatures));
 }
 
 /* ----------------------------- Exports ----------------------------- */
 
-// Not: Bu 3 fonksiyon artık aynı “akıllı” handler’a gider.
-// Çünkü senin UI bazı yerlerde hangi node’u tıkladığını ayırmıyor (her şeyi onCategorySelect’e yolluyor).
+// Not: Bu 3 fonksiyon artık aynı "akıllı" handler'a gider.
+// Çünkü senin UI bazı yerlerde hangi node'u tıkladığını ayırmıyor (her şeyi onCategorySelect'e yolluyor).
 export function handleCategorySelect(category: Category | null, deps: CategoryHandlerDeps) {
-  handleNodeSelect(category, deps);
+  handleNodeSelect(category as unknown as CategoryNode | null, deps);
 }
 
 export function handleSubcategorySelect(subcategory: Subcategory | null, deps: CategoryHandlerDeps) {
-  handleNodeSelect(subcategory, deps);
+  handleNodeSelect(subcategory as unknown as CategoryNode | null, deps);
 }
 
 export function handleSubSubcategorySelect(subsubcategory: Subcategory | null, deps: CategoryHandlerDeps) {
-  handleNodeSelect(subsubcategory, deps);
+  handleNodeSelect(subsubcategory as unknown as CategoryNode | null, deps);
 }

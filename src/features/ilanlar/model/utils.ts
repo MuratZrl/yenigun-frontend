@@ -5,7 +5,7 @@ import { FEATURE_IDS } from "./constants";
 export const decodeURLParam = (param: string): string =>
   decodeURIComponent(param.replace(/\+/g, " "));
 
-export const formatTRY = (v: any, currency?: string) => {
+export const formatTRY = (v: string | number | undefined | null, currency?: string) => {
   if (!v) return "";
   const label = currency && currency !== "₺" ? currency : "TL";
   if (typeof v === "string") {
@@ -16,7 +16,7 @@ export const formatTRY = (v: any, currency?: string) => {
   return String(v);
 };
 
-export const isValidM2 = (v: any) =>
+export const isValidM2 = (v: string | number | undefined | null) =>
   v !== undefined && v !== null && String(v).trim() !== "" && String(v).trim() !== "0";
 
 export const getM2Text = (ad: Advert) => {
@@ -42,6 +42,22 @@ export const getM2Text = (ad: Advert) => {
   return "";
 };
 
+export const getGrossM2Text = (ad: Advert) => {
+  if (!ad.isFeatures || !Array.isArray(ad.featureValues)) return "";
+  const gross = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.GROSS_M2);
+  const grossVal = isValidM2(gross?.value) ? Number(gross!.value) : null;
+  if (grossVal) return grossVal.toLocaleString("tr-TR");
+  return "";
+};
+
+export const getNetM2Text = (ad: Advert) => {
+  if (!ad.isFeatures || !Array.isArray(ad.featureValues)) return "";
+  const net = ad.featureValues.find((f) => f.featureId === FEATURE_IDS.NET_M2);
+  const netVal = isValidM2(net?.value) ? Number(net!.value) : null;
+  if (netVal) return netVal.toLocaleString("tr-TR");
+  return "";
+};
+
 export const getRoom = (ad: Advert) => {
   if (ad.details?.roomCount) return String(ad.details.roomCount);
   if (ad.isFeatures && Array.isArray(ad.featureValues)) {
@@ -62,7 +78,7 @@ export const getCityDistrict = (ad: Advert) => {
 
 export const hasValidImage = (ad: Advert): boolean => {
   if (!ad.photos || !Array.isArray(ad.photos)) return false;
-  const validPhoto = ad.photos.find((photo: any) => {
+  const validPhoto = ad.photos.find((photo: string) => {
     if (typeof photo === "string") {
       return (
         photo.trim() !== "" &&

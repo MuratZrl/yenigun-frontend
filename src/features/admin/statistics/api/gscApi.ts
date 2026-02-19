@@ -53,7 +53,7 @@ export async function fetchGSCData(
   });
 
   if (!res.data?.success) {
-    throw new Error(res.data?.error ?? "GSC verisi alinamadi");
+    throw new Error(res.data?.error ?? "GSC verisi alınamadı");
   }
 
   return res.data.data;
