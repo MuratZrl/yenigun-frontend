@@ -235,6 +235,32 @@ function buildFeaturesFromChain(chain: CategoryTreeNode[]): DynamicFeature[] {
   return [...af, ...ff].sort((a, b) => (a?.order ?? 9999) - (b?.order ?? 9999));
 }
 
+/**
+ * Names of fields already rendered as hardcoded rows.
+ * Dynamic features whose name matches any of these (case-insensitive,
+ * Turkish-normalized) are excluded so they don't appear twice.
+ */
+const HARDCODED_FIELD_NAMES = new Set([
+  "m2 (brut)", "m2 (net)", "m2 brut", "m2 net", "brut m2", "net m2",
+  "oda sayisi", "bina yasi", "bulundugu kat", "kat sayisi",
+  "isitma", "banyo sayisi", "balkon", "asansor", "otopark",
+  "esyali", "site icinde", "site icerisinde", "tapu durumu", "cephe", "imar durumu",
+]);
+
+function normalizeName(name: string): string {
+  return String(name || "")
+    .toLowerCase().trim()
+    .replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ı/g, "i")
+    .replace(/ö/g, "o").replace(/ş/g, "s").replace(/ü/g, "u")
+    .replace(/²/g, "2")
+    .replace(/[^a-z0-9 ()]/g, "")
+    .replace(/\s+/g, " ").trim();
+}
+
+function isHardcodedField(name: string): boolean {
+  return HARDCODED_FIELD_NAMES.has(normalizeName(name));
+}
+
 function getSafeAddress(address: string | { lat?: number; lng?: number } | null | undefined): string {
   if (!address) return "";
   if (typeof address === "string") return address;
@@ -396,9 +422,9 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
     const nodes = categories as unknown as CategoryTreeNode[];
     if (targetId) {
       const chain = collectChainToNode(nodes, targetId);
-      if (chain?.length) return buildFeaturesFromChain(chain);
+      if (chain?.length) return buildFeaturesFromChain(chain).filter((f) => !isHardcodedField(f.name));
       const node = findNodeInTree(nodes, targetId);
-      if (node) return buildFeaturesFromChain([node]);
+      if (node) return buildFeaturesFromChain([node]).filter((f) => !isHardcodedField(f.name));
     }
 
     // Fallback: find nodes by step names (edit mode — advert has steps.first/second/third)
@@ -411,7 +437,7 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
       if (node) chain.push(node);
     }
     if (!chain.length) return [];
-    return buildFeaturesFromChain(chain);
+    return buildFeaturesFromChain(chain).filter((f) => !isHardcodedField(f.name));
   }, [categories, categoryId, subcategoryId, stepFirst, stepSecond, stepThird]);
 
   console.log("EDIT allFeatures:", {
