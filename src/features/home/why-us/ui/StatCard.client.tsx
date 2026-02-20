@@ -21,10 +21,9 @@ export default function StatCard({ item, isActive }: Props) {
   return (
     <motion.div
       variants={fadeUp}
-      whileHover={{ scale: 1.02, y: -5 }}
-      className="group p-6 text-center bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100"
+      className="p-6 text-center bg-slate-50 rounded-xl border border-gray-200 hover:border-indigo-200 transition-all duration-200"
     >
-      <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">
+      <div className="text-3xl md:text-4xl font-bold text-indigo-600 mb-2">
         {isActive ? (
           <CountUp
             start={0}
@@ -38,7 +37,7 @@ export default function StatCard({ item, isActive }: Props) {
         )}
       </div>
 
-      <h3 className="text-gray-700 font-medium text-sm md:text-base">{item.title}</h3>
+      <h3 className="text-gray-500 font-medium text-sm">{item.title}</h3>
     </motion.div>
   );
 }

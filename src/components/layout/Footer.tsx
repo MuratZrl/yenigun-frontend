@@ -6,25 +6,22 @@ import { Phone, Mail, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 text-white">
+    <footer className="bg-white border-t border-gray-200">
       {/* Main content */}
-      <div className="mx-auto max-w-6xl px-4 py-14">
+      <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Sol: Logo + Açıklama + Sosyal */}
           <div>
-            <Link
-              href="/"
-              className="inline-flex items-center bg-white rounded-lg px-3 py-2 shadow-lg shadow-indigo-900/20 mb-5"
-            >
+            <Link href="/" className="inline-flex items-center mb-5">
               <Image
                 src="/logo.png"
                 alt="Yenigün Emlak"
-                width={180}
-                height={40}
-                className="h-9 w-auto"
+                width={140}
+                height={32}
+                className="h-7 w-auto"
               />
             </Link>
-            <p className="text-sm text-white/80 leading-relaxed mb-6">
+            <p className="text-sm text-gray-500 leading-relaxed mb-6">
               Yenigün Emlak olarak, hayalinizdeki yaşam alanını bulmanız için
               profesyonel danışmanlık hizmeti sunuyoruz. Güvenilir ve kaliteli
               hizmet anlayışımızla yanınızdayız.
@@ -34,7 +31,7 @@ const Footer = () => {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white hover:text-indigo-700 transition-all duration-200"
+                className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200"
                 aria-label="Facebook"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -45,7 +42,7 @@ const Footer = () => {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white hover:text-indigo-700 transition-all duration-200"
+                className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200"
                 aria-label="Instagram"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -56,7 +53,7 @@ const Footer = () => {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white hover:text-indigo-700 transition-all duration-200"
+                className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200"
                 aria-label="Twitter"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -67,7 +64,7 @@ const Footer = () => {
                 href="https://wa.me/905322328405"
                 target="_blank"
                 rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white hover:text-green-600 transition-all duration-200"
+                className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-green-50 hover:text-green-600 transition-colors duration-200"
                 aria-label="WhatsApp"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -79,34 +76,34 @@ const Footer = () => {
 
           {/* Orta: İletişim */}
           <div>
-            <h4 className="text-base font-bold mb-5 tracking-wide">İletişim</h4>
+            <h4 className="text-sm font-semibold text-gray-900 mb-5">İletişim</h4>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
-                <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                <span className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0 mt-0.5">
                   <Phone className="w-3.5 h-3.5" />
                 </span>
-                <div className="text-sm text-white/85 leading-relaxed font-medium">
+                <div className="text-sm text-gray-500 leading-relaxed">
                   (+90) 532 232 84 05
                   <br />
                   (+90) 264 272 16 30
                 </div>
               </li>
               <li className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <span className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0">
                   <Mail className="w-3.5 h-3.5" />
                 </span>
                 <a
                   href="mailto:yenigun@yenigunemlak.com"
-                  className="text-sm text-white/85 hover:text-white font-medium transition-colors duration-200"
+                  className="text-sm text-gray-500 hover:text-gray-900 transition-colors duration-200"
                 >
                   yenigun@yenigunemlak.com
                 </a>
               </li>
               <li className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <span className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0">
                   <MapPin className="w-3.5 h-3.5" />
                 </span>
-                <span className="text-sm text-white/85 font-medium">
+                <span className="text-sm text-gray-500">
                   Sakarya, Türkiye
                 </span>
               </li>
@@ -115,12 +112,12 @@ const Footer = () => {
 
           {/* Sağ: Hızlı Linkler */}
           <div>
-            <h4 className="text-base font-bold mb-5 tracking-wide">Hızlı Linkler</h4>
-            <ul className="space-y-2">
+            <h4 className="text-sm font-semibold text-gray-900 mb-5">Hızlı Linkler</h4>
+            <ul className="space-y-1">
               <li>
                 <Link
                   href="/about"
-                  className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold text-white/90 hover:bg-white hover:text-indigo-700 transition-all duration-200"
+                  className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-150"
                 >
                   Hakkımızda
                 </Link>
@@ -128,7 +125,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/contact"
-                  className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold text-white/90 hover:bg-white hover:text-indigo-700 transition-all duration-200"
+                  className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-150"
                 >
                   İletişim
                 </Link>
@@ -136,7 +133,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/ilanlar"
-                  className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold text-white/90 hover:bg-white hover:text-indigo-700 transition-all duration-200"
+                  className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors duration-150"
                 >
                   İlanlar
                 </Link>
@@ -147,22 +144,22 @@ const Footer = () => {
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-white/20">
+      <div className="border-t border-gray-200">
         <div className="mx-auto max-w-6xl px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="text-xs text-white/70 font-medium">
+          <div className="text-xs text-gray-400">
             © {new Date().getFullYear()}{" "}
-            <Link href="/" className="text-white font-bold hover:text-yellow-300 transition-colors duration-200">
+            <Link href="/" className="text-gray-900 font-semibold hover:text-indigo-600 transition-colors duration-200">
               Yenigün Emlak
             </Link>
             . Tüm hakları saklıdır.
           </div>
-          <div className="text-xs text-white/70 font-medium">
+          <div className="text-xs text-gray-400">
             Bu Site{" "}
             <a
               href="https://eupholias.com"
               target="_blank"
               rel="noreferrer"
-              className="text-white font-bold hover:text-yellow-300 transition-colors duration-200"
+              className="text-gray-900 font-semibold hover:text-indigo-600 transition-colors duration-200"
             >
               Eupholias Developers
             </a>{" "}

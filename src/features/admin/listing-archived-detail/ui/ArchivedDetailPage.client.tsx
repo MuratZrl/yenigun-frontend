@@ -1,5 +1,4 @@
 // src/features/admin/emlak-archived-detail/ui/ArchivedDetailPage.client.tsx
-
 "use client";
 
 import React, { useEffect } from "react";
@@ -79,7 +78,6 @@ export default function ArchivedDetailPage({ uid }: Props) {
 /* ================================================================== */
 
 function ArchivedDetailContent({ data }: { data: NonNullable<ReturnType<typeof useArchivedDetail>["data"]> }) {
-  const router = useRouter();
   const safePhotos = getSafePhotos(data.photos);
 
   const gallery = usePhotoGallery(safePhotos);

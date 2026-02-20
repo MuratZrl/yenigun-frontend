@@ -3,6 +3,8 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FolderOpen, ChevronRight, Layers, Info, RefreshCw } from "lucide-react";
+import type { AxiosError, AxiosResponse } from "axios";
+
 import api from "@/lib/api";
 
 type Id = string;
@@ -39,18 +41,21 @@ interface LegacyCategory {
  * Yeni (flat) şema için: uid/parentUid + attributes/facilities
  * Not: Backend’te alan adları farklıysa burada tolere ediyoruz.
  */
+type FlatCategoryItem = { _id?: string; uid?: number | string; id?: string; name?: string; label?: string };
+
 type FlatCategory = {
+  _id?: string;
   uid?: number | string;
   parentUid?: number | string | null;
   name?: string;
 
   // metadata (feature/questions)
-  attributes?: Array<{ _id?: string; uid?: number | string; name?: string; label?: string }>;
-  facilities?: Array<{ _id?: string; uid?: number | string; name?: string; label?: string }>;
+  attributes?: FlatCategoryItem[];
+  facilities?: FlatCategoryItem[];
 
-  // bazı payload’larda farklı isimler olabiliyor
-  attributeList?: any[];
-  facilityList?: any[];
+  // bazı payload'larda farklı isimler olabiliyor
+  attributeList?: FlatCategoryItem[];
+  facilityList?: FlatCategoryItem[];
 };
 
 interface Props {
@@ -58,8 +63,6 @@ interface Props {
   subcategoryId?: string | null;
   featureValues?: FeatureValue[];
 }
-
-type ApiAny = any;
 
 function safeArr<T>(v: T[] | null | undefined): T[] {
   return Array.isArray(v) ? v : [];
@@ -84,9 +87,9 @@ function formatValue(value: unknown): string | null {
   }
 
   if (typeof value === "object") {
-    const v: any = value;
-    const hasMin = v?.min !== undefined && v?.min !== null && String(v.min).trim() !== "";
-    const hasMax = v?.max !== undefined && v?.max !== null && String(v.max).trim() !== "";
+    const v = value as Record<string, unknown>;
+    const hasMin = v.min !== undefined && v.min !== null && String(v.min).trim() !== "";
+    const hasMax = v.max !== undefined && v.max !== null && String(v.max).trim() !== "";
     if (hasMin || hasMax) return `${hasMin ? v.min : "?"} - ${hasMax ? v.max : "?"}`;
     return null;
   }
@@ -94,19 +97,26 @@ function formatValue(value: unknown): string | null {
   return String(value);
 }
 
+/** Flexible shape for the categories API response */
+interface CategoriesApiData {
+  categories?: unknown[];
+  data?: { categories?: unknown[] } | unknown[];
+  items?: unknown[];
+}
+
 /**
- * API response’u olabildiğince toleranslı şekilde diziye indirger.
- * Senin backend’te çoğu zaman: res.data.data.categories gibi geliyor.
+ * API response'u olabildiğince toleranslı şekilde diziye indirger.
+ * Senin backend'te çoğu zaman: res.data.data.categories gibi geliyor.
  */
-function unwrapCategoriesArray(res: ApiAny): any[] {
+function unwrapCategoriesArray(res: AxiosResponse<CategoriesApiData>): unknown[] {
   const root = res?.data ?? res;
 
+  const nestedData = root?.data as CategoriesApiData | unknown[] | undefined;
+
   const candidates = [
-    root?.data?.categories,
-    root?.data?.data?.categories,
+    Array.isArray(nestedData) ? nestedData : undefined,
+    !Array.isArray(nestedData) ? nestedData?.categories : undefined,
     root?.categories,
-    root?.data,
-    root?.data?.data,
     root?.items,
   ];
 
@@ -144,17 +154,17 @@ type FlatNode = {
   featureNameById: Map<string, string>;
 };
 
-function toStrId(v: any): string | null {
+function toStrId(v: unknown): string | null {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
   return s ? s : null;
 }
 
-function pickFeatureId(x: any): string | null {
+function pickFeatureId(x: FlatCategoryItem): string | null {
   return toStrId(x?._id) ?? toStrId(x?.uid) ?? toStrId(x?.id) ?? null;
 }
 
-function pickFeatureName(x: any): string | null {
+function pickFeatureName(x: FlatCategoryItem): string | null {
   return toStrId(x?.name) ?? toStrId(x?.label) ?? null;
 }
 
@@ -166,7 +176,7 @@ function buildFlatTree(items: FlatCategory[]): {
 
   // 1) node’ları üret
   for (const raw of items) {
-    const id = toStrId(raw.uid) ?? toStrId((raw as any)._id) ?? null;
+    const id = toStrId(raw.uid) ?? toStrId(raw._id) ?? null;
     if (!id) continue;
 
     const parentId = toStrId(raw.parentUid) ?? null;
@@ -175,8 +185,8 @@ function buildFlatTree(items: FlatCategory[]): {
     // feature map (attributes + facilities)
     const featureNameById = new Map<string, string>();
 
-    const attrs = safeArr(raw.attributes ?? (raw as any).attributeList);
-    const facs = safeArr(raw.facilities ?? (raw as any).facilityList);
+    const attrs = safeArr(raw.attributes ?? raw.attributeList);
+    const facs = safeArr(raw.facilities ?? raw.facilityList);
 
     for (const f of [...attrs, ...facs]) {
       const fid = pickFeatureId(f);
@@ -207,7 +217,7 @@ function buildFlatTree(items: FlatCategory[]): {
 }
 
 export default function PremiumCategorySection({ categoryId, subcategoryId, featureValues }: Props) {
-  const [categoriesRaw, setCategoriesRaw] = useState<any[]>([]);
+  const [categoriesRaw, setCategoriesRaw] = useState<Array<LegacyCategory | FlatCategory>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -223,17 +233,17 @@ export default function PremiumCategorySection({ categoryId, subcategoryId, feat
     setError(null);
 
     try {
-      // ✅ kritik fix: backend sende /admin/categories için 404 dönüyor, list endpoint’i kullan
-      const res = await api.get("/admin/categories", { signal: ctrl.signal } as any);
+      // ✅ kritik fix: backend sende /admin/categories için 404 dönüyor, list endpoint'i kullan
+      const res = await api.get<CategoriesApiData>("/admin/categories", { signal: ctrl.signal });
       const arr = unwrapCategoriesArray(res);
-      setCategoriesRaw(arr);
-    } catch (e: any) {
-      // iptal edilen request’i hata gibi göstermeyelim
-      if (e?.name === "CanceledError" || e?.code === "ERR_CANCELED") {
-        return;
-      }
+      setCategoriesRaw(arr as Array<LegacyCategory | FlatCategory>);
+    } catch (e: unknown) {
+      // iptal edilen request'i hata gibi göstermeyelim
+      const axiosErr = e as AxiosError | undefined;
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      if (axiosErr?.code === "ERR_CANCELED") return;
 
-      const status = e?.response?.status;
+      const status = axiosErr?.response?.status;
       const msg =
         status === 401
           ? "Yetkisiz (401). Kategoriler okunamadı."
@@ -341,7 +351,7 @@ export default function PremiumCategorySection({ categoryId, subcategoryId, feat
         if (!name) {
           const subMap = subcategoryId ? lookups.featureNameByNode.get(subcategoryId) : undefined;
           const catMap = categoryId ? lookups.featureNameByNode.get(categoryId) : undefined;
-          name = (subMap?.get(fv.featureId) ?? catMap?.get(fv.featureId) ?? null) as any;
+          name = subMap?.get(fv.featureId) ?? catMap?.get(fv.featureId) ?? null;
         }
 
         return {

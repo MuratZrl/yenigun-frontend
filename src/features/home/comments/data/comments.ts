@@ -32,7 +32,7 @@ export const commentsData: CommentItem[] = [
       "Ev alma sürecimizde Yenigün Emlak ekibi adeta bir aile gibi yanımızdaydı. Her sorumuza anında cevap verdiler ve işlemlerimiz sorunsuz ilerledi. Çok memnun kaldık!",
     star: 5,
     author: {
-      title: "Ahmet M***",
+      title: "Ahmet M***",  
       image: "/human_3.jpeg",
       location: "Sapanca, Sakarya",
       job: "Öğretmen",

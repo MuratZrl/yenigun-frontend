@@ -28,7 +28,8 @@ export default function HighlightMobileRow({ listing, onNavigate }: Props) {
   return (
     <div
       onClick={() => onNavigate(listing.uid)}
-      className="cursor-pointer flex overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100 active:scale-[0.99] active:ring-indigo-200 transition-all duration-200"
+      className="cursor-pointer flex overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm
+                 active:border-indigo-200 transition-all duration-200"
       aria-label={listing.title || "İlan"}
       role="button"
       tabIndex={0}
@@ -51,47 +52,49 @@ export default function HighlightMobileRow({ listing, onNavigate }: Props) {
           }}
         />
 
-        {listing.isHighlight ? (
+        {listing.isHighlight && (
           <div className="absolute top-1.5 left-1.5">
-            <div className="flex items-center gap-1 py-0.5 px-1.5 rounded-full bg-gradient-to-r from-orange-500 to-rose-500 text-white text-[9px] font-bold shadow-sm">
+            <span className="inline-flex items-center gap-0.5 py-0.5 px-1.5 rounded-md bg-orange-500 text-white text-[9px] font-semibold">
               <Flame size={8} />
-              <span>Öne Çıkan</span>
-            </div>
+              Öne Çıkan
+            </span>
           </div>
-        ) : null}
+        )}
       </div>
 
       {/* Right: Info */}
       <div className="flex-1 p-2.5 flex flex-col justify-between min-w-0">
         <div>
-          <div className="text-xs font-bold text-gray-900 line-clamp-2 leading-tight">
+          <div className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight">
             {listing.title || "Başlık Yok"}
           </div>
 
           <div className="mt-1 flex items-center gap-1 min-w-0">
-            <MapPin className="text-indigo-500 shrink-0" size={10} />
-            <span className="text-[10px] font-medium text-gray-500 truncate">{locationText}</span>
+            <MapPin className="text-gray-400 shrink-0" size={10} />
+            <span className="text-[10px] text-gray-500 truncate">
+              {locationText}
+            </span>
           </div>
         </div>
 
         <div className="mt-1.5 flex items-center justify-between gap-2">
-          <div className="inline-flex py-1 px-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-blue-500 text-white text-[11px] font-bold shadow-sm">
-            <span className="truncate">{feeText}</span>
-          </div>
+          <span className="inline-block py-0.5 px-2 rounded-md bg-indigo-900 text-white text-[11px] font-bold">
+            {feeText}
+          </span>
 
           <div className="flex items-center gap-1">
             {areaSqm ? (
-              <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full">
+              <span className="text-[9px] font-medium text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-md">
                 {areaSqm}m²
               </span>
             ) : null}
             {bedrooms ? (
-              <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+              <span className="text-[9px] font-medium text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
                 <Bed size={8} />{bedrooms}
               </span>
             ) : null}
             {bathrooms ? (
-              <span className="text-[9px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+              <span className="text-[9px] font-medium text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
                 <Bath size={8} />{bathrooms}
               </span>
             ) : null}

@@ -14,35 +14,24 @@ type Props = {
 
 export default function WhyUsImageBlock({ imageSrc, imageAlt, badge }: Props) {
   return (
-    <motion.div variants={fadeUp} className="relative shrink-0">
-      <div className="relative">
-        <img
-          src={imageSrc}
-          alt={imageAlt}
-          className="w-full max-w-md rounded-xl shadow-lg border border-gray-200"
-        />
+    <motion.div variants={fadeUp} className="relative shrink-0 lg:w-[45%]">
+      <img
+        src={imageSrc}
+        alt={imageAlt}
+        className="w-full rounded-xl border border-gray-200"
+      />
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, type: "spring" }}
-          viewport={{ once: true }}
-          className="absolute -bottom-4 -right-4 bg-blue-600 text-white p-4 rounded-xl shadow-lg"
-        >
-          <div className="flex items-center gap-2">
-            <div className="p-1 bg-white/20 rounded-lg">
-              <img
-                src={badge.icon}
-                alt="professional"
-                className="w-6 h-6 rounded-full"
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold">{badge.countText}</span>
-              <span className="text-xs opacity-90">{badge.label}</span>
-            </div>
-          </div>
-        </motion.div>
+      {/* Badge */}
+      <div className="absolute bottom-4 left-4 flex items-center gap-2.5 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg px-4 py-2.5 shadow-sm">
+        <img
+          src={badge.icon}
+          alt="badge"
+          className="w-8 h-8 rounded-full"
+        />
+        <div>
+          <span className="block text-sm font-bold text-gray-900">{badge.countText}</span>
+          <span className="block text-xs text-gray-500">{badge.label}</span>
+        </div>
       </div>
     </motion.div>
   );

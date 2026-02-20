@@ -4,6 +4,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { AxiosError } from "axios";
 import api from "@/lib/api";
 
 type Id = string;
@@ -21,12 +22,24 @@ interface SearchResponse {
   pagination?: { totalItems?: number };
 }
 
+interface RawTreeNode {
+  uid?: number;
+  _id?: string;
+  name?: string;
+  children?: RawTreeNode[];
+}
+
+interface TreeApiRoot {
+  data?: { tree?: RawTreeNode[] } | RawTreeNode[];
+  tree?: RawTreeNode[];
+}
+
 /** Fetch the total advert count for a given category name. */
 async function fetchAdvertCount(categoryName: string): Promise<number> {
   try {
     const qs = new URLSearchParams({ category: categoryName }).toString();
     const res = await api.get<SearchResponse>(`/advert/search?${qs}`);
-    const data: SearchResponse = res?.data ?? (res as any);
+    const data: SearchResponse = res?.data ?? (res as unknown as SearchResponse);
     return data?.pagination?.totalItems ?? 0;
   } catch {
     return 0;
@@ -58,16 +71,17 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
         setLoading(true);
         setError(null);
 
-        const res = await api.get("/categories/tree", { signal: ctrl.signal } as any);
+        const res = await api.get("/categories/tree", { signal: ctrl.signal });
 
-        const root = res?.data ?? res;
-        const tree: any[] =
-          root?.data?.tree ??
+        const root: TreeApiRoot = res?.data ?? res;
+        const rootData = root?.data;
+        const tree: RawTreeNode[] =
+          (!Array.isArray(rootData) ? rootData?.tree : undefined) ??
           root?.tree ??
-          root?.data ??
-          (Array.isArray(root) ? root : []);
+          (Array.isArray(rootData) ? rootData : undefined) ??
+          (Array.isArray(root) ? (root as RawTreeNode[]) : []);
 
-        let items: any[] = tree;
+        let items: RawTreeNode[] = tree;
         if (
           items.length === 1 &&
           Array.isArray(items[0]?.children) &&
@@ -76,18 +90,30 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
           items = items[0].children;
         }
 
-        const mapped: CategoryVm[] = items.map((c: any) => ({
+        const mapped: CategoryVm[] = items.map((c) => ({
           id: String(c.uid ?? c._id ?? c.name),
-          name: c.name,
+          name: c.name ?? "",
         }));
 
         setCategories(mapped);
-      } catch (e: any) {
-        if (e?.name === "CanceledError" || e?.code === "ERR_CANCELED") return;
-        if (e?.message?.toLowerCase?.().includes("canceled")) return;
+      } catch (e: unknown) {
+        if (e instanceof AxiosError) {
+          if (e.name === "CanceledError" || e.code === "ERR_CANCELED") return;
+          if (e.message?.toLowerCase().includes("canceled")) return;
 
-        setCategories([]);
-        setError(e?.response?.data?.message || e?.message || "Kategoriler yüklenemedi.");
+          setCategories([]);
+          const msg =
+            (e.response?.data as Record<string, unknown> | undefined)?.message;
+          setError(typeof msg === "string" ? msg : e.message || "Kategoriler yüklenemedi.");
+        } else if (e instanceof Error) {
+          if (e.message?.toLowerCase().includes("canceled")) return;
+
+          setCategories([]);
+          setError(e.message || "Kategoriler yüklenemedi.");
+        } else {
+          setCategories([]);
+          setError("Kategoriler yüklenemedi.");
+        }
       } finally {
         setLoading(false);
       }

@@ -1,78 +1,66 @@
 // src/features/home/comments/ui/CommentsSlider.client.tsx
 "use client";
 
-import React, { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination, Navigation, Autoplay } from "swiper/modules";
+import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
-import "swiper/css/navigation";
 
 import type { CommentItem } from "../types";
 import CommentCard from "./CommentCard.client";
-import SwiperPaginationStyles from "./SwiperPaginationStyles.client";
 
 type Props = {
   items: CommentItem[];
 };
 
 export default function CommentsSlider({ items }: Props) {
-  const prevRef = useRef<HTMLButtonElement | null>(null);
-  const nextRef = useRef<HTMLButtonElement | null>(null);
-  const paginationRef = useRef<HTMLDivElement | null>(null);
-
   return (
     <div className="relative">
-      <SwiperPaginationStyles />
+      <style jsx global>{`
+        #comments .swiper-pagination {
+          position: relative !important;
+          bottom: auto !important;
+          margin-top: 2rem;
+          display: flex;
+          gap: 6px;
+          justify-content: center;
+          align-items: center;
+        }
+        #comments .swiper-pagination-bullet {
+          width: 8px;
+          height: 8px;
+          background: #d1d5db;
+          opacity: 1;
+          border-radius: 9999px;
+          transition: all 0.3s;
+        }
+        #comments .swiper-pagination-bullet-active {
+          background: #4f46e5;
+          width: 24px;
+        }
+        #comments .swiper-slide {
+          height: 280px !important;
+        }
+      `}</style>
 
       <Swiper
         breakpoints={{
-          320: { slidesPerView: 1, spaceBetween: 20 },
-          640: { slidesPerView: 2, spaceBetween: 24 },
-          1024: { slidesPerView: 3, spaceBetween: 28 },
+          320: { slidesPerView: 1, spaceBetween: 16 },
+          640: { slidesPerView: 2, spaceBetween: 20 },
+          1024: { slidesPerView: 3, spaceBetween: 24 },
         }}
-        style={{ padding: "3rem 1rem" }}
-        modules={[Pagination, Navigation, Autoplay]}
+        modules={[Pagination, Autoplay]}
         loop
         autoplay={{ delay: 5000, disableOnInteraction: false }}
-        pagination={{ clickable: true, dynamicBullets: true }}
-        navigation
-        onBeforeInit={(swiper) => {
-          const s: any = swiper;
-          s.params.navigation.prevEl = prevRef.current;
-          s.params.navigation.nextEl = nextRef.current;
-          s.params.pagination.el = paginationRef.current;
-        }}
+        pagination={{ clickable: true, dynamicBullets: false }}
       >
         {items.map((item, index) => (
           <SwiperSlide key={`${item.title}-${index}`}>
-            <CommentCard item={item} index={index} />
+            <CommentCard item={item} />
           </SwiperSlide>
         ))}
       </Swiper>
-
-      <div className="flex items-center justify-center gap-6 mt-8">
-        <button
-          ref={prevRef}
-          type="button"
-          aria-label="Önceki"
-          className="p-3 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300 border border-gray-300"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <div ref={paginationRef} className="swiper-pagination" />
-
-        <button
-          ref={nextRef}
-          type="button"
-          aria-label="Sonraki"
-          className="p-3 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300 border border-gray-300"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      </div>
     </div>
   );
 }

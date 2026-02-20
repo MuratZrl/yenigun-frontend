@@ -12,9 +12,9 @@ export default function StarsRow({ count }: Props) {
   const safe = Math.max(0, Math.min(5, Number(count) || 0));
 
   return (
-    <div className="flex gap-1 mb-4">
+    <div className="flex gap-0.5 mb-3">
       {Array.from({ length: safe }).map((_, i) => (
-        <Star key={i} className="text-yellow-400 text-sm" />
+        <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
       ))}
     </div>
   );

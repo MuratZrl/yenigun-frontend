@@ -48,12 +48,19 @@ export default async function Home() {
   return (
     <div>
       <HighlightsSection data={data} />
+      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
       <QualitySection />
+      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
       <WhyUsSection />
+      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
       <LocationsSection data={data} />
+      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
       <TypesSection data={data} />
+      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
       <CommentsSection />
+      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
       <ImageSliderSection />
+      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
       <RepresentativesSection />
     </div>
   );

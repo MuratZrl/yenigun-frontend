@@ -11,6 +11,8 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import CombinedCategoryTab from "@/components/tabs/CategoriesTab";
 import IlanDetaylariTab from "@/components/tabs/AdDetailsTab";
 
+import type { StepState } from "@/types/property";
+
 import {
   contractTimes,
   yesNoOptions,
@@ -30,7 +32,7 @@ export default function EmlakCreatePage() {
   const stepLabels = ["Kategori", "İlan Detayları"];
   const totalSteps = stepLabels.length;
 
-  const getSelected = (step: any) => (step as any)?.selected ?? {};
+  const getSelected = (step: StepState) => step.selected;
 
   const breadcrumb = (() => {
     const parts: string[] = [];
@@ -69,7 +71,7 @@ export default function EmlakCreatePage() {
             onTitleChange={c.handleTitleChange}
             onPriceValueChange={c.handlePriceValueChange}
             onPriceTypeChange={c.handlePriceTypeChange}
-            onAdminNoteChange={(e: any) => c.updateFourthStep("adminNote" as any, e.target.value)}
+            onAdminNoteChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => c.updateFourthStep("adminNote", e.target.value)}
             currencyOptions={currencyOptions}
             firstStep={c.firstStep}
             secondStep={c.secondStep}
@@ -77,28 +79,28 @@ export default function EmlakCreatePage() {
             featuresStep={c.featuresStep}
             setFeaturesStep={c.setFeaturesStep}
             onElevatorToggle={(v: string) =>
-              c.updateFourthStep("elevator" as any, { ...(c.fourthStep as any).elevator, value: v })
+              c.updateFourthStep("elevator", { ...c.fourthStep.elevator, value: v })
             }
             onInSiteToggle={(v: string) =>
-              c.updateFourthStep("inSite" as any, { ...(c.fourthStep as any).inSite, value: v })
+              c.updateFourthStep("inSite", { ...c.fourthStep.inSite, value: v })
             }
             onBalconyToggle={(v: string) =>
-              c.updateFourthStep("balcony" as any, { ...(c.fourthStep as any).balcony, value: v })
+              c.updateFourthStep("balcony", { ...c.fourthStep.balcony, value: v })
             }
             onIsFurnishedToggle={(v: string) =>
-              c.updateFourthStep("isFurnished" as any, { ...(c.fourthStep as any).isFurnished, value: v })
+              c.updateFourthStep("isFurnished", { ...c.fourthStep.isFurnished, value: v })
             }
-            onHeatingChange={(e: any) =>
-              c.updateFourthStep("heating" as any, { ...(c.fourthStep as any).heating, value: e.target.value })
+            onHeatingChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              c.updateFourthStep("heating", { ...c.fourthStep.heating, value: e.target.value })
             }
-            onDeedStatusChange={(e: any) =>
-              c.updateFourthStep("deedStatus" as any, { ...(c.fourthStep as any).deedStatus, value: e.target.value })
+            onDeedStatusChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              c.updateFourthStep("deedStatus", { ...c.fourthStep.deedStatus, value: e.target.value })
             }
-            onWhichSideChange={(e: any) =>
-              c.updateFourthStep("whichSide" as any, { ...(c.fourthStep as any).whichSide, value: e.target.value })
+            onWhichSideChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              c.updateFourthStep("whichSide", { ...c.fourthStep.whichSide, value: e.target.value })
             }
-            onZoningStatusChange={(e: any) =>
-              c.updateFourthStep("zoningStatus" as any, { ...(c.fourthStep as any).zoningStatus, value: e.target.value })
+            onZoningStatusChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              c.updateFourthStep("zoningStatus", { ...c.fourthStep.zoningStatus, value: e.target.value })
             }
             heatingOptions={heatingOptions}
             deedStatusOptions={deedStatusOptions}

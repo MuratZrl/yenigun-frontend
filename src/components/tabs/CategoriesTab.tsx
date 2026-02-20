@@ -4,12 +4,32 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check } from "lucide-react";
 
+import type { AxiosError } from "axios";
+
 import api from "@/lib/api";
-import type { StepState } from "@/types/property";
+import type { SelectedItem, StepState } from "@/types/property";
 
 /* ───────────────────── Types ───────────────────── */
 
 type Id = string;
+
+/** Shape of a node coming from the API before mapping */
+interface RawCategoryNode {
+  _id?: string;
+  uid?: number;
+  parentUid?: number | null;
+  name?: string;
+  attributes?: unknown[];
+  facilities?: unknown[];
+  children?: RawCategoryNode[];
+}
+
+/** Extended selected item with fields specific to category selection */
+interface CategorySelectedItem extends Omit<SelectedItem, "categoryData" | "subcategoryData"> {
+  uid?: number;
+  categoryData?: NestedSubCategory | null;
+  subcategoryData?: NestedSubCategory | null;
+}
 
 type CategoryAttribute = {
   id: string;
@@ -51,19 +71,19 @@ interface CombinedCategoryTabProps {
 
 const CATEGORIES_ENDPOINT = "/admin/categories/tree";
 
-function safeArr<T>(v: any): T[] {
+function safeArr<T>(v: unknown): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
 }
 
-function mapChildrenToSubcategories(nodes: any[]): NestedSubCategory[] {
-  return nodes.map((n: any) => ({
+function mapChildrenToSubcategories(nodes: RawCategoryNode[]): NestedSubCategory[] {
+  return nodes.map((n) => ({
     _id: String(n._id ?? n.uid ?? ""),
-    uid: n.uid,
+    uid: n.uid ?? 0,
     parentUid: n.parentUid ?? null,
     name: n.name ?? "",
     attributes: safeArr<CategoryAttribute>(n.attributes),
     facilities: safeArr<CategoryFacilityGroup>(n.facilities),
-    subcategories: mapChildrenToSubcategories(safeArr(n.children)),
+    subcategories: mapChildrenToSubcategories(safeArr<RawCategoryNode>(n.children)),
   }));
 }
 
@@ -83,17 +103,19 @@ function slugifyTR(input: string) {
     .replace(/^-|-$/g, "");
 }
 
-function isAbortError(e: any) {
-  return e?.name === "AbortError" || e?.code === "ERR_CANCELED";
+function isAbortError(e: unknown): boolean {
+  if (e instanceof DOMException && e.name === "AbortError") return true;
+  const err = e as AxiosError | undefined;
+  return err?.code === "ERR_CANCELED";
 }
 
-function getSelected(step: StepState): any {
-  return (step as any)?.selected ?? {};
+function getSelected(step: StepState): CategorySelectedItem {
+  return (step.selected as CategorySelectedItem) ?? { isSelect: false, value: "" };
 }
 
 function patchSelected(
   setStep: React.Dispatch<React.SetStateAction<StepState>>,
-  patch: Record<string, any>,
+  patch: Partial<CategorySelectedItem>,
 ) {
   setStep((prev) => {
     const prevSel = getSelected(prev);
@@ -205,17 +227,20 @@ export default function CombinedCategoryTab({
       setLoading(true);
       setError(null);
 
-      const res = await api.get(CATEGORIES_ENDPOINT, { signal: ac.signal } as any);
+      const res = await api.get<{ data?: { tree?: RawCategoryNode[] }; tree?: RawCategoryNode[] }>(
+        CATEGORIES_ENDPOINT,
+        { signal: ac.signal },
+      );
       const raw = res?.data?.data?.tree || res?.data?.tree || res?.data?.data || [];
-      const tree = mapChildrenToSubcategories(Array.isArray(raw) ? raw : []);
+      const tree = mapChildrenToSubcategories(Array.isArray(raw) ? raw as RawCategoryNode[] : []);
       const main = pickMainForUI(tree);
 
       setCategories(
         main.map((n) => ({ ...n, value: slugifyTR(n.name) })),
       );
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (isAbortError(e)) return;
-      const status = e?.response?.status;
+      const status = (e as AxiosError)?.response?.status;
       if (status === 401) setError("Yetkisiz (401). Admin oturumu/token sorunu var.");
       else if (status === 403) setError("Erişim yok (403). Yetki sorunu var.");
       else if (status === 404) setError("Endpoint bulunamadı (404). Route yanlış.");
@@ -290,16 +315,16 @@ export default function CombinedCategoryTab({
 
   /* ── Selection helpers ── */
   const resetSecond = useCallback(() => {
-    patchSelected(setSecondStep, { isSelect: false, value: "", id: "", uid: null, subcategoryData: null });
+    patchSelected(setSecondStep, { isSelect: false, value: "", id: "", uid: undefined, subcategoryData: null });
   }, [setSecondStep]);
 
   const resetThird = useCallback(() => {
-    patchSelected(setThirdStep, { isSelect: false, value: "", id: "", uid: null, subcategoryData: null });
+    patchSelected(setThirdStep, { isSelect: false, value: "", id: "", uid: undefined, subcategoryData: null });
   }, [setThirdStep]);
 
   const clearAll = useCallback(() => {
     didSyncRef.current = false;
-    patchSelected(setFirstStep, { isSelect: false, value: "", id: "", uid: null, name: "", categoryData: null });
+    patchSelected(setFirstStep, { isSelect: false, value: "", id: "", uid: undefined, name: "", categoryData: null });
     resetSecond();
     resetThird();
   }, [setFirstStep, resetSecond, resetThird]);

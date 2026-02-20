@@ -4,9 +4,8 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Poppins } from "next/font/google";
 import { motion } from "framer-motion";
-import { ExternalLink, MapPin } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 
 import CategorySidebar from "./ui/CategorySidebar.client";
 
@@ -16,17 +15,12 @@ import { useCopyListingLink } from "./hooks/useCopyListing";
 import HighlightMobileRow from "./ui/HighlightMobileRow.client";
 import HighlightCard from "./ui/HighlightCard.client";
 
-const PoppinsFont = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
 export default function HighlightsSection({ data }: HighlightProps) {
   const router = useRouter();
   const [visibleCount, setVisibleCount] = useState(12);
   const { copiedId, copy } = useCopyListingLink("/ilan", 2000);
 
-  const safeData: Listing[] = Array.isArray(data) ? data : [];
+  const safeData = useMemo<Listing[]>(() => (Array.isArray(data) ? data : []), [data]);
 
   const filteredData = useMemo(() => {
     return safeData.filter(hasValidPhoto);
@@ -47,113 +41,110 @@ export default function HighlightsSection({ data }: HighlightProps) {
   return (
     <section
       id="highlights"
-      className="min-h-screen w-full bg-gradient-to-b from-slate-50 via-white to-slate-50 relative overflow-hidden"
+      className="py-16 md:py-24 bg-slate-50 relative overflow-hidden"
     >
-      {/* Full-width background blobs */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-50 rounded-full -translate-x-1/3 -translate-y-1/3 blur-[120px] opacity-50" />
-      <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-cyan-50 rounded-full translate-x-1/4 -translate-y-1/2 blur-[100px] opacity-40" />
-      <div className="absolute bottom-0 left-1/3 w-[350px] h-[350px] bg-blue-50 rounded-full translate-y-1/3 blur-[100px] opacity-30" />
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+          className="text-left mb-10 md:mb-14"
+        >
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
+            Öne Çıkan{" "}
+            <span className="text-indigo-600">İlanlar</span>
+          </h2>
+          <p className="text-sm md:text-base text-gray-500 max-w-xl leading-relaxed">
+            Özenle seçilmiş mülkler arasından hayalinizdeki yaşam alanını keşfedin.
+          </p>
+        </motion.div>
 
-      {/* Content container */}
-      <div className="relative z-10 py-12 md:py-16 flex flex-col px-4 md:px-6 xl:w-[90%] mx-auto gap-12 md:gap-16">
-
-      <div className="flex flex-col items-center gap-3">
-        <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">
-          Öne Çıkan İlanlar
-        </h2>
-        <p className="text-sm text-gray-500 text-center">
-          Özenle seçilmiş mülkler arasından hayalinizdeki yaşam alanını keşfedin.
-        </p>
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-6 md:gap-8 w-full">
-        <div className="lg:w-1/4">
-          <div className="sticky top-6">
-            <CategorySidebar />
-          </div>
-        </div>
-
-        <div className="lg:w-3/4">
-          <div className="space-y-3 mb-8 block md:hidden">
-            {visibleData.map((listing, index) => (
-              <HighlightMobileRow
-                key={listing.uid || String(index)}
-                listing={listing}
-                onNavigate={navigateTo}
-              />
-            ))}
-          </div>
-
-          <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-            {visibleData.map((listing, index) => (
-              <HighlightCard
-                key={listing.uid}
-                listing={listing}
-                index={index}
-                copiedId={copiedId}
-                onNavigate={navigateTo}
-                onCopy={copy}
-              />
-            ))}
-          </div>
-
-          {filteredData.length === 0 ? (
-            <div className="text-center py-12 md:py-16">
-              <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-indigo-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="text-indigo-500" size={32} />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
-                  İlan Bulunamadı
-                </h3>
-                <p className="text-gray-600 text-sm md:text-base">
-                  Seçtiğiniz kriterlere uygun ilan bulunamadı. Lütfen farklı filtreler deneyin.
-                </p>
-              </div>
+        {/* Content */}
+        <div className="flex flex-col lg:flex-row gap-6 md:gap-8 w-full">
+          {/* Sidebar */}
+          <div className="lg:w-1/4">
+            <div className="sticky top-6">
+              <CategorySidebar />
             </div>
-          ) : null}
+          </div>
 
-          {filteredData.length > 0 && visibleCount < filteredData.length ? (
+          {/* Listings */}
+          <div className="lg:w-3/4">
+            {/* Mobile list */}
+            <div className="space-y-3 mb-8 block md:hidden">
+              {visibleData.map((listing, index) => (
+                <HighlightMobileRow
+                  key={listing.uid || String(index)}
+                  listing={listing}
+                  onNavigate={navigateTo}
+                />
+              ))}
+            </div>
+
+            {/* Desktop grid */}
+            <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+              {visibleData.map((listing, index) => (
+                <HighlightCard
+                  key={listing.uid}
+                  listing={listing}
+                  index={index}
+                  copiedId={copiedId}
+                  onNavigate={navigateTo}
+                  onCopy={copy}
+                />
+              ))}
+            </div>
+
+            {/* Empty state */}
+            {filteredData.length === 0 && (
+              <div className="text-center py-12 md:py-16">
+                <div className="max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MapPin className="text-indigo-500" size={28} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    İlan Bulunamadı
+                  </h3>
+                  <p className="text-gray-500 text-sm">
+                    Seçtiğiniz kriterlere uygun ilan bulunamadı. Lütfen farklı filtreler deneyin.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Load more */}
+            {filteredData.length > 0 && visibleCount < filteredData.length && (
+              <div className="flex justify-center mt-8 md:mt-12">
+                <button
+                  onClick={loadMore}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors duration-300"
+                >
+                  Daha Fazla Göster ({remaining} ilan kaldı)
+                </button>
+              </div>
+            )}
+
+            {/* View all */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="flex justify-center mt-8 md:mt-12"
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+              className="flex justify-center mt-6 md:mt-10"
             >
-              <button
-                onClick={loadMore}
-                className="group flex items-center gap-2 md:gap-3 px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 text-white rounded-full font-bold text-sm md:text-base shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all duration-300 hover:gap-3 md:hover:gap-4"
+              <Link
+                href="/ilanlar"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-200
+                           hover:border-indigo-200 hover:text-indigo-600 transition-all duration-300 group"
               >
-                <span>Daha Fazla Göster ({remaining} ilan kaldı)</span>
-                <ExternalLink
-                  className="transition-transform duration-300 group-hover:translate-y-0.5"
-                  size={14}
-                />
-              </button>
+                Tüm İlanları Görüntüle
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-300" />
+              </Link>
             </motion.div>
-          ) : null}
+          </div>
         </div>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="flex justify-center mt-2 md:mt-4 w-full"
-      >
-        <div className="w-full flex justify-center">
-          <Link
-            href="/ilanlar"
-            className="group flex items-center gap-2 md:gap-3 px-6 md:px-8 py-2.5 md:py-3 bg-white text-indigo-700 rounded-full font-bold text-sm md:text-base shadow-lg ring-1 ring-indigo-200 hover:bg-gradient-to-r hover:from-indigo-600 hover:via-blue-600 hover:to-cyan-500 hover:text-white hover:ring-0 hover:shadow-xl hover:shadow-indigo-500/25 transition-all duration-300 hover:gap-3 md:hover:gap-4"
-          >
-            <span>Tüm İlanları Görüntüle</span>
-            <ExternalLink
-              className="transition-transform duration-300 group-hover:translate-x-0.5"
-              size={14}
-            />
-          </Link>
-        </div>
-      </motion.div>
       </div>
     </section>
   );
