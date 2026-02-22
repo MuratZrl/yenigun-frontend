@@ -62,6 +62,14 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
     [selectedCategoryId]
   );
 
+  const totalCount = useMemo(() => {
+    let sum = 0;
+    for (const v of counts.values()) {
+      if (v !== null) sum += v;
+    }
+    return sum;
+  }, [counts]);
+
   // Fetch category tree
   useEffect(() => {
     const ctrl = new AbortController();
@@ -176,9 +184,18 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
     <aside className="w-full rounded-lg bg-white border border-gray-200 overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-100">
-        <span className="text-sm font-semibold text-gray-900">Kategoriler</span>
+        <button
+          type="button"
+          onClick={goAll}
+          className="w-full flex items-center gap-1.5 text-sm font-semibold text-blue-700 hover:text-blue-900 hover:underline cursor-pointer"
+        >
+          <span>Tüm Kategoriler</span>
+          <span className="text-xs text-gray-400 font-normal no-underline">
+            ({totalCount.toLocaleString("tr-TR")})
+          </span>
+        </button>
       </div>
-
+      
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center gap-2 px-4 py-8">
@@ -201,21 +218,7 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
 
       {/* Category list */}
       {!loading && !error && categories.length > 0 && (
-        <div className="p-1.5">
-          {/* All categories button */}
-          <button
-            type="button"
-            onClick={goAll}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors duration-150 ${
-              !selectedId
-                ? "bg-indigo-50 text-indigo-700 font-semibold"
-                : "text-gray-700 hover:bg-gray-50 font-medium"
-            }`}
-          >
-            <span>Tüm Kategoriler</span>
-          </button>
-
-          {/* Category items */}
+        <div className="px-4 py-3 space-y-1">
           {categories.map((c) => {
             const active = selectedId === c.id;
             const count = counts.get(c.id) ?? null;
@@ -225,18 +228,18 @@ export default function CategorySidebar({ selectedCategoryId }: Props) {
                 key={c.id}
                 type="button"
                 onClick={() => goCategory(c.id, c.name)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors duration-150 ${
+                className={`w-full flex items-center gap-1.5 pl-3 py-1 text-sm cursor-pointer transition-colors duration-150 group/cat ${
                   active
-                    ? "bg-indigo-50 text-indigo-700 font-semibold"
-                    : "text-gray-700 hover:bg-gray-50 font-medium"
+                    ? "text-blue-800 font-semibold"
+                    : "text-blue-700 hover:text-blue-900 font-normal"
                 }`}
               >
-                <span className="truncate">{c.name}</span>
+                <span className="truncate group-hover/cat:underline">{c.name}</span>
                 {count === null ? (
                   <Loader2 size={10} className="shrink-0 animate-spin text-gray-300" />
                 ) : (
                   <span className="shrink-0 text-xs text-gray-400">
-                    {count.toLocaleString("tr-TR")}
+                    ({count.toLocaleString("tr-TR")})
                   </span>
                 )}
               </button>

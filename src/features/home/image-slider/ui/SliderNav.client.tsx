@@ -2,32 +2,31 @@
 "use client";
 
 import React from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Props = {
-  prevRef: React.RefObject<HTMLButtonElement | null>;
-  nextRef: React.RefObject<HTMLButtonElement | null>;
+  onPrev: () => void;
+  onNext: () => void;
 };
 
-export default function SliderNav({ prevRef, nextRef }: Props) {
+export default function SliderNav({ onPrev, onNext }: Props) {
   return (
-    <div className="absolute top-[80%] md:top-1/2 -translate-y-1/2 right-4 md:right-1/4 z-70 flex flex-col items-center justify-center gap-6 md:gap-10">
+    <div className="flex items-center gap-2">
       <button
-        ref={prevRef}
         type="button"
         aria-label="Önceki"
-        className="p-3 rounded-full bg-white/80 text-gray-900 hover:bg-white transition-colors duration-300 shadow-lg backdrop-blur"
+        onClick={onPrev}
+        className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-white/70 hover:bg-white/20 hover:text-white transition-all duration-200"
       >
-        <ChevronUp className="w-5 h-5" />
+        <ChevronLeft className="w-5 h-5" />
       </button>
-
       <button
-        ref={nextRef}
         type="button"
         aria-label="Sonraki"
-        className="p-3 rounded-full bg-white/80 text-gray-900 hover:bg-white transition-colors duration-300 shadow-lg backdrop-blur"
+        onClick={onNext}
+        className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-white/70 hover:bg-white/20 hover:text-white transition-all duration-200"
       >
-        <ChevronDown className="w-5 h-5" />
+        <ChevronRight className="w-5 h-5" />
       </button>
     </div>
   );

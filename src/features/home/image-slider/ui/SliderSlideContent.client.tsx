@@ -14,8 +14,8 @@ type Props = {
 
 export default function SliderSlideContent({ slide, isActive }: Props) {
   return (
-    <div className="absolute inset-0 z-10 flex items-center">
-      <div className="max-w-6xl mx-auto px-6 md:px-10 w-full">
+    <div className="absolute inset-0 z-10 flex items-center justify-center">
+      <div className="w-full px-6 md:px-10 text-center">
         <AnimatePresence mode="wait">
           {isActive && (
             <motion.div
@@ -23,54 +23,75 @@ export default function SliderSlideContent({ slide, isActive }: Props) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
-              className="max-w-2xl"
+              transition={{ duration: 0.3 }}
+              className="flex flex-col items-center"
             >
-              {/* Small accent line */}
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: 48 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="h-1 bg-indigo-500 rounded-full mb-6"
-              />
-
-              {/* Heading */}
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="text-white/80 text-sm md:text-base lg:text-lg font-medium tracking-widest uppercase mb-3 md:mb-4"
+              {/* Badge */}
+              <motion.span
+                initial={{ opacity: 0, scale: 0.8, filter: "blur(8px)" }}
+                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="inline-block px-5 py-1.5 text-[11px] font-semibold tracking-[0.2em] uppercase text-white/90 border border-white/25 rounded-full mb-6 backdrop-blur-sm bg-white/5"
               >
                 {slide.heading}
-              </motion.h1>
+              </motion.span>
 
-              {/* Main lines */}
+              {/* Main heading lines */}
               {slide.lines.map((line, i) => (
                 <motion.p
                   key={i}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4 + i * 0.15 }}
-                  className="text-white font-bold text-3xl md:text-5xl lg:text-6xl leading-tight"
+                  initial={{ opacity: 0, y: 40, filter: "blur(6px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{
+                    duration: 0.6,
+                    delay: 0.2 + i * 0.12,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  className="text-white font-bold text-5xl md:text-7xl lg:text-8xl leading-[1.05]"
+                  style={{ textShadow: "0 2px 10px rgba(0,0,0,0.5), 0 8px 40px rgba(0,0,0,0.3)" }}
                 >
                   {line}
                 </motion.p>
               ))}
 
-              {/* CTA button */}
+              {/* Decorative line */}
+              <motion.div
+                initial={{ scaleX: 0, opacity: 0 }}
+                animate={{ scaleX: 1, opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="w-16 h-[2px] bg-gradient-to-r from-transparent via-white/60 to-transparent mt-6 mb-4"
+              />
+
+              {/* Subtitle */}
+              <motion.p
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="text-white/65 text-base md:text-lg lg:text-xl font-medium max-w-xl"
+                style={{ textShadow: "0 2px 8px rgba(0,0,0,0.4)" }}
+              >
+                {slide.subtitle}
+              </motion.p>
+
+              {/* CTA buttons */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.7 }}
-                className="mt-6 md:mt-8"
+                transition={{ duration: 0.5, delay: 0.65 }}
+                className="flex flex-wrap items-center justify-center gap-3 mt-8"
               >
                 <Link
                   href={slide.cta.href}
-                  className="inline-flex items-center gap-2.5 px-6 py-3 bg-white text-gray-900 text-sm md:text-base font-semibold rounded-lg
-                             hover:bg-indigo-600 hover:text-white transition-all duration-300 group"
+                  className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-gray-900 text-sm font-bold rounded-full hover:bg-white/90 transition-all duration-200 group shadow-lg shadow-black/20"
                 >
                   {slide.cta.label}
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
+                </Link>
+                <Link
+                  href="/about"
+                  className="inline-flex items-center gap-2 px-7 py-3.5 text-white/85 hover:text-white text-sm font-semibold border border-white/25 hover:border-white/50 rounded-full backdrop-blur-sm bg-white/5 hover:bg-white/10 transition-all duration-200"
+                >
+                  Hakkımızda
                 </Link>
               </motion.div>
             </motion.div>

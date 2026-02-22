@@ -1,7 +1,7 @@
 // src/features/home/image-slider/ImageSliderSection.client.tsx
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
 import { Autoplay, EffectFade } from "swiper/modules";
@@ -11,12 +11,56 @@ import "swiper/css/effect-fade";
 import { slides } from "./data/slides";
 import SliderSlideContent from "./ui/SliderSlideContent.client";
 
+const AUTOPLAY_DELAY = 6000;
+const SLIDE_COUNT = slides.length;
+
 export default function ImageSliderSection() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
   const swiperRef = useRef<SwiperType | null>(null);
+  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const padIndex = (n: number) => String(n + 1).padStart(2, "0");
+
+  // Progress bar animation
+  const startProgress = useCallback(() => {
+    if (progressRef.current) clearInterval(progressRef.current);
+    setProgress(0);
+
+    const step = 50; // update every 50ms
+    let elapsed = 0;
+
+    progressRef.current = setInterval(() => {
+      elapsed += step;
+      setProgress(Math.min((elapsed / AUTOPLAY_DELAY) * 100, 100));
+      if (elapsed >= AUTOPLAY_DELAY) {
+        if (progressRef.current) clearInterval(progressRef.current);
+      }
+    }, step);
+  }, []);
+
+  useEffect(() => {
+    startProgress();
+    return () => {
+      if (progressRef.current) clearInterval(progressRef.current);
+    };
+  }, [startProgress]);
+
+  const handleSlideChange = useCallback(
+    (swiper: SwiperType) => {
+      setActiveIndex(swiper.realIndex);
+      startProgress();
+    },
+    [startProgress]
+  );
+
+  const goTo = useCallback((idx: number) => {
+    swiperRef.current?.slideToLoop(idx);
+  }, []);
+
 
   return (
-    <section id="image-slider" className="relative h-screen overflow-hidden">
+    <section id="image-slider" className="relative h-screen overflow-hidden bg-black -mt-16">
       <Swiper
         slidesPerView={1}
         spaceBetween={0}
@@ -24,30 +68,34 @@ export default function ImageSliderSection() {
         effect="fade"
         style={{ height: "100vh" }}
         modules={[Autoplay, EffectFade]}
-        autoplay={{ delay: 6000, disableOnInteraction: false }}
+        autoplay={{ delay: AUTOPLAY_DELAY, disableOnInteraction: false }}
         loop
         onSwiper={(swiper) => {
           swiperRef.current = swiper;
         }}
-        onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
+        onSlideChange={handleSlideChange}
       >
         {slides.map((slide, idx) => (
           <SwiperSlide key={idx}>
-            {/* Background image with zoom animation */}
+            {/* Background image with Ken Burns */}
             <div className="absolute inset-0">
               <img
                 src={slide.image}
                 alt={slide.alt}
-                className="object-cover h-full w-full scale-105 transition-transform duration-[8000ms] ease-out"
+                className="h-full w-full object-cover transition-transform duration-[8000ms] ease-out"
                 style={{
-                  transform: activeIndex === idx ? "scale(1.1)" : "scale(1)",
+                  transform:
+                    activeIndex === idx
+                      ? idx % 2 === 0
+                        ? "scale(1.08)"
+                        : "scale(1.12) translate(-1%, 0)"
+                      : "scale(1)",
                 }}
               />
             </div>
 
-            {/* Dark gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-black/25" />
 
             {/* Content */}
             <SliderSlideContent slide={slide} isActive={activeIndex === idx} />
@@ -55,29 +103,34 @@ export default function ImageSliderSection() {
         ))}
       </Swiper>
 
-      {/* Slide indicators */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5">
-        {slides.map((_, idx) => (
-          <button
-            key={idx}
-            type="button"
-            aria-label={`Slide ${idx + 1}`}
-            onClick={() => swiperRef.current?.slideToLoop(idx)}
-            className={`h-1.5 rounded-full transition-all duration-500 ${
-              activeIndex === idx
-                ? "w-8 bg-white"
-                : "w-3 bg-white/40 hover:bg-white/60"
-            }`}
-          />
-        ))}
-      </div>
+      {/* Bottom bar */}
+      <div className="absolute bottom-0 left-0 right-0 z-20">
+        {/* Bottom controls */}
+        <div className="flex items-center justify-center px-6 md:px-10 py-5 gap-8">
+          {/* Slide counter */}
+          <div className="flex items-center gap-3 text-white/60 text-sm font-medium">
+            <span className="text-white text-lg font-bold">{padIndex(activeIndex)}</span>
+            <span className="w-8 h-px bg-white/30" />
+            <span>{padIndex(SLIDE_COUNT - 1)}</span>
+          </div>
 
-      {/* Scroll hint */}
-      <div className="absolute bottom-8 right-8 z-20 hidden md:flex flex-col items-center gap-2">
-        <span className="text-white/50 text-xs tracking-widest uppercase rotate-90 origin-center translate-y-4">
-          Scroll
-        </span>
-        <div className="w-px h-10 bg-gradient-to-b from-white/50 to-transparent mt-6" />
+          {/* Slide dots */}
+          <div className="hidden md:flex items-center gap-2">
+            {slides.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                aria-label={`Slide ${idx + 1}`}
+                onClick={() => goTo(idx)}
+                className={`h-2 rounded-full transition-all duration-400 ${
+                  activeIndex === idx
+                    ? "w-8 bg-white"
+                    : "w-2 bg-white/30 hover:bg-white/50"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

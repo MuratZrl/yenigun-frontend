@@ -35,7 +35,6 @@ const cardVariants: Variants = {
     transition: { duration: 0.4, ease: "easeOut" },
   },
   hover: {
-    y: -4,
     transition: { duration: 0.2, ease: "easeInOut" },
   },
 };
@@ -61,7 +60,7 @@ export default function HighlightCard({
       viewport={{ once: true, margin: "-50px" }}
       onClick={() => onNavigate(listing.uid)}
       className="group cursor-pointer overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm
-                 hover:shadow-md hover:border-indigo-200 transition-all duration-300"
+                 hover:shadow-md hover:border-blue-200 transition-all duration-300"
       style={{ animationDelay: `${index * 0.05}s` }}
     >
       {/* Image */}
@@ -116,7 +115,7 @@ export default function HighlightCard({
 
         {/* Price */}
         <div className="absolute bottom-2.5 left-2.5">
-          <span className="inline-block py-1 px-2.5 rounded-lg bg-indigo-900 text-white text-xs font-bold">
+          <span className="inline-block py-1.5 px-3 rounded-md bg-white text-gray-900 text-xs font-bold shadow">
             {feeText}
           </span>
         </div>
@@ -124,7 +123,7 @@ export default function HighlightCard({
 
       {/* Info */}
       <div className="p-3.5">
-        <h3 className="font-semibold text-sm text-gray-900 line-clamp-1 group-hover:text-indigo-600 transition-colors duration-200">
+        <h3 className="font-semibold text-sm text-gray-900 line-clamp-1 group-hover:text-blue-700 transition-colors duration-200">
           {listing.title || "Başlık Yok"}
         </h3>
 
@@ -137,7 +136,7 @@ export default function HighlightCard({
 
         {/* Feature tags */}
         <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+          <span className="text-[10px] font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
             {listing.steps?.second || "Konut"}
           </span>
           <span className="text-[10px] font-medium text-gray-500 bg-gray-50 px-2 py-0.5 rounded-md">

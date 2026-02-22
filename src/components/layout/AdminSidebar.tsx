@@ -19,6 +19,7 @@ import {
   FileText,
   LogOut,
   Mail,
+  MessageSquareText,
   Send,
   Shield,
   Users,
@@ -128,6 +129,12 @@ export default function AdminSidebar({
         name: "Mesaj Paneli",
         url: "/admin/message",
         icon: <Mail size={20} />,
+      },
+      {
+        key: "sms-panel",
+        name: "SMS Paneli",
+        url: "/admin/sms-panel",
+        icon: <MessageSquareText size={20} />,
       },
       {
         key: "contracts",

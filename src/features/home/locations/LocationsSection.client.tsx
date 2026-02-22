@@ -50,7 +50,7 @@ export default function LocationsSection({ data }: Props) {
         >
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
             Türkiye&apos;nin{" "}
-            <span className="text-indigo-600">Her Yerinden</span>{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 to-blue-500">Her Yerinden</span>{" "}
             İlanlar
           </h2>
           <p className="text-sm md:text-base text-gray-500 max-w-xl leading-relaxed">
@@ -83,7 +83,7 @@ export default function LocationsSection({ data }: Props) {
             <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
             <p className="text-gray-500 text-sm">
               <span className="font-semibold text-gray-900">{totalActive}+</span>{" "}
-              aktif ilan ile hizmetinizdeyiz
+              Aktif ilan ile hizmetinizdeyiz
             </p>
           </div>
         </motion.div>

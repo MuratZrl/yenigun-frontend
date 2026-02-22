@@ -25,7 +25,7 @@ export default function CommentsSection() {
         >
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
             Müşterilerimizin{" "}
-            <span className="text-indigo-600">Deneyimleri</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 to-blue-500">Deneyimleri</span>
           </h2>
           <p className="text-sm md:text-base text-gray-500 max-w-xl leading-relaxed">
             Yenigün Emlak ile hayallerine kavuşan müşterilerimizin samimi geri

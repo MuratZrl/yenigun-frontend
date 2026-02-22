@@ -3,6 +3,7 @@ export type SliderSlide = {
   image: string;
   alt: string;
   heading: string;
+  subtitle: string;
   lines: string[];
   cta: {
     href: string;

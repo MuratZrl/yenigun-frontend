@@ -50,7 +50,7 @@ export default function RecentActivityCard({
 }: RecentActivityCardProps) {
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 h-full animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 h-full w-full animate-pulse">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 rounded-xl bg-gray-100" />
           <div>
@@ -79,7 +79,7 @@ export default function RecentActivityCard({
 
   if (items.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 h-full flex flex-col items-center justify-center gap-2">
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 h-full w-full flex flex-col items-center justify-center gap-2">
         <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
           <Clock size={18} className="text-gray-300" />
         </div>
@@ -89,7 +89,7 @@ export default function RecentActivityCard({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-5 h-full flex flex-col">
+    <div className="bg-white border border-gray-200 rounded-2xl p-5 h-full w-full flex flex-col">
       {/* Header */}
       <div className="flex items-start justify-between mb-5">
         <div className="flex items-center gap-3">

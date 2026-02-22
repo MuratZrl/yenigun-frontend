@@ -18,7 +18,7 @@ export const qualityItems: QualityItem[] = [
     description:
       "Geniş ağımız ile ister ev kiralayabilir ister kiraya verebilirsiniz. Size en uygun kişileri danışmanlarımız ayarlayacaktır.",
     image: "/icons/rent.svg",
-    gradient: "from-purple-600 to-blue-700",
+    gradient: "from-blue-900 to-blue-600",
     button: {
       title: "Bilgi Al",
       link: "/about",

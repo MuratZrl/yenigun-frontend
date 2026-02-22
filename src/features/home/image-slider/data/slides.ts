@@ -4,16 +4,18 @@ import type { SliderSlide } from "../types";
 export const slides: SliderSlide[] = [
   {
     image: "/home_1.jpg",
-    alt: "ilan",
+    alt: "Yenigün Emlak - Modern konutlar",
     heading: "Yenigün Emlak",
-    lines: ["biz buradayız!"],
-    cta: { href: "/about", label: "Detaylar için tıklayın" },
+    subtitle: "Sakarya'nın güvenilir emlak danışmanı",
+    lines: ["Hayalinizdeki Eve", "Kavuşun"],
+    cta: { href: "/ilanlar", label: "İlanları Keşfet" },
   },
   {
     image: "/home_2.jpg",
-    alt: "ilan",
-    heading: "Yenigün Emlak",
-    lines: ["Çeşitliliğimizle istediğiniz", "eve kavuşabilirsiniz"],
-    cta: { href: "/about", label: "Detaylar için tıklayın" },
+    alt: "Yenigün Emlak - Geniş portföy",
+    heading: "Geniş Portföy",
+    subtitle: "Konut, iş yeri ve arsa seçenekleri",
+    lines: ["Çeşitliliğimizle", "Fark Yaratıyoruz"],
+    cta: { href: "/ilanlar", label: "Tüm İlanlar" },
   },
 ];

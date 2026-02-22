@@ -32,7 +32,7 @@ function formatNum(n: number) {
 export default function GSCCountriesCard({ byCountry, loading }: Props) {
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full w-full animate-pulse">
         <div className="h-4 w-40 bg-gray-200 rounded mb-3" />
         <div className="h-3 bg-gray-100 rounded-full mb-4" />
         <div className="space-y-3">
@@ -46,7 +46,7 @@ export default function GSCCountriesCard({ byCountry, loading }: Props) {
 
   if (byCountry.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full w-full flex items-center justify-center">
         <p className="text-xs text-gray-400">Henüz ülke verisi yok</p>
       </div>
     );
@@ -68,7 +68,7 @@ export default function GSCCountriesCard({ byCountry, loading }: Props) {
   });
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 h-full w-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">
           Ülkelere Göre Arama

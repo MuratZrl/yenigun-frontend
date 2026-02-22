@@ -41,7 +41,7 @@ export default function HighlightsSection({ data }: HighlightProps) {
   return (
     <section
       id="highlights"
-      className="py-16 md:py-24 bg-slate-50 relative overflow-hidden"
+      className="py-16 md:py-24 bg-white relative overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-10">
         {/* Header */}
@@ -52,26 +52,30 @@ export default function HighlightsSection({ data }: HighlightProps) {
           viewport={{ once: true }}
           className="text-left mb-10 md:mb-14"
         >
+          <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-blue-600 mb-3">
+            <span className="w-8 h-0.5 bg-gradient-to-r from-blue-900 to-blue-500 rounded-full" />
+            Yeni Eklenenler
+          </span>
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-            Öne Çıkan{" "}
-            <span className="text-indigo-600">İlanlar</span>
+            Son Eklenen{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 to-blue-500">İlanlar</span>
           </h2>
           <p className="text-sm md:text-base text-gray-500 max-w-xl leading-relaxed">
-            Özenle seçilmiş mülkler arasından hayalinizdeki yaşam alanını keşfedin.
+            En güncel ilanları keşfedin, fırsatları kaçırmayın.
           </p>
         </motion.div>
 
         {/* Content */}
         <div className="flex flex-col lg:flex-row gap-6 md:gap-8 w-full">
           {/* Sidebar */}
-          <div className="lg:w-1/4">
+          <div className="lg:w-1/5">
             <div className="sticky top-6">
               <CategorySidebar />
             </div>
           </div>
 
           {/* Listings */}
-          <div className="lg:w-3/4">
+          <div className="lg:w-4/5">
             {/* Mobile list */}
             <div className="space-y-3 mb-8 block md:hidden">
               {visibleData.map((listing, index) => (

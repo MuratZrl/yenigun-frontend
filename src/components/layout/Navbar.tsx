@@ -132,9 +132,7 @@ const Navbar: React.FC = () => {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 bg-white border-b transition-shadow duration-300 ${
-          scrolled ? "shadow-sm border-gray-200" : "border-transparent"
-        }`}
+        className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200"
       >
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex items-center gap-5 h-16">
@@ -201,7 +199,7 @@ const Navbar: React.FC = () => {
                     onClick={() => setOpenUserMenu((v) => !v)}
                     className="h-9 flex items-center gap-2 px-2 rounded-lg hover:bg-gray-50 transition-colors duration-150"
                   >
-                    <span className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
+                    <span className="w-8 h-8 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold">
                       {userInitials || <User className="w-4 h-4" />}
                     </span>
                     <span className="hidden lg:inline text-sm font-medium text-gray-700">
@@ -322,7 +320,7 @@ const Navbar: React.FC = () => {
             {!loadingUser && isLoggedIn && user && (
               <div className="space-y-1">
                 <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-gray-50">
-                  <span className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                  <span className="w-9 h-9 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
                     {userInitials || <User className="w-4 h-4" />}
                   </span>
                   <span className="text-sm font-medium text-gray-900 truncate">

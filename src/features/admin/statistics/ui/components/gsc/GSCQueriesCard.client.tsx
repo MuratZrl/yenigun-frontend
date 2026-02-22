@@ -18,7 +18,7 @@ function formatNum(n: number) {
 export default function GSCQueriesCard({ byQuery, loading }: Props) {
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full w-full animate-pulse">
         <div className="h-4 w-44 bg-gray-200 rounded mb-3" />
         <div className="space-y-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -31,7 +31,7 @@ export default function GSCQueriesCard({ byQuery, loading }: Props) {
 
   if (byQuery.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full w-full flex items-center justify-center">
         <p className="text-xs text-gray-400">Henüz sorgu verisi yok</p>
       </div>
     );
@@ -41,7 +41,7 @@ export default function GSCQueriesCard({ byQuery, loading }: Props) {
   const maxClicks = queries[0]?.clicks ?? 1;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 h-full w-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">
           Popüler Arama Sorguları

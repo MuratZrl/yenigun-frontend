@@ -9,6 +9,7 @@ import { TypesSection } from "@/features/home/types";
 import { CommentsSection } from "@/features/home/comments";
 import { ImageSliderSection } from "@/features/home/image-slider";
 import { RepresentativesSection } from "@/features/home/representatives";
+import { FaqSection } from "@/features/home/faq";
 
 export const metadata: Metadata = {
   title: "Anasayfa | Yenigün Emlak",
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
 
 async function getHomeAdverts() {
   const base = process.env.BACKEND_API || "https://api.yenigunemlak.com";
-  const url = `${base}/advert/adverts?page=1&limit=6`;
+  const url = `${base}/advert/adverts?page=1&limit=12`;
   try {
     const res = await fetch(url, { next: { revalidate: 60 } });
     if (!res.ok) return [];
@@ -47,20 +48,22 @@ export default async function Home() {
 
   return (
     <div>
-      <HighlightsSection data={data} />
-      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
-      <QualitySection />
-      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
-      <WhyUsSection />
-      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
-      <LocationsSection data={data} />
-      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
-      <TypesSection data={data} />
-      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
-      <CommentsSection />
-      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
       <ImageSliderSection />
-      <hr className="border-t border-gray-200 mx-auto max-w-6xl" />
+      <hr className="border-t border-gray-200" />
+      <HighlightsSection data={data} />
+      <hr className="border-t border-gray-200" />
+      <QualitySection />
+      <hr className="border-t border-gray-200" />
+      <WhyUsSection />
+      <hr className="border-t border-gray-200" />
+      <LocationsSection data={data} />
+      <hr className="border-t border-gray-200" />
+      <TypesSection />
+      <hr className="border-t border-gray-200" />
+      <CommentsSection />
+      <hr className="border-t border-gray-200" />
+      <FaqSection />
+      <hr className="border-t border-gray-200" />
       <RepresentativesSection />
     </div>
   );

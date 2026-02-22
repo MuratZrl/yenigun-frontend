@@ -46,7 +46,7 @@ function formatNum(n: number) {
 export default function GSCDevicesCard({ byDevice, loading }: Props) {
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full animate-pulse">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full w-full animate-pulse">
         <div className="h-4 w-32 bg-gray-200 rounded mb-3" />
         <div className="flex items-center gap-4">
           <div className="w-[100px] h-[100px] rounded-full bg-gray-100" />
@@ -62,7 +62,7 @@ export default function GSCDevicesCard({ byDevice, loading }: Props) {
 
   if (byDevice.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex items-center justify-center">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 h-full w-full flex items-center justify-center">
         <p className="text-xs text-gray-400">Henüz cihaz verisi yok</p>
       </div>
     );
@@ -89,7 +89,7 @@ export default function GSCDevicesCard({ byDevice, loading }: Props) {
   const segments = buildDonut(devices, r);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 h-full">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 h-full w-full">
       <h3 className="text-sm font-semibold text-gray-900 mb-3">
         Cihaz Dağılımı
       </h3>
