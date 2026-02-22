@@ -106,7 +106,9 @@ export function AdsRowDesktop({
   const ts = ad.created?.createdTimestamp;
   const { dm, y } = formatTrDayMonth(ts);
 
-  const imgSrc = (hasValidImage(ad) ? getFirstPhoto(ad) : null) || "/logo.png";
+  const firstPhoto = hasValidImage(ad) ? getFirstPhoto(ad) : null;
+  const imgSrc = firstPhoto || "/logo.png";
+  const isFallback = !firstPhoto;
 
   const grossM2Text = getGrossM2Text(ad) || "-";
   const netM2Text = getNetM2Text(ad) || "-";
@@ -125,7 +127,7 @@ export function AdsRowDesktop({
             <img
               src={imgSrc}
               alt={ad.title || "İlan görseli"}
-              className="w-full h-full object-cover"
+              className={isFallback ? "w-full h-full object-contain p-2" : "w-full h-full object-cover"}
               onError={(e) => {
                 e.currentTarget.src = "/logo.png";
                 e.currentTarget.className = "w-full h-full object-contain p-2";
@@ -193,7 +195,9 @@ export function AdsRowMobile({
   fallbackKey: number;
   rowIndex?: number;
 }) {
-  const imgSrc = (hasValidImage(ad) ? getFirstPhoto(ad) : null) || "/logo.png";
+  const firstPhotoMobile = hasValidImage(ad) ? getFirstPhoto(ad) : null;
+  const imgSrc = firstPhotoMobile || "/logo.png";
+  const isFallback = !firstPhotoMobile;
 
   const ts = ad.created?.createdTimestamp;
   const { dm, y } = formatTrDayMonth(ts);
@@ -213,7 +217,7 @@ export function AdsRowMobile({
           <img
             src={imgSrc}
             alt={ad.title || "İlan görseli"}
-            className="w-full h-full object-cover"
+            className={isFallback ? "w-full h-full object-contain p-2" : "w-full h-full object-cover"}
             onError={(e) => {
               e.currentTarget.src = "/logo.png";
               e.currentTarget.className = "w-full h-full object-contain p-2";
@@ -264,7 +268,9 @@ export function AdsGridCard({
 }) {
   const uid = ad.uid ?? fallbackKey;
 
-  const imgSrc = (hasValidImage(ad) ? getFirstPhoto(ad) : null) || "/logo.png";
+  const firstPhotoGrid = hasValidImage(ad) ? getFirstPhoto(ad) : null;
+  const imgSrc = firstPhotoGrid || "/logo.png";
+  const isFallback = !firstPhotoGrid;
 
   const grossM2Text = getGrossM2Text(ad) || "-";
   const netM2Text = getNetM2Text(ad) || "-";
@@ -289,7 +295,7 @@ export function AdsGridCard({
           <img
             src={imgSrc}
             alt={title}
-            className="w-full h-full object-cover"
+            className={isFallback ? "w-full h-full object-contain p-3" : "w-full h-full object-cover"}
             onError={(e) => {
               e.currentTarget.src = "/logo.png";
               e.currentTarget.className = "w-full h-full object-contain p-3";

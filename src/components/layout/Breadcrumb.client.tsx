@@ -101,7 +101,7 @@ export default function BreadcrumbBar({
 
   return (
     <div
-      className={`w-full bg-slate-50 border-b border-gray-200 relative z-30 ${className}`}
+      className={`w-full bg-slate-50 border-b border-gray-200 shadow-sm relative z-30 ${className}`}
     >
       <div className="mx-auto max-w-6xl px-4">
         <div className="py-1 flex items-center justify-between gap-4">

@@ -329,7 +329,7 @@ export default function CategoryOptionsBox({
       <button
         type="button"
         onClick={handleRootClick}
-        className="w-full text-left px-3 py-1.5 text-[13px] focus:outline-none cursor-pointer"
+        className="w-full text-left px-3 py-0.5 text-[13px] focus:outline-none cursor-pointer"
       >
         <span className={`${linkBase} ${!selectedL0 ? "font-bold" : "font-semibold"}`}>
           {title}
@@ -344,7 +344,7 @@ export default function CategoryOptionsBox({
               key={l0.uid}
               type="button"
               onClick={() => handleNodeClick(l0)}
-              className="w-full text-left px-3 py-[3px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
+              className="w-full text-left px-3 py-[1px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
               style={{ paddingLeft: 20 }}
             >
               <span className={linkBase}>{l0.name}</span>
@@ -356,7 +356,7 @@ export default function CategoryOptionsBox({
         {selectedL0 && !selectedL1 && (
           <>
             <div
-              className="px-3 py-[3px] text-[13px] leading-[20px]"
+              className="px-3 py-[1px] text-[13px] leading-[20px]"
               style={{ paddingLeft: 20 }}
             >
               <span className={labelStyle} onClick={() => handleNodeClick(selectedL0)} role="button" tabIndex={0}>
@@ -369,7 +369,7 @@ export default function CategoryOptionsBox({
                 key={l1.uid}
                 type="button"
                 onClick={() => handleNodeClick(l1)}
-                className="w-full text-left px-3 py-[3px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
+                className="w-full text-left px-3 py-[1px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
                 style={{ paddingLeft: 36 }}
               >
                 <span className={linkBase}>{l1.name}</span>
@@ -385,7 +385,7 @@ export default function CategoryOptionsBox({
             <button
               type="button"
               onClick={() => handleNodeClick(selectedL0)}
-              className="w-full text-left px-3 py-[3px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
+              className="w-full text-left px-3 py-[1px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
               style={{ paddingLeft: 20 }}
             >
               <span className={labelStyle}>{selectedL0.name}</span>
@@ -394,7 +394,7 @@ export default function CategoryOptionsBox({
             <button
               type="button"
               onClick={() => handleNodeClick(selectedL1)}
-              className="w-full text-left px-3 py-[3px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
+              className="w-full text-left px-3 py-[1px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
               style={{ paddingLeft: 36 }}
             >
               <span className={labelStyle}>{selectedL1.name}</span>
@@ -405,7 +405,7 @@ export default function CategoryOptionsBox({
                 key={l2.uid}
                 type="button"
                 onClick={() => handleNodeClick(l2)}
-                className="w-full text-left px-3 py-[3px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
+                className="w-full text-left px-3 py-[1px] text-[13px] leading-[20px] focus:outline-none cursor-pointer"
                 style={{ paddingLeft: 52 }}
               >
                 <span className={`${linkBase} ${activePathParts.includes(l2.name) ? "font-semibold" : ""}`}>

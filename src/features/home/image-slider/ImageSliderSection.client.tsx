@@ -12,15 +12,12 @@ import { slides } from "./data/slides";
 import SliderSlideContent from "./ui/SliderSlideContent.client";
 
 const AUTOPLAY_DELAY = 6000;
-const SLIDE_COUNT = slides.length;
 
 export default function ImageSliderSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const swiperRef = useRef<SwiperType | null>(null);
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const padIndex = (n: number) => String(n + 1).padStart(2, "0");
 
   // Progress bar animation
   const startProgress = useCallback(() => {
@@ -103,18 +100,9 @@ export default function ImageSliderSection() {
         ))}
       </Swiper>
 
-      {/* Bottom bar */}
+      {/* Bottom dots */}
       <div className="absolute bottom-0 left-0 right-0 z-20">
-        {/* Bottom controls */}
-        <div className="flex items-center justify-center px-6 md:px-10 py-5 gap-8">
-          {/* Slide counter */}
-          <div className="flex items-center gap-3 text-white/60 text-sm font-medium">
-            <span className="text-white text-lg font-bold">{padIndex(activeIndex)}</span>
-            <span className="w-8 h-px bg-white/30" />
-            <span>{padIndex(SLIDE_COUNT - 1)}</span>
-          </div>
-
-          {/* Slide dots */}
+        <div className="flex items-center justify-center px-6 md:px-10 py-5">
           <div className="hidden md:flex items-center gap-2">
             {slides.map((_, idx) => (
               <button

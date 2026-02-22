@@ -222,7 +222,7 @@ export default function PhotoGallerySection({
             }}
             onLoad={() => setImageLoading(false)}
             onError={handleImageError}
-            className="w-full h-[360px] object-cover select-none cursor-pointer"
+            className={`w-full h-[360px] select-none ${hasPhotos ? "object-cover cursor-pointer" : "object-contain p-8 bg-gray-50"}`}
             alt={hasPhotos ? `İlan Fotoğrafı ${selectedIndex + 1}` : "İlan"}
             loading={hasPhotos ? "lazy" : "eager"}
             decoding="async"
@@ -382,7 +382,7 @@ export default function PhotoGallerySection({
           onLoad={() => setImageLoading(false)}
           onError={handleImageError}
           className={[
-            "w-full h-[260px] object-cover select-none cursor-pointer",
+            `w-full h-[260px] select-none ${hasPhotos ? "object-cover cursor-pointer" : "object-contain p-8 bg-gray-50"}`,
             imageLoading && hasPhotos ? "opacity-0" : "opacity-100",
           ].join(" ")}
           alt={hasPhotos ? `İlan Fotoğrafı ${selectedIndex + 1}` : "İlan"}
