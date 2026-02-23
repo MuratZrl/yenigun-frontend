@@ -1,1 +1,1 @@
-export { default as ContactInfoSection, teamData } from "./ContactInfoSection.client";
+export { default as ContactInfoSection } from "./ContactInfoSection.client";

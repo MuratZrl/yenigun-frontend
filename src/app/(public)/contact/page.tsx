@@ -1,8 +1,8 @@
 // src/app/(public)/contact/page.tsx
 import {
   ContactHeroSection,
-  ContactStatsSection,
   ContactInfoSection,
+  ContactFormSection,
   WhatsAppCTASection,
   MapSection,
 } from "@/features/contact";
@@ -11,9 +11,13 @@ export default function ContactPage() {
   return (
     <>
       <ContactHeroSection />
-      <ContactStatsSection />
+      <hr className="border-t border-gray-200" />
       <ContactInfoSection />
+      <hr className="border-t border-gray-200" />
+      <ContactFormSection />
+      <hr className="border-t border-gray-200" />
       <WhatsAppCTASection />
+      <hr className="border-t border-gray-200" />
       <MapSection />
     </>
   );

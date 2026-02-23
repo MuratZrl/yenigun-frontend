@@ -9,7 +9,7 @@ import { TypesSection } from "@/features/home/types";
 import { CommentsSection } from "@/features/home/comments";
 import { ImageSliderSection } from "@/features/home/image-slider";
 import { RepresentativesSection } from "@/features/home/representatives";
-import { FaqSection } from "@/features/home/faq";
+
 
 export const metadata: Metadata = {
   title: "Anasayfa | Yenigün Emlak",
@@ -61,8 +61,6 @@ export default async function Home() {
       <TypesSection />
       <hr className="border-t border-gray-200" />
       <CommentsSection />
-      <hr className="border-t border-gray-200" />
-      <FaqSection />
       <hr className="border-t border-gray-200" />
       <RepresentativesSection />
     </div>

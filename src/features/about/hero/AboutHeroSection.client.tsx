@@ -1,59 +1,135 @@
+// src/features/about/hero/AboutHeroSection.client.tsx
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
+import { Building2, Users, Award, ArrowDown } from "lucide-react";
+
+const stats = [
+  { icon: Building2, value: "3.000+", label: "Aktif İlan" },
+  { icon: Users, value: "5.000+", label: "Mutlu Müşteri" },
+  { icon: Award, value: "10.000+", label: "Başarılı İşlem" },
+];
 
 export default function AboutHeroSection() {
   return (
-    <section className="relative min-h-[80vh] flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 overflow-hidden">
-      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5"></div>
-      <div className="absolute top-0 left-0 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
-
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6"
-          >
-            <div className="w-8 sm:w-12 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
-            <span className="text-gray-600 font-semibold tracking-widest text-xs sm:text-sm uppercase">
-              Hakkımızda
-            </span>
-            <div className="w-8 sm:w-12 h-1 bg-gradient-to-l from-blue-500 to-indigo-500 rounded-full"></div>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 mb-4 sm:mb-6 px-2"
-          >
-            Yenigün{" "}
-            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Emlak
-            </span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-6 sm:mb-8 px-2"
-          >
-            15 yılı aşkın deneyimimizle, hayalinizdeki yaşam alanını bulmanız
-            için profesyonel danışmanlık hizmeti sunuyoruz. Güven, kalite ve
-            müşteri memnuniyeti odaklı çalışma prensibimizle sektörde lider
-            konumdayız.
-          </motion.p>
-        </motion.div>
+    <section className="relative h-screen overflow-hidden bg-black -mt-16">
+      {/* Background image */}
+      <div className="absolute inset-0">
+        <Image
+          src="/home_2.jpg"
+          alt="Yenigün Emlak"
+          fill
+          priority
+          className="object-cover scale-105"
+          sizes="100vw"
+        />
       </div>
+
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
+
+      {/* Content */}
+      <div className="absolute inset-0 z-10 flex items-center justify-center">
+        <div className="w-full px-6 md:px-10 text-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center"
+          >
+            {/* Badge */}
+            <motion.span
+              initial={{ opacity: 0, scale: 0.8, filter: "blur(8px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="inline-block px-5 py-1.5 text-[11px] font-semibold tracking-[0.2em] uppercase text-white/90 border border-white/25 rounded-full mb-6 backdrop-blur-sm bg-white/5"
+            >
+              Hakkımızda
+            </motion.span>
+
+            {/* Main heading */}
+            {["Güvenin", "Adresi"].map((line, i) => (
+              <motion.p
+                key={i}
+                initial={{ opacity: 0, y: 40, filter: "blur(6px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{
+                  duration: 0.6,
+                  delay: 0.2 + i * 0.12,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="text-white font-bold text-5xl md:text-7xl lg:text-8xl leading-[1.05]"
+                style={{
+                  textShadow:
+                    "0 2px 10px rgba(0,0,0,0.5), 0 8px 40px rgba(0,0,0,0.3)",
+                }}
+              >
+                {line}
+              </motion.p>
+            ))}
+
+            {/* Decorative line */}
+            <motion.div
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="w-16 h-[2px] bg-gradient-to-r from-transparent via-white/60 to-transparent mt-6 mb-4"
+            />
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="text-white/65 text-base md:text-lg lg:text-xl font-medium max-w-xl"
+              style={{ textShadow: "0 2px 8px rgba(0,0,0,0.4)" }}
+            >
+              Sakarya&apos;nın güvenilir ve köklü emlak danışmanı
+            </motion.p>
+
+            {/* Stats row */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+              className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 mt-10"
+            >
+              {stats.map((stat, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full border border-white/20 backdrop-blur-sm bg-white/5 flex items-center justify-center">
+                    <stat.icon className="w-4 h-4 text-white/80" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-white font-bold text-lg leading-tight">
+                      {stat.value}
+                    </p>
+                    <p className="text-white/50 text-xs font-medium">
+                      {stat.label}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
+      >
+        <motion.div
+          animate={{ y: [0, 8, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <ArrowDown className="w-5 h-5 text-white/40" />
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
