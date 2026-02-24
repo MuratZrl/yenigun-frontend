@@ -5,32 +5,34 @@ import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 
 import type { AdvertLike, LocationItem } from "./types";
-import { locationConfigs } from "./data/locations";
-import { countByDistrict } from "./utils/count";
+import { countByProvince } from "./utils/count";
+import { getFallbackCityImage } from "./data/cities";
 import LocationCard from "./ui/LocationCard.client";
 
 type Props = {
   data: AdvertLike[];
 };
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
+const TOP_CITIES_COUNT = 6;
 
 export default function LocationsSection({ data }: Props) {
   const items: LocationItem[] = useMemo(() => {
     const safe = Array.isArray(data) ? data : [];
-    return locationConfigs.map((cfg) => ({
-      title: cfg.title,
-      image: cfg.image,
-      href: cfg.href,
-      count: countByDistrict(safe, cfg.district),
-      provinceLabel: cfg.provinceLabel ?? "Sakarya",
-    }));
+    const provinceCounts = countByProvince(safe);
+
+    // Take top 6 cities by advert count
+    const topCities: LocationItem[] = [];
+    for (const [city, cityData] of provinceCounts) {
+      if (topCities.length >= TOP_CITIES_COUNT) break;
+      topCities.push({
+        title: city,
+        image: cityData.image || getFallbackCityImage(city),
+        href: `/ilanlar?location=${encodeURIComponent(city)}`,
+        count: cityData.count,
+      });
+    }
+
+    return topCities;
   }, [data]);
 
   const totalActive = useMemo(() => {
@@ -38,55 +40,44 @@ export default function LocationsSection({ data }: Props) {
   }, [items]);
 
   return (
-    <section id="locations" className="py-16 md:py-24 bg-slate-50 relative overflow-hidden">
-      <div className="max-w-6xl mx-auto px-6 md:px-10">
+    <section id="locations" className="py-8 md:py-12 bg-slate-50 relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
-          className="text-left mb-10 md:mb-14"
+          className="flex items-end justify-between mb-6 md:mb-8"
         >
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-            Türkiye&apos;nin{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 to-blue-500">Her Yerinden</span>{" "}
-            İlanlar
-          </h2>
-          <p className="text-sm md:text-base text-gray-500 max-w-xl leading-relaxed">
-            Türkiye&apos;nin en gözde lokasyonlarından satılık ve kiralık konutları keşfedin.
-          </p>
-        </motion.div>
+          <div>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
+              Türkiye&apos;nin{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 to-blue-500">Her Yerinden</span>{" "}
+              İlanlar
+            </h2>
+            <p className="text-sm md:text-base text-gray-500 max-w-xl leading-relaxed">
+              Türkiye&apos;nin en gözde şehirlerinden satılık ve kiralık konutları keşfedin.
+            </p>
+          </div>
 
-        {/* Grid */}
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6"
-        >
-          {items.map((item, index) => (
-            <LocationCard key={item.title} item={item} index={index} />
-          ))}
-        </motion.div>
-
-        {/* Active listings badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          viewport={{ once: true }}
-          className="text-center mt-10 md:mt-14"
-        >
-          <div className="inline-flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-5 py-3">
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
-            <p className="text-gray-500 text-sm">
+          <div className="inline-flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-2 hidden md:flex">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <p className="text-gray-500 text-xs">
               <span className="font-semibold text-gray-900">{totalActive}+</span>{" "}
-              Aktif ilan ile hizmetinizdeyiz
+              Aktif ilan
             </p>
           </div>
         </motion.div>
+
+        {/* Cards */}
+        <div className="flex flex-wrap gap-4">
+          {items.map((item, index) => (
+            <div key={item.title} className="flex-1 min-w-[140px] sm:min-w-0" style={{ flexBasis: `calc(${100 / items.length}% - ${((items.length - 1) * 16) / items.length}px)` }}>
+              <LocationCard item={item} index={index} />
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

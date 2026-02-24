@@ -1,3 +1,5 @@
+// src/components/layout/AdminGoogleMap.tsx
+
 import React from "react";
 import {
   GoogleMap,

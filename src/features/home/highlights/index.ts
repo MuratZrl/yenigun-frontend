@@ -1,3 +1,3 @@
 // src/features/home/highlights/index.ts
-export { default as HighlightsSection } from "./HighlightsSection.client";
-export { default } from "./HighlightsSection.client";
+export { default as LatestAdverts } from "./LatestAdverts.client";
+export { default } from "./LatestAdverts.client";

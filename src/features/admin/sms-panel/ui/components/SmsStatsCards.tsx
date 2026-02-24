@@ -29,10 +29,12 @@ export default function SmsStatsCards({ stats }: Props) {
       icon: Mail,
       value: stats.remainingQuota,
       subtitle: `${quotaPercent.toFixed(0)}% kota kaldı`,
-      iconBg: "bg-blue-600",
+      gradient: "from-blue-600 via-blue-700 to-indigo-800",
+      glowColor: "shadow-blue-500/25",
+      iconBg: "bg-white/15",
       trendIcon: null as typeof TrendingUp | null,
-      trendColor: "",
-      progressColor: "bg-blue-500",
+      progressTrack: "bg-white/15",
+      progressBar: "bg-white",
       progressPercent: quotaPercent,
     },
     {
@@ -41,10 +43,12 @@ export default function SmsStatsCards({ stats }: Props) {
       icon: Send,
       value: stats.totalSent,
       subtitle: "Tüm zamanlar",
-      iconBg: "bg-indigo-600",
+      gradient: "from-violet-600 via-purple-700 to-indigo-800",
+      glowColor: "shadow-violet-500/25",
+      iconBg: "bg-white/15",
       trendIcon: TrendingUp,
-      trendColor: "text-indigo-500",
-      progressColor: "bg-indigo-500",
+      progressTrack: "bg-white/15",
+      progressBar: "bg-white",
       progressPercent: 100,
     },
     {
@@ -53,10 +57,12 @@ export default function SmsStatsCards({ stats }: Props) {
       icon: CheckCircle2,
       value: stats.successCount,
       subtitle: `%${successRate} başarı oranı`,
-      iconBg: "bg-emerald-600",
+      gradient: "from-emerald-500 via-emerald-600 to-teal-700",
+      glowColor: "shadow-emerald-500/25",
+      iconBg: "bg-white/15",
       trendIcon: TrendingUp,
-      trendColor: "text-emerald-500",
-      progressColor: "bg-emerald-500",
+      progressTrack: "bg-white/15",
+      progressBar: "bg-white",
       progressPercent: stats.totalSent > 0 ? (stats.successCount / stats.totalSent) * 100 : 0,
     },
     {
@@ -65,10 +71,12 @@ export default function SmsStatsCards({ stats }: Props) {
       icon: XCircle,
       value: stats.failCount,
       subtitle: `%${failRate} hata oranı`,
-      iconBg: "bg-red-500",
+      gradient: "from-rose-500 via-red-600 to-red-800",
+      glowColor: "shadow-red-500/25",
+      iconBg: "bg-white/15",
       trendIcon: TrendingDown,
-      trendColor: "text-red-500",
-      progressColor: "bg-red-500",
+      progressTrack: "bg-white/15",
+      progressBar: "bg-white",
       progressPercent: stats.totalSent > 0 ? (stats.failCount / stats.totalSent) * 100 : 0,
     },
   ];
@@ -81,37 +89,43 @@ export default function SmsStatsCards({ stats }: Props) {
         return (
           <div
             key={card.key}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4 hover:shadow-md transition-shadow duration-200"
+            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${card.gradient} p-5 flex flex-col gap-4 shadow-lg ${card.glowColor} hover:shadow-xl transition-shadow duration-300 cursor-default`}
           >
+            {/* Decorative blurred circles */}
+            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-black/10 blur-2xl pointer-events-none" />
+
             {/* Top row: icon + trend */}
-            <div className="flex items-center justify-between">
-              <div className={`w-11 h-11 rounded-xl ${card.iconBg} flex items-center justify-center shadow-sm`}>
+            <div className="relative flex items-center justify-between">
+              <div className={`w-11 h-11 rounded-xl ${card.iconBg} backdrop-blur-sm flex items-center justify-center ring-1 ring-white/20`}>
                 <Icon size={20} className="text-white" />
               </div>
               {TrendIcon && (
-                <div className={`flex items-center gap-1 ${card.trendColor}`}>
+                <div className="flex items-center gap-1 text-white/60">
                   <TrendIcon size={14} />
                 </div>
               )}
             </div>
 
             {/* Value */}
-            <div>
-              <div className="text-3xl font-bold text-gray-900 tracking-tight">
+            <div className="relative">
+              <div className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
                 {card.value.toLocaleString("tr-TR")}
               </div>
-              <div className="text-xs font-medium text-gray-500 mt-0.5">{card.label}</div>
+              <div className="text-[13px] font-semibold text-white/70 mt-0.5 tracking-wide">
+                {card.label}
+              </div>
             </div>
 
             {/* Progress bar + subtitle */}
-            <div className="space-y-1.5">
-              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="relative space-y-2">
+              <div className={`h-1.5 ${card.progressTrack} rounded-full overflow-hidden`}>
                 <div
-                  className={`h-full rounded-full ${card.progressColor} transition-all duration-500`}
+                  className={`h-full rounded-full ${card.progressBar} transition-all duration-700 ease-out`}
                   style={{ width: `${card.progressPercent}%` }}
                 />
               </div>
-              <p className="text-[11px] text-gray-400">{card.subtitle}</p>
+              <p className="text-[11px] font-medium text-white/50 tracking-wide">{card.subtitle}</p>
             </div>
           </div>
         );

@@ -5,15 +5,62 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
-import type { StepState } from "@/types/property";
+import type { StepState, FormData, SelectionItem } from "@/types/property";
 import type {
   FeatureValues,
   Category,
-  Feature,
 } from "@/types/category";
 
+/* ------------------------------------------------------------------ */
+/*  Local types for tree node shapes from the backend                  */
+/* ------------------------------------------------------------------ */
+
+interface AttributeNode {
+  id?: string;
+  _id?: string;
+  name?: string;
+  type?: string;
+  options?: string[];
+  order?: number;
+}
+
+interface FacilityGroup {
+  title?: string;
+  features?: string[];
+}
+
+interface TreeNode {
+  uid?: number | string;
+  _id?: string;
+  name?: string;
+  attributes?: AttributeNode[];
+  facilities?: FacilityGroup[];
+  children?: TreeNode[];
+  subcategories?: TreeNode[];
+}
+
+interface NormalizedFeature {
+  _id: string;
+  name: string;
+  type: string;
+  options: string[];
+  required: boolean;
+  order?: number;
+}
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+type FeatureValue = string | number | boolean | string[];
+
+/* ------------------------------------------------------------------ */
+/*  props                                                              */
+/* ------------------------------------------------------------------ */
+
 interface EditFeaturesTabProps {
-  fourthStep: any;
+  fourthStep: FormData;
 
   firstStep: StepState;
   secondStep: StepState;
@@ -32,10 +79,10 @@ interface EditFeaturesTabProps {
   onWhichSideChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onZoningStatusChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 
-  heatingOptions: any[];
-  deedStatusOptions: any[];
-  directionOptions: any[];
-  zoningStatusOptions: any[];
+  heatingOptions: SelectOption[];
+  deedStatusOptions: SelectOption[];
+  directionOptions: SelectOption[];
+  zoningStatusOptions: SelectOption[];
 
   featureValues: FeatureValues;
   setFeatureValues: React.Dispatch<React.SetStateAction<FeatureValues>>;
@@ -49,12 +96,12 @@ interface EditFeaturesTabProps {
 /*  helpers                                                           */
 /* ------------------------------------------------------------------ */
 
-function safeArr<T>(v: any): T[] {
+function safeArr<T>(v: T[] | null | undefined): T[] {
   return Array.isArray(v) ? v : [];
 }
 
 /** Read .value from a SelectionItem or plain string */
-function selVal(x: any): string {
+function selVal(x: SelectionItem | string | null | undefined): string {
   if (!x) return "";
   if (typeof x === "string") return x;
   if (typeof x === "object" && "value" in x) return String(x.value ?? "");
@@ -78,7 +125,7 @@ function slugifyTR(input: string) {
 }
 
 /** Backend type → UI type */
-function mapType(t: any): string {
+function mapType(t: string | null | undefined): string {
   const up = String(t || "").toUpperCase();
   if (up === "TEXT") return "text";
   if (up === "NUMBER") return "number";
@@ -88,7 +135,7 @@ function mapType(t: any): string {
   return "text";
 }
 
-function findNodeInTree(nodes: any[], id: string | number | undefined): any | null {
+function findNodeInTree(nodes: TreeNode[], id: string | number | undefined): TreeNode | null {
   if (!id && id !== 0) return null;
   const strId = String(id);
 
@@ -98,7 +145,7 @@ function findNodeInTree(nodes: any[], id: string | number | undefined): any | nu
 
     if (nodeUid === strId || nodeId === strId) return node;
 
-    const kids = safeArr<any>(node?.children ?? node?.subcategories);
+    const kids = safeArr(node?.children ?? node?.subcategories);
     if (kids.length) {
       const found = findNodeInTree(kids, id);
       if (found) return found;
@@ -108,10 +155,10 @@ function findNodeInTree(nodes: any[], id: string | number | undefined): any | nu
 }
 
 function collectChainToNode(
-  nodes: any[],
+  nodes: TreeNode[],
   targetId: string | number | undefined,
-  chain: any[] = []
-): any[] | null {
+  chain: TreeNode[] = []
+): TreeNode[] | null {
   if (!targetId && targetId !== 0) return null;
   const strId = String(targetId);
 
@@ -123,7 +170,7 @@ function collectChainToNode(
       return [...chain, node];
     }
 
-    const kids = safeArr<any>(node?.children ?? node?.subcategories);
+    const kids = safeArr(node?.children ?? node?.subcategories);
     if (kids.length) {
       const result = collectChainToNode(kids, targetId, [...chain, node]);
       if (result) return result;
@@ -132,7 +179,7 @@ function collectChainToNode(
   return null;
 }
 
-function normalizeOptions(options: any[]) {
+function normalizeOptions(options: (string | SelectOption)[]): SelectOption[] {
   return (options ?? []).map((opt) => {
     if (opt && typeof opt === "object") {
       return {
@@ -191,7 +238,7 @@ function SimpleSelect({
   label: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  options: { value: string; label: string }[];
+  options: SelectOption[];
   className?: string;
 }) {
   return (
@@ -223,9 +270,9 @@ function DynamicFeatureInput({
   value,
   onChange,
 }: {
-  feature: any;
-  value: any;
-  onChange: (v: any) => void;
+  feature: NormalizedFeature;
+  value: FeatureValue;
+  onChange: (v: FeatureValue) => void;
 }) {
   const type = feature?.type;
 
@@ -244,10 +291,10 @@ function DynamicFeatureInput({
         return (
           <input
             type="text"
-            value={value || ""}
+            value={(value as string) || ""}
             onChange={(e) => onChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder={feature.placeholder || ""}
+            placeholder=""
           />
         );
 
@@ -255,12 +302,10 @@ function DynamicFeatureInput({
         return (
           <input
             type="number"
-            value={typeof value === "number" ? value : value || 0}
+            value={typeof value === "number" ? value : Number(value) || 0}
             onChange={(e) => onChange(Number(e.target.value))}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder={feature.placeholder || ""}
-            min={feature.min}
-            max={feature.max}
+            placeholder=""
           />
         );
 
@@ -268,7 +313,7 @@ function DynamicFeatureInput({
       case "single_select":
         return (
           <select
-            value={value || ""}
+            value={(value as string) || ""}
             onChange={(e) => onChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
           >
@@ -311,10 +356,10 @@ function DynamicFeatureInput({
         return (
           <input
             type="text"
-            value={value || ""}
+            value={(value as string) || ""}
             onChange={(e) => onChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder={feature.placeholder || ""}
+            placeholder=""
           />
         );
     }
@@ -326,9 +371,6 @@ function DynamicFeatureInput({
         {feature.name}
       </label>
       {renderInput()}
-      {feature.description && (
-        <p className="text-xs text-gray-500">{feature.description}</p>
-      )}
     </div>
   );
 }
@@ -371,9 +413,13 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
     const targetId = subcategoryId || categoryId;
     if (!targetId) return [];
 
-    const chain = collectChainToNode(categories, targetId);
+    // categories from @/types/category don't have the tree shape exactly,
+    // but the API response may have additional fields — cast to TreeNode
+    const treeNodes = categories as unknown as TreeNode[];
+
+    const chain = collectChainToNode(treeNodes, targetId);
     if (!chain?.length) {
-      const node = findNodeInTree(categories, targetId);
+      const node = findNodeInTree(treeNodes, targetId);
       if (!node) return [];
       return buildFeaturesFromChain([node]);
     }
@@ -406,23 +452,26 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
   }, [allFeatures, setFeatureValues]);
 
   const handleFeatureChange = useCallback(
-    (featureId: string, value: any, featureType?: string) => {
+    (featureId: string, value: FeatureValue, featureType?: string) => {
       setFeatureValues((prev) => ({
         ...(prev ?? {}),
         [featureId]: value,
       }));
 
-      setFeaturesStep((prev: any) => ({
-        ...prev,
-        selections: {
-          ...(prev?.selections ?? {}),
-          [featureId]: {
-            featureId,
-            value,
-            featureType: featureType || "text",
+      setFeaturesStep((prev) => {
+        const prevSelections = (prev?.selections ?? {}) as Record<string, { featureId: string; value: FeatureValue; featureType: string }>;
+        return {
+          ...prev,
+          selections: {
+            ...prevSelections,
+            [featureId]: {
+              featureId,
+              value,
+              featureType: featureType || "text",
+            },
           },
-        },
-      }));
+        };
+      });
     },
     [setFeatureValues, setFeaturesStep]
   );
@@ -497,7 +546,7 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
               />
             )}
 
-            {booleanFeatures.map((feature: any) => (
+            {booleanFeatures.map((feature) => (
               <FeatureToggle
                 key={feature._id}
                 label={feature.name}
@@ -552,13 +601,13 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
               />
             )}
 
-            {selectFeatures.map((feature: any) => (
+            {selectFeatures.map((feature) => (
               <SimpleSelect
                 key={feature._id}
                 label={feature.name}
                 value={String(featureValues?.[feature._id] ?? "")}
                 onChange={(e) => handleFeatureChange(feature._id, e.target.value, "single_select")}
-                options={normalizeOptions((feature.options ?? []).map((x: any) => x))}
+                options={normalizeOptions(feature.options ?? [])}
               />
             ))}
           </div>
@@ -571,11 +620,11 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
           <h3 className="text-lg font-semibold text-gray-900">Çoklu Seçim Özellikleri</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {multiSelectFeatures.map((feature: any) => (
+            {multiSelectFeatures.map((feature) => (
               <DynamicFeatureInput
                 key={feature._id}
                 feature={feature}
-                value={featureValues?.[feature._id] ?? []}
+                value={(featureValues?.[feature._id] as string[]) ?? []}
                 onChange={(v) => handleFeatureChange(feature._id, v, "multi_select")}
               />
             ))}
@@ -589,20 +638,20 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
           <h3 className="text-lg font-semibold text-gray-900">Diğer Özellikler</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {textFeatures.map((feature: any) => (
+            {textFeatures.map((feature) => (
               <DynamicFeatureInput
                 key={feature._id}
                 feature={feature}
-                value={featureValues?.[feature._id] ?? ""}
+                value={(featureValues?.[feature._id] as string) ?? ""}
                 onChange={(v) => handleFeatureChange(feature._id, v, "text")}
               />
             ))}
 
-            {numberFeatures.map((feature: any) => (
+            {numberFeatures.map((feature) => (
               <DynamicFeatureInput
                 key={feature._id}
                 feature={feature}
-                value={featureValues?.[feature._id] ?? 0}
+                value={(featureValues?.[feature._id] as number) ?? 0}
                 onChange={(v) => handleFeatureChange(feature._id, v, "number")}
               />
             ))}
@@ -623,10 +672,10 @@ const EditFeaturesTab: React.FC<EditFeaturesTabProps> = ({
 /*  Build Feature[] from a chain of tree nodes                        */
 /* ------------------------------------------------------------------ */
 
-function buildFeaturesFromChain(chain: any[]): any[] {
-  const attrMap = new Map<string, any>();
+function buildFeaturesFromChain(chain: TreeNode[]): NormalizedFeature[] {
+  const attrMap = new Map<string, AttributeNode>();
   for (const node of chain) {
-    for (const a of safeArr<any>(node?.attributes)) {
+    for (const a of safeArr(node?.attributes)) {
       const key = String(a?.id ?? a?._id ?? "");
       if (!key) continue;
       attrMap.set(key, a);
@@ -635,9 +684,9 @@ function buildFeaturesFromChain(chain: any[]): any[] {
 
   const facMap = new Map<string, Set<string>>();
   for (const node of chain) {
-    for (const g of safeArr<any>(node?.facilities)) {
+    for (const g of safeArr(node?.facilities)) {
       const title = String(g?.title ?? "");
-      const feats = safeArr<string>(g?.features);
+      const feats = safeArr(g?.features);
       if (!title || feats.length === 0) continue;
       if (!facMap.has(title)) facMap.set(title, new Set<string>());
       const set = facMap.get(title)!;
@@ -645,8 +694,8 @@ function buildFeaturesFromChain(chain: any[]): any[] {
     }
   }
 
-  const attrFeatures = Array.from(attrMap.values())
-    .map((a: any) => {
+  const attrFeatures: (NormalizedFeature | null)[] = Array.from(attrMap.values())
+    .map((a) => {
       const _id = String(a?.id ?? a?._id ?? "");
       const name = String(a?.name ?? "");
       if (!_id || !name) return null;
@@ -654,14 +703,13 @@ function buildFeaturesFromChain(chain: any[]): any[] {
         _id,
         name,
         type: mapType(a?.type),
-        options: safeArr<string>(a?.options),
+        options: safeArr(a?.options),
         required: false,
         order: typeof a?.order === "number" ? a.order : undefined,
       };
-    })
-    .filter(Boolean);
+    });
 
-  const facilityFeatures = Array.from(facMap.entries()).map(([title, set]) => ({
+  const facilityFeatures: NormalizedFeature[] = Array.from(facMap.entries()).map(([title, set]) => ({
     _id: `fac_${slugifyTR(title)}`,
     name: title,
     type: "multi_select",
@@ -669,7 +717,9 @@ function buildFeaturesFromChain(chain: any[]): any[] {
     required: false,
   }));
 
-  return [...attrFeatures, ...facilityFeatures].sort((a: any, b: any) => {
+  const filtered = attrFeatures.filter((f): f is NormalizedFeature => f !== null);
+
+  return [...filtered, ...facilityFeatures].sort((a, b) => {
     const ao = typeof a?.order === "number" ? a.order : 9999;
     const bo = typeof b?.order === "number" ? b.order : 9999;
     return ao - bo;

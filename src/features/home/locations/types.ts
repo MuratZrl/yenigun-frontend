@@ -1,8 +1,17 @@
 // src/features/home/locations/types.ts
+export type ListingPhoto = string | { url?: string | null } | null | undefined;
+
 export type AdvertLike = {
   address?: {
+    province?: string | null;
     district?: string | null;
   } | null;
+  photos?: ListingPhoto[] | null;
+};
+
+export type CityConfig = {
+  name: string;
+  image: string;
 };
 
 export type LocationConfig = {
@@ -18,5 +27,4 @@ export type LocationItem = {
   image: string;
   href: string;
   count: number;
-  provinceLabel: string;
 };

@@ -18,7 +18,7 @@ const staggerContainer = {
 export default function RepresentativesSection() {
   return (
     <section
-      className="py-16 md:py-24 bg-white relative overflow-hidden"
+      className="py-8 md:py-12 bg-white relative overflow-hidden"
       id="represent"
     >
       <div className="max-w-6xl mx-auto px-6 md:px-10">

@@ -10,7 +10,7 @@ import { qualityItems } from "./data/qualityItems";
 
 export default function QualitySection() {
   return (
-    <section className="py-16 md:py-24 bg-slate-50 relative overflow-hidden">
+    <section className="py-8 md:py-12 bg-slate-50 relative overflow-hidden">
       <div className="w-full max-w-6xl mx-auto px-6 md:px-10">
         {/* Header */}
         <motion.div

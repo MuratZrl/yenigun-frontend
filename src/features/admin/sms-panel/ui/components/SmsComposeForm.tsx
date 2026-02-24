@@ -19,9 +19,10 @@ import {
   X,
   Plus,
 } from "lucide-react";
-import type { RecipientType, CustomerCategory } from "../../lib/types";
+import type { RecipientType, CustomerCategory, SmsRecipient } from "../../lib/types";
 import { turkishCities, districtsByCity } from "../../lib/mockData";
 import SmsPreview from "./SmsPreview";
+import SmsRecipientList from "./SmsRecipientList";
 
 type Props = {
   recipientType: RecipientType;
@@ -41,6 +42,9 @@ type Props = {
   onMessageChange: (message: string) => void;
   onSend: () => void;
   onReset: () => void;
+  recipients: SmsRecipient[];
+  excludedRecipientIds: Set<string>;
+  onExcludeRecipient: (id: string) => void;
 };
 
 const recipientOptions: { type: RecipientType; label: string; icon: React.ReactNode; desc: string }[] = [
@@ -413,13 +417,22 @@ export default function SmsComposeForm(props: Props) {
         </div>
       </div>
 
-      {/* Right: Preview */}
-      <div className="lg:col-span-1">
-        <div className="sticky top-6">
+      {/* Right: Preview + Recipient List */}
+      <div className="lg:col-span-1 space-y-4">
+        <div className="sticky top-6 space-y-4">
           <SmsPreview
             message={props.message}
             charCount={props.charCount}
             smsSegments={props.smsSegments}
+          />
+          <SmsRecipientList
+            recipients={props.recipients}
+            recipientType={props.recipientType}
+            selectedCities={props.selectedCities}
+            selectedDistricts={props.selectedDistricts}
+            selectedCategory={props.selectedCategory}
+            excludedRecipientIds={props.excludedRecipientIds}
+            onExcludeRecipient={props.onExcludeRecipient}
           />
         </div>
       </div>

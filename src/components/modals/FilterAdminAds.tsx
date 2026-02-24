@@ -4,7 +4,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { Poppins } from "next/font/google";
-import Select from "react-select";
+import Select, { SingleValue } from "react-select";
 
 import JSONDATA from "../../app/data.json";
 import api from "@/lib/api";
@@ -83,10 +83,28 @@ type FilterState = {
   subsubcategory?: string | null;
   categoryPath?: string | null;
 
-  [k: string]: any;
+  [k: string]: string | number | boolean | null | undefined;
 };
 
+type FeatureFilterValue = boolean | string | number | string[] | RangeValue | null | undefined;
+
 type RangeValue = { min: number | null; max: number | null };
+
+interface ReactSelectOption {
+  value: string;
+  label: string;
+  color?: string;
+}
+
+interface TurkeyDistrict {
+  district: string;
+  quarters: string[];
+}
+
+interface TurkeyCity {
+  province: string;
+  districts: TurkeyDistrict[];
+}
 
 type Props = {
   open: boolean;
@@ -95,24 +113,33 @@ type Props = {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
 
-  handleFilter?: (...args: any[]) => void;
+  handleFilter?: (...args: unknown[]) => void;
   handleCleanFilters: () => void;
 
   page?: number;
   limit?: number;
 
-  onSearchResult?: (data: any) => void;
+  onSearchResult?: (data: Record<string, unknown>) => void;
 };
 
-type ApiAny = any;
+interface ApiResponse {
+  data?: {
+    data?: unknown[];
+    [key: string]: unknown;
+  };
+  items?: unknown[];
+  categories?: unknown[];
+  [key: string]: unknown;
+}
 
-function unwrapArray<T>(res: ApiAny): T[] {
+function unwrapArray<T>(res: ApiResponse): T[] {
   const root = res?.data ?? res;
+  const rootObj = root as Record<string, unknown>;
   const maybe =
-    root?.data?.data ??
-    root?.data ??
-    root?.items ??
-    root?.categories ??
+    (rootObj?.data as Record<string, unknown>)?.data ??
+    rootObj?.data ??
+    rootObj?.items ??
+    rootObj?.categories ??
     root;
 
   return Array.isArray(maybe) ? (maybe as T[]) : [];
@@ -126,20 +153,20 @@ function normalizeCategoryPath(parts: (string | null | undefined)[]) {
   return parts.filter(Boolean).join(" > ");
 }
 
-function countTruthy(obj: Record<string, any>) {
+function countTruthy(obj: Record<string, string | number | boolean | null | undefined>) {
   return Object.values(obj).filter(Boolean).length;
 }
 
-function isMeaningfulFeatureValue(v: any) {
+function isMeaningfulFeatureValue(v: FeatureFilterValue): boolean {
   if (v === undefined || v === null) return false;
   if (typeof v === "string" && v.trim() === "") return false;
   if (Array.isArray(v)) return v.length > 0;
   if (typeof v === "object") {
-    const minOk = v.min !== undefined && v.min !== null;
-    const maxOk = v.max !== undefined && v.max !== null;
+    const range = v as RangeValue;
+    const minOk = range.min !== undefined && range.min !== null;
+    const maxOk = range.max !== undefined && range.max !== null;
     return minOk || maxOk;
   }
-  // boolean false'ı “filtre yok” kabul ediyoruz (mevcut davranış)
   if (v === false) return false;
   return true;
 }
@@ -150,8 +177,8 @@ const FeatureInput = React.memo(function FeatureInput({
   onChange,
 }: {
   feature: Feature;
-  value: any;
-  onChange: (value: any) => void;
+  value: FeatureFilterValue;
+  onChange: (value: FeatureFilterValue) => void;
 }) {
   switch (feature.type) {
     case "boolean": {
@@ -176,7 +203,7 @@ const FeatureInput = React.memo(function FeatureInput({
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">{feature.name}</label>
           <select
-            value={value ?? ""}
+            value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           >
@@ -228,7 +255,7 @@ const FeatureInput = React.memo(function FeatureInput({
           <label className="block text-sm font-medium text-gray-700">{feature.name}</label>
           <input
             type="number"
-            value={value ?? ""}
+            value={(value as number) ?? ""}
             onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={`${feature.name} girin`}
@@ -239,8 +266,8 @@ const FeatureInput = React.memo(function FeatureInput({
 
     case "range": {
       const current: RangeValue =
-        value && typeof value === "object"
-          ? { min: value.min ?? null, max: value.max ?? null }
+        value && typeof value === "object" && !Array.isArray(value)
+          ? { min: (value as RangeValue).min ?? null, max: (value as RangeValue).max ?? null }
           : { min: null, max: null };
 
       return (
@@ -288,7 +315,7 @@ const FeatureInput = React.memo(function FeatureInput({
           <label className="block text-sm font-medium text-gray-700">{feature.name}</label>
           <input
             type="text"
-            value={value ?? ""}
+            value={(value as string) ?? ""}
             onChange={(e) => onChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={`${feature.name} girin`}
@@ -321,22 +348,22 @@ export default function FilterAdminAds({
   const [selectedSubcategory, setSelectedSubcategory] = useState<SubcategoryNode | null>(null);
   const [selectedSubSubcategory, setSelectedSubSubcategory] = useState<SubcategoryNode | null>(null);
 
-  const [featureFilters, setFeatureFilters] = useState<Record<string, any>>({});
+  const [featureFilters, setFeatureFilters] = useState<Record<string, FeatureFilterValue>>({});
 
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   useEffect(() => {
     setPortalTarget(document.body);
   }, []);
 
-  const turkeyCities = useMemo(() => {
-    return (JSONDATA as any[]).map((city: any) => {
+  const turkeyCities = useMemo<TurkeyCity[]>(() => {
+    return JSONDATA.map((city) => {
       return {
         province: city.name,
-        districts: (city.towns ?? []).map((town: any) => {
+        districts: (city.towns ?? []).map((town) => {
           return {
             district: town.name,
-            quarters: (town.districts ?? []).reduce((acc: string[], d: any) => {
-              const names = (d.quarters ?? []).map((q: any) => q.name);
+            quarters: (town.districts ?? []).reduce<string[]>((acc, d) => {
+              const names = (d.quarters ?? []).map((q) => q.name);
               return acc.concat(names);
             }, []),
           };
@@ -364,23 +391,21 @@ export default function FilterAdminAds({
 
   const fetchCustomers = useCallback(async () => {
     const res = await api.get("/admin/customers");
-    // bazı endpointler {data:{data:[...]}} / bazıları direkt data: [...]
-    const items = unwrapArray<Customer>(res);
+    const items = unwrapArray<Customer>(res as unknown as ApiResponse);
     setCustomers(items);
   }, []);
 
   const fetchAdvisors = useCallback(async () => {
     const res = await api.get("/admin/users");
-    const items = unwrapArray<Advisor>(res);
+    const items = unwrapArray<Advisor>(res as unknown as ApiResponse);
     setAdvisors(items);
   }, []);
 
   const fetchCategories = useCallback(async () => {
     try {
       setLoadingCategories(true);
-      // projede başka yerde /admin/categories kullanmışsın; burada da onu tercih etmek daha tutarlı
       const res = await api.get("/admin/categories/tree");
-      const items = unwrapArray<CategoryNode>(res);
+      const items = unwrapArray<CategoryNode>(res as unknown as ApiResponse);
       setCategories(items);
     } catch (e) {
       console.error("Kategoriler yüklenirken hata:", e);
@@ -415,11 +440,10 @@ export default function FilterAdminAds({
   const handleClose = useCallback(() => setOpen(false), [setOpen]);
 
   const initFeatureFiltersFor = useCallback((features: Feature[]) => {
-    const next: Record<string, any> = {};
+    const next: Record<string, FeatureFilterValue> = {};
     for (const f of features) {
       if (f.type === "multi_select") next[f._id] = [];
       else if (f.type === "range") next[f._id] = { min: null, max: null };
-      // boolean/number/text için default set etmiyoruz, “dokunulmadıysa yok” kalsın
     }
     setFeatureFilters(next);
   }, []);
@@ -483,12 +507,12 @@ export default function FilterAdminAds({
     [initFeatureFiltersFor, selectedCategory?.name, selectedSubcategory?.name, setFilters]
   );
 
-  const handleFeatureFilterChange = useCallback((featureId: string, value: any) => {
+  const handleFeatureFilterChange = useCallback((featureId: string, value: FeatureFilterValue) => {
     setFeatureFilters((prev) => ({ ...prev, [featureId]: value }));
   }, []);
 
   const prepareSearchParams = useCallback(() => {
-    const params: Record<string, any> = { page, limit };
+    const params: Record<string, string | number | boolean> = { page, limit };
 
     if (filters.search) params.search = filters.search;
     if (filters.province) params.province = filters.province;
@@ -501,13 +525,13 @@ export default function FilterAdminAds({
     if (filters.maxFee !== null && filters.maxFee !== undefined) params.maxPrice = filters.maxFee;
 
     if (filters.advisor) {
-      const adv = advisors.find((a: any) => `${a.name} ${a.surname}` === filters.advisor);
-      if (adv) params.advisorUid = (adv as any).uid;
+      const adv = advisors.find((a) => `${a.name} ${a.surname}` === filters.advisor);
+      if (adv) params.advisorUid = adv.uid;
     }
 
     if (filters.customer) {
-      const cust = customers.find((c: any) => `${c.name} ${c.surname}` === filters.customer);
-      if (cust) params.customerUid = (cust as any).uid;
+      const cust = customers.find((c) => `${c.name} ${c.surname}` === filters.customer);
+      if (cust) params.customerUid = cust.uid;
     }
 
     if (filters.categoryPath) {
@@ -520,17 +544,16 @@ export default function FilterAdminAds({
       const v = featureFilters[feature._id];
       if (!isMeaningfulFeatureValue(v)) continue;
 
-      // NOT: Backend bu key formatını feature.name ile bekliyorsa aynı bırakıyoruz.
-      // Eğer feature.name boşluk/özel karakter içeriyorsa backend tarafı sıkıntılı olabilir.
       const keyBase = `features.${feature.name}`;
 
       if (Array.isArray(v)) {
         params[keyBase] = v.join(",");
       } else if (typeof v === "object" && v !== null) {
-        if (v.min !== undefined && v.min !== null) params[`${keyBase}.min`] = v.min;
-        if (v.max !== undefined && v.max !== null) params[`${keyBase}.max`] = v.max;
-      } else {
-        params[keyBase] = v;
+        const range = v as RangeValue;
+        if (range.min !== undefined && range.min !== null) params[`${keyBase}.min`] = range.min;
+        if (range.max !== undefined && range.max !== null) params[`${keyBase}.max`] = range.max;
+      } else if (v !== undefined && v !== null) {
+        params[keyBase] = v as string | number | boolean;
       }
     }
 
@@ -553,14 +576,16 @@ export default function FilterAdminAds({
         const params = prepareSearchParams();
         const res = await api.get("/admin/adverts/search", { params });
 
-        const data = res?.data?.data ?? res?.data;
+        const resData = res?.data as Record<string, unknown> | undefined;
+        const data = (resData?.data ?? resData) as Record<string, unknown>;
         if (onSearchResult) onSearchResult(data);
 
         toast.success("Filtreleme başarılı!");
         setOpen(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Filtreleme hatası:", err);
-        toast.error(err?.response?.data?.message || "Filtreleme sırasında bir hata oluştu");
+        const errObj = err as { response?: { data?: { message?: string } } };
+        toast.error(errObj?.response?.data?.message || "Filtreleme sırasında bir hata oluştu");
       } finally {
         setLoading(false);
       }
@@ -584,7 +609,8 @@ export default function FilterAdminAds({
       if (onSearchResult) {
         try {
           const res = await api.get("/admin/adverts/search", { params: { page, limit } });
-          onSearchResult(res?.data?.data ?? res?.data);
+          const resData = res?.data as Record<string, unknown> | undefined;
+          onSearchResult((resData?.data ?? resData) as Record<string, unknown>);
         } catch {
           toast.error("Sıfırlama sırasında bir hata oluştu");
         }
@@ -640,9 +666,9 @@ export default function FilterAdminAds({
                   <MapPin className="inline mr-2" size={16} />
                   İl
                 </label>
-                <Select
+                <Select<ReactSelectOption>
                   classNamePrefix="select"
-                  options={turkeyCities.map((c: any) => ({ value: c.province, label: c.province }))}
+                  options={turkeyCities.map((c) => ({ value: c.province, label: c.province }))}
                   value={
                     filters.province ? { value: filters.province, label: filters.province } : null
                   }
@@ -661,7 +687,7 @@ export default function FilterAdminAds({
                     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                     placeholder: (base) => ({ ...base, color: "#9ca3af" }),
                   }}
-                  onChange={(opt: any) => {
+                  onChange={(opt: SingleValue<ReactSelectOption>) => {
                     setFilters((prev) => ({
                       ...prev,
                       province: opt?.value ?? null,
@@ -675,12 +701,12 @@ export default function FilterAdminAds({
               {/* İlçe */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">İlçe</label>
-                <Select
+                <Select<ReactSelectOption>
                   classNamePrefix="select"
                   options={
                     turkeyCities
-                      .find((c: any) => c.province === filters.province)
-                      ?.districts.map((d: any) => ({ value: d.district, label: d.district })) || []
+                      .find((c) => c.province === filters.province)
+                      ?.districts.map((d) => ({ value: d.district, label: d.district })) || []
                   }
                   value={
                     filters.district ? { value: filters.district, label: filters.district } : null
@@ -701,7 +727,7 @@ export default function FilterAdminAds({
                     }),
                     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                   }}
-                  onChange={(opt: any) => {
+                  onChange={(opt: SingleValue<ReactSelectOption>) => {
                     setFilters((prev) => ({
                       ...prev,
                       district: opt?.value ?? null,
@@ -714,13 +740,13 @@ export default function FilterAdminAds({
               {/* Mahalle */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">Mahalle</label>
-                <Select
+                <Select<ReactSelectOption>
                   classNamePrefix="select"
                   options={(() => {
                     if (!filters.province || !filters.district) return [];
-                    const city = turkeyCities.find((c: any) => c.province === filters.province);
-                    const dist = city?.districts.find((d: any) => d.district === filters.district);
-                    return (dist?.quarters ?? []).map((q: any) => ({ value: q, label: q }));
+                    const city = turkeyCities.find((c) => c.province === filters.province);
+                    const dist = city?.districts.find((d) => d.district === filters.district);
+                    return (dist?.quarters ?? []).map((q) => ({ value: q, label: q }));
                   })()}
                   value={
                     filters.quarter ? { value: filters.quarter, label: filters.quarter } : null
@@ -742,7 +768,7 @@ export default function FilterAdminAds({
                     }),
                     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                   }}
-                  onChange={(opt: any) => {
+                  onChange={(opt: SingleValue<ReactSelectOption>) => {
                     setFilters((prev) => ({ ...prev, quarter: opt?.value ?? null }));
                   }}
                 />
@@ -754,7 +780,7 @@ export default function FilterAdminAds({
                   <Tag className="inline mr-2" size={16} />
                   İlan Türü
                 </label>
-                <Select
+                <Select<ReactSelectOption>
                   classNamePrefix="select"
                   options={[
                     { value: "", label: "Hepsi", color: "#6b7280" },
@@ -777,10 +803,10 @@ export default function FilterAdminAds({
                       boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
                       "&:hover": { borderColor: "#3b82f6" },
                     }),
-                    option: (base, { data }: any) => ({ ...base, color: data.color || "#374151", fontWeight: "500" }),
+                    option: (base, { data }) => ({ ...base, color: (data as ReactSelectOption).color || "#374151", fontWeight: "500" }),
                     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                   }}
-                  onChange={(opt: any) => {
+                  onChange={(opt: SingleValue<ReactSelectOption>) => {
                     setFilters((prev) => ({ ...prev, type: opt?.value ?? null }));
                   }}
                 />
@@ -792,22 +818,26 @@ export default function FilterAdminAds({
                   <User className="inline mr-2" size={16} />
                   Müşteri
                 </label>
-                <Select
+                <Select<ReactSelectOption>
                   classNamePrefix="select"
-                  options={customers.map((c: any) => ({
+                  options={customers.map((c) => ({
                     value: `${c.name} ${c.surname}`,
-                    label: (
+                    label: `${c.name} ${c.surname}`,
+                  }))}
+                  formatOptionLabel={(option) => {
+                    const cust = customers.find((c) => `${c.name} ${c.surname}` === option.value);
+                    return (
                       <div className="flex items-center">
                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
                           <User size={14} className="text-blue-600" />
                         </div>
                         <div>
-                          <div className="font-medium">{c.name} {c.surname}</div>
-                          <div className="text-xs text-gray-500">{c.phones?.[0]?.number}</div>
+                          <div className="font-medium">{option.label}</div>
+                          <div className="text-xs text-gray-500">{cust?.phones?.[0]?.number}</div>
                         </div>
                       </div>
-                    ),
-                  }))}
+                    );
+                  }}
                   value={filters.customer ? { value: filters.customer, label: filters.customer } : null}
                   placeholder="Müşteri seçin"
                   menuPortalTarget={portalTarget ?? undefined}
@@ -831,7 +861,7 @@ export default function FilterAdminAds({
                         "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
                     }),
                   }}
-                  onChange={(opt: any) => setFilters((prev) => ({ ...prev, customer: opt?.value ?? null }))}
+                  onChange={(opt: SingleValue<ReactSelectOption>) => setFilters((prev) => ({ ...prev, customer: opt?.value ?? null }))}
                 />
               </div>
 
@@ -841,19 +871,20 @@ export default function FilterAdminAds({
                   <Users className="inline mr-2" size={16} />
                   Danışman
                 </label>
-                <Select
+                <Select<ReactSelectOption>
                   classNamePrefix="select"
-                  options={advisors.map((a: any) => ({
+                  options={advisors.map((a) => ({
                     value: `${a.name} ${a.surname}`,
-                    label: (
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-3">
-                          <Users size={14} className="text-purple-600" />
-                        </div>
-                        <div className="font-medium">{a.name} {a.surname}</div>
-                      </div>
-                    ),
+                    label: `${a.name} ${a.surname}`,
                   }))}
+                  formatOptionLabel={(option) => (
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-3">
+                        <Users size={14} className="text-purple-600" />
+                      </div>
+                      <div className="font-medium">{option.label}</div>
+                    </div>
+                  )}
                   value={filters.advisor ? { value: filters.advisor, label: filters.advisor } : null}
                   placeholder="Danışman seçin"
                   menuPortalTarget={portalTarget ?? undefined}
@@ -877,7 +908,7 @@ export default function FilterAdminAds({
                         "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
                     }),
                   }}
-                  onChange={(opt: any) => setFilters((prev) => ({ ...prev, advisor: opt?.value ?? null }))}
+                  onChange={(opt: SingleValue<ReactSelectOption>) => setFilters((prev) => ({ ...prev, advisor: opt?.value ?? null }))}
                 />
               </div>
 

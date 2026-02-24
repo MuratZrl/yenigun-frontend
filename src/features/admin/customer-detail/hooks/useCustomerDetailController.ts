@@ -62,7 +62,7 @@ export function useCustomerDetailController() {
 
   /* ── Actions ── */
   const goBack = useCallback(() => {
-    router.push("/admin/users");
+    router.push("/admin/customers");
   }, [router]);
 
   const handleAdvertClick = useCallback((advert: Advert) => {

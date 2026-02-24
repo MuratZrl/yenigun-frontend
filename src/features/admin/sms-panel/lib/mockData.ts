@@ -1,5 +1,5 @@
 // src/features/admin/sms-panel/lib/mockData.ts
-import type { SmsStats, SmsHistoryItem } from "./types";
+import type { SmsStats, SmsHistoryItem, SmsRecipient, CustomerCategory } from "./types";
 
 export const mockStats: SmsStats = {
   remainingQuota: 500,
@@ -191,3 +191,44 @@ export const mockRecipientCounts: Record<string, number> = {
   "Ev Sahibi": 156,
   "Mülk Sahibi": 63,
 };
+
+// Mock recipients list (for phone number display)
+const mockNames = [
+  "Ahmet Yılmaz", "Fatma Şahin", "Mehmet Demir", "Ayşe Kaya", "Ali Özkan",
+  "Zeynep Arslan", "Hasan Çelik", "Elif Yıldırım", "Mustafa Koç", "Selin Aydın",
+  "Emre Kılıç", "Büşra Erdoğan", "Oğuzhan Yıldız", "Merve Aksoy", "Burak Çetin",
+  "Derya Korkmaz", "Serkan Acar", "Gamze Polat", "Cem Öztürk", "Esra Karaca",
+  "Tuncay Güneş", "Aslı Doğan", "Volkan Şen", "Deniz Bayrak", "Sibel Tekin",
+  "Uğur Aydoğan", "Pınar Sarı", "Kadir Turan", "Neslihan Ünal", "Barış Yalçın",
+];
+
+const categoryList: CustomerCategory[] = ["Kiracı", "Ev Sahibi", "Mülk Sahibi"];
+
+function generateRecipients(): SmsRecipient[] {
+  const recipients: SmsRecipient[] = [];
+  let id = 1;
+
+  for (const city of turkishCities) {
+    const districts = districtsByCity[city] ?? [];
+    for (const district of districts) {
+      const count = mockRecipientCounts[district] ?? 1;
+      for (let i = 0; i < count; i++) {
+        const name = mockNames[(id - 1) % mockNames.length];
+        const phone = `05${30 + (id % 14)}${String(id * 137 % 10000000).padStart(7, "0")}`;
+        const formatted = `${phone.slice(0, 4)} ${phone.slice(4, 7)} ${phone.slice(7)}`;
+        recipients.push({
+          id: String(id),
+          name,
+          phone: formatted,
+          city,
+          district,
+          category: categoryList[id % 3],
+        });
+        id++;
+      }
+    }
+  }
+  return recipients;
+}
+
+export const mockRecipients: SmsRecipient[] = generateRecipients();

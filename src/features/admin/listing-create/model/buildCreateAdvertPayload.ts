@@ -1,5 +1,10 @@
 // src/features/admin/emlak-create/model/buildCreateAdvertPayload.ts
-import type { FormData, StepState } from "@/types/property";
+import type { FormData, StepState, SelectedItem, FeatureValue, PropertyDetails } from "@/types/property";
+
+interface MarkerCoord {
+  lat: number;
+  lng: number;
+}
 
 type BuildPayloadArgs = {
   firstStep: StepState;
@@ -8,12 +13,12 @@ type BuildPayloadArgs = {
   featuresStep: StepState;
   fourthStep: FormData;
   content: string;
-  marker: any[];
+  marker: MarkerCoord[];
   isActiveAd: boolean;
 };
 
-function getSelected(step: StepState): any {
-  return (step as any)?.selected ?? {};
+function getSelected(step: StepState): SelectedItem {
+  return step?.selected ?? ({} as SelectedItem);
 }
 
 /**
@@ -37,7 +42,7 @@ export function buildCreateAdvertPayload(args: BuildPayloadArgs) {
   const ts = getSelected(thirdStep);
 
   /* ── fee: plain number string with dots, NO currency symbol ── */
-  const rawPrice = String((fourthStep as any).price?.value ?? "0");
+  const rawPrice = String(fourthStep.price?.value ?? "0");
   // rawPrice is already formatted like "9.999" or "3.200.000", just strip any currency symbols
   const fee = rawPrice.replace(/[^\d.]/g, "") || "0";
 
@@ -49,31 +54,31 @@ export function buildCreateAdvertPayload(args: BuildPayloadArgs) {
     null;
 
   /* ── advisor: API requires { uid, peopleCanSeeProfile } ── */
-  const advisorUid = Number((fourthStep as any).advisor) || 0;
+  const advisorUid = Number(fourthStep.advisor) || 0;
   const advisor = advisorUid
     ? {
         uid: advisorUid,
         peopleCanSeeProfile:
-          (fourthStep as any).advisor_profile?.value === "Evet",
+          fourthStep.advisor_profile?.value === "Evet",
       }
     : undefined;
 
   /* ── contract ── */
-  const contractDateTimestamp = (fourthStep as any).contract_date
-    ? new Date((fourthStep as any).contract_date).getTime()
+  const contractDateTimestamp = fourthStep.contract_date
+    ? new Date(fourthStep.contract_date).getTime()
     : Date.now();
 
   /* ── eids (top-level fields) ── */
-  const eidsNo = (fourthStep as any).eids?.no || "";
-  const eidsDate = (fourthStep as any).eids?.date
-    ? new Date((fourthStep as any).eids.date).getTime()
+  const eidsNo = fourthStep.eids?.no || "";
+  const eidsDate = fourthStep.eids?.date
+    ? new Date(fourthStep.eids.date).getTime()
     : null;
 
   /* ── featureValues: array format [{ featureId, value }] ── */
-  const featureValues: Array<{ featureId: string; value: any }> = [];
-  const selections = (featuresStep as any).selections;
+  const featureValues: Array<{ featureId: string; value: string | number | boolean | string[] }> = [];
+  const selections = featuresStep?.selections as Record<string, FeatureValue> | undefined;
   if (selections) {
-    Object.values(selections).forEach((sel: any) => {
+    Object.values(selections).forEach((sel) => {
       if (sel?.featureId && sel.value !== undefined && sel.value !== null) {
         featureValues.push({
           featureId: sel.featureId,
@@ -94,64 +99,64 @@ export function buildCreateAdvertPayload(args: BuildPayloadArgs) {
   const isSatilik =
     ss?.value === "Satılık" || ss?.value === "Devren Satılık";
 
-  const details: Record<string, any> = {
-    roomCount: isKonutOrBina ? ((fourthStep as any).roomCount || "") : null,
-    netArea: isKonutOrBina ? (Number((fourthStep as any).netArea) || null) : null,
-    grossArea: isKonutOrBina ? (Number((fourthStep as any).grossArea) || null) : null,
-    buildingAge: isKonutOrBina ? (Number((fourthStep as any).buildingAge) || 0) : null,
-    elevator: (fourthStep as any).elevator?.value === "Evet",
-    inSite: (fourthStep as any).inSite?.value === "Evet",
-    whichSide: (fourthStep as any).whichSide?.value || "",
-    acre: isArsaOrArazi ? `${(fourthStep as any).acre || 0} m²` : null,
-    zoningStatus: isArsaOrArazi ? ((fourthStep as any).zoningStatus?.value || "") : "",
-    floor: Number((fourthStep as any).floor) || null,
-    totalFloor: Number((fourthStep as any).totalFloors) || null,
-    balcony: (fourthStep as any).balcony?.value === "Evet",
-    balconyCount: Number((fourthStep as any).balconyCount) || null,
-    furniture: (fourthStep as any).isFurnished?.value === "Evet",
-    heating: (fourthStep as any).heating?.value || "",
-    deed: isSatilik ? ((fourthStep as any).deedStatus?.value || "") : "",
+  const details: PropertyDetails = {
+    roomCount: isKonutOrBina ? (fourthStep.roomCount || "") : undefined,
+    netArea: isKonutOrBina ? (Number(fourthStep.netArea) || undefined) : undefined,
+    grossArea: isKonutOrBina ? (Number(fourthStep.grossArea) || undefined) : undefined,
+    buildingAge: isKonutOrBina ? (Number(fourthStep.buildingAge) || 0) : undefined,
+    elevator: fourthStep.elevator?.value === "Evet",
+    inSite: fourthStep.inSite?.value === "Evet",
+    whichSide: fourthStep.whichSide?.value || "",
+    acre: isArsaOrArazi ? `${fourthStep.acre || 0} m²` : undefined,
+    zoningStatus: isArsaOrArazi ? (fourthStep.zoningStatus?.value || "") : "",
+    floor: Number(fourthStep.floor) || undefined,
+    totalFloor: Number(fourthStep.totalFloor) || undefined,
+    balcony: fourthStep.balcony?.value === "Evet",
+    balconyCount: Number(fourthStep.balconyCount) || undefined,
+    furniture: fourthStep.isFurnished?.value === "Evet",
+    heating: fourthStep.heating?.value || "",
+    deed: isSatilik ? (fourthStep.deedStatus?.value || "") : "",
   };
 
   return {
-    title: (fourthStep as any).title || "",
+    title: fourthStep.title || "",
     steps: {
       first: fs?.value || "",
       second: ss?.value || "",
       third: ts?.value || "",
     },
-    customer: Number((fourthStep as any).customer) || 0,
+    customer: Number(fourthStep.customer) || 0,
     contract: {
-      no: (fourthStep as any).contract_no || "",
+      no: fourthStep.contract_no || "",
       date: contractDateTimestamp,
-      time: (fourthStep as any).contract_time?.value || "",
+      time: fourthStep.contract_time?.value || "",
     },
     ...(advisor ? { advisor } : {}),
     eidsNo,
     eidsDate,
     questions: {
-      agendaEmlak: (fourthStep as any).agenda_emlak?.value === "Evet",
-      homepageEmlak: (fourthStep as any).homepage_emlak?.value === "Evet",
-      new_emlak: (fourthStep as any).new_emlak?.value === "Evet",
-      chance_emlak: (fourthStep as any).chance_emlak?.value === "Evet",
-      special_emlak: (fourthStep as any).special_emlak?.value === "Evet",
-      onweb_emlak: (fourthStep as any).onweb_emlak?.value === "Evet",
+      agendaEmlak: fourthStep.agenda_emlak?.value === "Evet",
+      homepageEmlak: fourthStep.homepage_emlak?.value === "Evet",
+      new_emlak: fourthStep.new_emlak?.value === "Evet",
+      chance_emlak: fourthStep.chance_emlak?.value === "Evet",
+      special_emlak: fourthStep.special_emlak?.value === "Evet",
+      onweb_emlak: fourthStep.onweb_emlak?.value === "Evet",
     },
     thoughts: content || " ",
-    whoseKey: (fourthStep as any).key?.value || "Yenigün Emlak",
+    whoseKey: fourthStep.key?.value || "Yenigün Emlak",
     fee,
     address: {
-      province: (fourthStep as any).province || "",
-      district: (fourthStep as any).district || "",
-      quarter: (fourthStep as any).quarter || "",
-      full_address: (fourthStep as any).address || "",
+      province: fourthStep.province || "",
+      district: fourthStep.district || "",
+      quarter: fourthStep.quarter || "",
+      full_address: fourthStep.address || "",
       mapCoordinates,
-      parcel: (fourthStep as any).parsel || "",
+      parcel: fourthStep.parsel || "",
     },
     details,
-    adminNote: (fourthStep as any).adminNote || "",
+    adminNote: fourthStep.adminNote || "",
     active: isActiveAd,
-    userNotes: [],
+    userNotes: [] as string[],
     categoryUid: categoryUid ? Number(categoryUid) : null,
     featureValues,
     isFeatures: featureValues.length > 0,

@@ -7,15 +7,7 @@ export const slides: SliderSlide[] = [
     alt: "Yenigün Emlak - Modern konutlar",
     heading: "Yenigün Emlak",
     subtitle: "Sakarya'nın güvenilir emlak danışmanı",
-    lines: ["Hayalinizdeki Eve", "Kavuşun"],
+    lines: ["Hayalinizdeki Eve Kavuşun"],
     cta: { href: "/ilanlar", label: "İlanları Keşfet" },
-  },
-  {
-    image: "/home_2.jpg",
-    alt: "Yenigün Emlak - Geniş portföy",
-    heading: "Geniş Portföy",
-    subtitle: "Konut, iş yeri ve arsa seçenekleri",
-    lines: ["Çeşitliliğimizle", "Fark Yaratıyoruz"],
-    cta: { href: "/ilanlar", label: "Tüm İlanlar" },
   },
 ];

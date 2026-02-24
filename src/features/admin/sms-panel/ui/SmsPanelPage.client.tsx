@@ -3,7 +3,7 @@
 
 import React from "react";
 import { Poppins } from "next/font/google";
-import { Send, History, BarChart3, MessageSquare } from "lucide-react";
+import { Send, History, BarChart3 } from "lucide-react";
 
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useSmsController } from "../hooks/useSmsController";
@@ -43,18 +43,13 @@ export default function SmsPanelPage() {
       >
         <div className="p-6 max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
-              <MessageSquare size={22} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                SMS Paneli
-              </h1>
-              <p className="text-gray-400 mt-0.5 text-sm">
-                Müşterilerinize toplu veya bireysel SMS gönderin
-              </p>
-            </div>
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+              SMS Paneli
+            </h1>
+            <p className="text-gray-400 mt-1 text-sm">
+              Müşterilerinize toplu veya bireysel SMS gönderin
+            </p>
           </div>
 
           {/* Stats Cards (always visible) */}
@@ -64,7 +59,7 @@ export default function SmsPanelPage() {
 
           {/* Tabs */}
           <div className="mb-6">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-1.5 inline-flex gap-1">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-1.5 flex gap-1">
               {tabs.map((tab) => {
                 const isActive = c.activeTab === tab.key;
                 return (
@@ -72,7 +67,7 @@ export default function SmsPanelPage() {
                     key={tab.key}
                     type="button"
                     onClick={() => c.setActiveTab(tab.key)}
-                    className={`relative inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    className={`relative flex-1 inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                       isActive
                         ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md"
                         : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -113,6 +108,9 @@ export default function SmsPanelPage() {
               onMessageChange={c.setMessage}
               onSend={c.handleSend}
               onReset={c.handleReset}
+              recipients={c.recipients}
+              excludedRecipientIds={c.excludedRecipientIds}
+              onExcludeRecipient={c.excludeRecipient}
             />
           )}
 

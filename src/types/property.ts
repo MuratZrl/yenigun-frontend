@@ -38,6 +38,7 @@ export interface FeaturesState {
 
 export interface SubCategory {
   _id: string;
+  uid?: number;
   name: string;
   features: Feature[];
   subcategories: SubCategory[];
@@ -47,6 +48,7 @@ export interface SubCategory {
 
 export interface Category {
   _id: string;
+  uid?: number;
   name: string;
   value: string;
   img: string;

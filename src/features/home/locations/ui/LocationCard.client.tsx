@@ -3,10 +3,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { MapPin } from "lucide-react";
-import { motion } from "framer-motion";
+import Image from "next/image";
 import type { LocationItem } from "../types";
-import { cardVariants } from "../motion/variants";
 
 type Props = {
   item: LocationItem;
@@ -16,37 +14,29 @@ type Props = {
 export default function LocationCard({ item }: Props) {
   return (
     <Link href={item.href} className="block">
-      <motion.div
-        variants={cardVariants}
-        whileHover="hover"
-        className="group cursor-pointer bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-300"
-      >
-        {/* Image */}
-        <div className="relative overflow-hidden aspect-[4/3]">
-          <img
+      <div className="cursor-pointer rounded-2xl overflow-hidden shadow-sm transition-all duration-300">
+        {/* Vertical image */}
+        <div className="relative overflow-hidden aspect-[2/3]">
+          <Image
             src={item.image}
             alt={item.title}
-            className="w-full h-full object-cover transition-transform duration-400 group-hover:scale-105"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 17vw"
+            className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-          {/* Count badge */}
-          <div className="absolute top-3 left-3">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-xs font-semibold text-gray-700">
-              <MapPin size={12} />
+          {/* Center-bottom overlay – city name + count */}
+          <div className="absolute inset-0 flex flex-col items-center justify-end pb-[18%]">
+            <h3 className="text-white font-bold text-sm">
+              {item.title}
+            </h3>
+            <span className="text-white/70 text-xs mt-1">
               {item.count} İlan
-            </div>
+            </span>
           </div>
         </div>
-
-        {/* Info */}
-        <div className="p-4 text-center">
-          <h3 className="text-sm font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors duration-200">
-            {item.title}
-          </h3>
-          <span className="text-xs text-gray-500">{item.provinceLabel}</span>
-        </div>
-      </motion.div>
+      </div>
     </Link>
   );
 }

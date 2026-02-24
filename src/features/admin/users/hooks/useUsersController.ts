@@ -260,7 +260,7 @@ export function useUsersController() {
   );
 
   const handleViewDetails = useCallback((uid: string | number) => {
-    window.open(`/admin/users/${uid}/`);
+    window.open(`/admin/customers/${uid}/`);
   }, []);
 
   const handleViewLists = useCallback(

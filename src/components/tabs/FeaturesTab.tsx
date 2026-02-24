@@ -5,13 +5,58 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
-import type { StepState, Feature } from "@/types/property";
+import type { StepState, Feature, SelectedItem } from "@/types/property";
 import FeatureToggle from "@/components/ui/FeatureToggle";
 import SimpleSelect from "@/components/ui/SimpleSelect";
 import DynamicFeatureInput from "@/components/ui/DynamicFeatureInput";
 
+/* ------------------------------------------------------------------ */
+/*  Local types for tree node shapes from the backend                  */
+/* ------------------------------------------------------------------ */
+
+interface AttributeNode {
+  id?: string;
+  _id?: string;
+  name?: string;
+  type?: string;
+  options?: string[];
+  order?: number;
+}
+
+interface FacilityGroup {
+  title?: string;
+  features?: string[];
+}
+
+interface TreeNode {
+  uid?: number | string;
+  _id?: string;
+  name?: string;
+  attributes?: AttributeNode[];
+  facilities?: FacilityGroup[];
+  children?: TreeNode[];
+  subcategories?: TreeNode[];
+}
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface FeatureSelectionEntry {
+  featureId: string;
+  value: string | number | boolean | string[];
+  featureType: Feature["type"];
+}
+
+type FeaturesSelections = Record<string, FeatureSelectionEntry>;
+
+/* ------------------------------------------------------------------ */
+/*  props                                                              */
+/* ------------------------------------------------------------------ */
+
 interface FeaturesTabProps {
-  fourthStep: any;
+  fourthStep: unknown; // not used in this component but declared in interface
   firstStep: StepState;
   secondStep: StepState;
   thirdStep: StepState;
@@ -28,11 +73,15 @@ interface FeaturesTabProps {
   onWhichSideChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onZoningStatusChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 
-  heatingOptions: any[];
-  deedStatusOptions: any[];
-  directionOptions: any[];
-  zoningStatusOptions: any[];
+  heatingOptions: SelectOption[];
+  deedStatusOptions: SelectOption[];
+  directionOptions: SelectOption[];
+  zoningStatusOptions: SelectOption[];
 }
+
+/* ------------------------------------------------------------------ */
+/*  helpers                                                           */
+/* ------------------------------------------------------------------ */
 
 const FeatureAccordion = ({
   title,
@@ -86,8 +135,8 @@ const FeatureAccordion = ({
 
 const shouldAccordion = (feature: Feature) => (feature.options?.length || 0) >= 6;
 
-function safeArr<T>(v: any): T[] {
-  return Array.isArray(v) ? (v as T[]) : [];
+function safeArr<T>(v: T[] | null | undefined): T[] {
+  return Array.isArray(v) ? v : [];
 }
 
 function slugifyTR(input: string) {
@@ -106,7 +155,7 @@ function slugifyTR(input: string) {
     .replace(/^-|-$/g, "");
 }
 
-function mapBackendTypeToUiType(t: any): Feature["type"] {
+function mapBackendTypeToUiType(t: string | null | undefined): Feature["type"] {
   const up = String(t || "").toUpperCase();
   if (up === "TEXT") return "text";
   if (up === "NUMBER") return "number";
@@ -133,6 +182,11 @@ function getDefaultFeatureValue(type: Feature["type"]): string | number | string
   }
 }
 
+/** Helper to safely read selections from StepState */
+function getSelections(step: StepState): FeaturesSelections {
+  return (step?.selections ?? {}) as FeaturesSelections;
+}
+
 export default function FeaturesTab({
   firstStep,
   secondStep,
@@ -148,22 +202,22 @@ export default function FeaturesTab({
     setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const selectedChain = useMemo(() => {
-    const c1 = (firstStep as any)?.selected?.categoryData ?? null;
-    const c2 = (secondStep as any)?.selected?.subcategoryData ?? null;
-    const c3 = (thirdStep as any)?.selected?.subcategoryData ?? null;
+    const c1 = (firstStep?.selected as SelectedItem)?.categoryData ?? null;
+    const c2 = (secondStep?.selected as SelectedItem)?.subcategoryData ?? null;
+    const c3 = (thirdStep?.selected as SelectedItem)?.subcategoryData ?? null;
 
     // sıra önemli: root -> leaf
-    return [c1, c2, c3].filter(Boolean);
+    return [c1, c2, c3].filter(Boolean) as TreeNode[];
   }, [firstStep, secondStep, thirdStep]);
 
   useEffect(() => {
     const buildFeatures = () => {
       setLoading(true);
 
-      // 1) attributes: id’ye göre dedupe, leaf override etsin diye root->leaf set ediyoruz
-      const attrMap = new Map<string, any>();
+      // 1) attributes: id'ye göre dedupe, leaf override etsin diye root->leaf set ediyoruz
+      const attrMap = new Map<string, AttributeNode>();
       for (const node of selectedChain) {
-        for (const a of safeArr<any>((node as any)?.attributes)) {
+        for (const a of safeArr((node as TreeNode)?.attributes)) {
           const key = String(a?.id ?? a?._id ?? "");
           if (!key) continue;
           attrMap.set(key, a);
@@ -171,12 +225,12 @@ export default function FeaturesTab({
       }
       const attrs = Array.from(attrMap.values());
 
-      // 2) facilities: title’a göre merge (features union)
+      // 2) facilities: title'a göre merge (features union)
       const facMap = new Map<string, Set<string>>();
       for (const node of selectedChain) {
-        for (const g of safeArr<any>((node as any)?.facilities)) {
+        for (const g of safeArr((node as TreeNode)?.facilities)) {
           const title = String(g?.title ?? "");
-          const feats = safeArr<string>(g?.features);
+          const feats = safeArr(g?.features);
           if (!title || feats.length === 0) continue;
 
           if (!facMap.has(title)) facMap.set(title, new Set<string>());
@@ -186,7 +240,7 @@ export default function FeaturesTab({
       }
 
       const attrFeatures: Feature[] = attrs
-        .map((a: any) => {
+        .map((a) => {
           const _id = String(a?.id ?? a?._id ?? "");
           const name = String(a?.name ?? "");
           if (!_id || !name) return null;
@@ -195,12 +249,11 @@ export default function FeaturesTab({
             _id,
             name,
             type: mapBackendTypeToUiType(a?.type),
-            options: safeArr<string>(a?.options),
+            options: safeArr(a?.options),
             required: false,
-            order: typeof a?.order === "number" ? a.order : undefined,
-          } as any;
+          } as Feature;
         })
-        .filter(Boolean) as Feature[];
+        .filter((f): f is Feature => f !== null);
 
       const facilityFeatures: Feature[] = Array.from(facMap.entries())
         .map(([title, set]) => {
@@ -208,32 +261,29 @@ export default function FeaturesTab({
           return {
             _id: `fac_${slugifyTR(title)}`,
             name: title,
-            type: "multi_select",
+            type: "multi_select" as Feature["type"],
             options,
             required: false,
-          } as any;
+          };
         });
 
-      const merged = [...attrFeatures, ...facilityFeatures].sort((a: any, b: any) => {
-        const ao = typeof a?.order === "number" ? a.order : 9999;
-        const bo = typeof b?.order === "number" ? b.order : 9999;
-        return ao - bo;
-      });
+      const merged = [...attrFeatures, ...facilityFeatures];
 
       setDynamicFeatures(merged);
 
-      const initialFeatureState: StepState = {
-        selected: { isSelect: false, value: "", featureData: null },
-        selections: {},
-      } as any;
-
+      const selections: FeaturesSelections = {};
       merged.forEach((feature) => {
-        (initialFeatureState as any).selections[feature._id] = {
+        selections[feature._id] = {
           featureId: feature._id,
           value: getDefaultFeatureValue(feature.type),
           featureType: feature.type,
         };
       });
+
+      const initialFeatureState: StepState = {
+        selected: { isSelect: false, value: "", featureData: null },
+        selections: selections as unknown as Record<string, unknown>,
+      };
 
       setFeaturesStep(initialFeatureState);
       setOpenGroups({});
@@ -252,13 +302,16 @@ export default function FeaturesTab({
     value: string | number | boolean | string[],
     featureType: Feature["type"]
   ) => {
+    const currentSelections = getSelections(featuresStep);
+    const updatedSelections: FeaturesSelections = {
+      ...currentSelections,
+      [featureId]: { featureId, value, featureType },
+    };
+
     setFeaturesStep({
       ...featuresStep,
-      selections: {
-        ...(featuresStep as any).selections,
-        [featureId]: { featureId, value, featureType },
-      },
-    } as any);
+      selections: updatedSelections as unknown as Record<string, unknown>,
+    });
   };
 
   const handleSimpleSelectChange =
@@ -272,6 +325,8 @@ export default function FeaturesTab({
     (value: string) => {
       handleFeatureChange(featureId, value, featureType);
     };
+
+  const selections = getSelections(featuresStep);
 
   const booleanFeatures = dynamicFeatures.filter((f) => f.type === "boolean");
   const selectFeatures = dynamicFeatures.filter((f) => f.type === "single_select");
@@ -302,7 +357,7 @@ export default function FeaturesTab({
               <FeatureToggle
                 key={feature._id}
                 label={feature.name}
-                value={((featuresStep as any).selections?.[feature._id]?.value as string) || "no"}
+                value={(selections[feature._id]?.value as string) || "no"}
                 onChange={handleFeatureToggleChange(feature._id, "boolean")}
               />
             ))}
@@ -316,7 +371,7 @@ export default function FeaturesTab({
           <div className="columns-1 md:columns-2 gap-4">
             {selectFeatures.map((feature) => {
               const opts = feature.options?.map((opt) => ({ value: opt, label: opt })) || [];
-              const selected = ((featuresStep as any).selections?.[feature._id]?.value as string) || "";
+              const selected = (selections[feature._id]?.value as string) || "";
 
               return (
                 <div key={feature._id} className="mb-4 break-inside-avoid">
@@ -355,7 +410,7 @@ export default function FeaturesTab({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {multiSelectFeatures.map((feature) => {
               const selectedArr =
-                ((featuresStep as any).selections?.[feature._id]?.value as string[]) || [];
+                (selections[feature._id]?.value as string[]) || [];
 
               if (!shouldAccordion(feature)) {
                 return (
@@ -363,7 +418,7 @@ export default function FeaturesTab({
                     key={feature._id}
                     feature={feature}
                     value={selectedArr}
-                    onChange={(value: any) => handleFeatureChange(feature._id, value, "multi_select")}
+                    onChange={(value: string | number | boolean | string[]) => handleFeatureChange(feature._id, value, "multi_select")}
                   />
                 );
               }
@@ -379,7 +434,7 @@ export default function FeaturesTab({
                   <DynamicFeatureInput
                     feature={feature}
                     value={selectedArr}
-                    onChange={(value: any) => handleFeatureChange(feature._id, value, "multi_select")}
+                    onChange={(value: string | number | boolean | string[]) => handleFeatureChange(feature._id, value, "multi_select")}
                   />
                 </FeatureAccordion>
               );
@@ -396,8 +451,8 @@ export default function FeaturesTab({
               <DynamicFeatureInput
                 key={feature._id}
                 feature={feature}
-                value={(((featuresStep as any).selections?.[feature._id]?.value as string) ?? "")}
-                onChange={(value: any) => handleFeatureChange(feature._id, value, "text")}
+                value={(selections[feature._id]?.value as string) ?? ""}
+                onChange={(value: string | number | boolean | string[]) => handleFeatureChange(feature._id, value, "text")}
               />
             ))}
 
@@ -405,8 +460,8 @@ export default function FeaturesTab({
               <DynamicFeatureInput
                 key={feature._id}
                 feature={feature}
-                value={(((featuresStep as any).selections?.[feature._id]?.value as number) ?? 0)}
-                onChange={(value: any) => handleFeatureChange(feature._id, value, "number")}
+                value={(selections[feature._id]?.value as number) ?? 0}
+                onChange={(value: string | number | boolean | string[]) => handleFeatureChange(feature._id, value, "number")}
               />
             ))}
           </div>

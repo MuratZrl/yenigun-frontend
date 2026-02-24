@@ -12,9 +12,9 @@ export default function CommentsSection() {
   return (
     <section
       id="comments"
-      className="py-16 md:py-24 bg-slate-50 relative overflow-hidden"
+      className="py-8 md:py-12 bg-slate-50 relative overflow-hidden"
     >
-      <div className="max-w-6xl mx-auto px-6 md:px-10">
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -59,7 +59,7 @@ export default function SmsPreview({ message, charCount, smsSegments }: Props) {
               <ChevronLeft size={20} className="text-white/70" />
               <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                 YE
-              </div>
+              </div>  
               <div className="flex-1 min-w-0">
                 <div className="text-white text-xs font-semibold">Yenigün Emlak</div>
                 <div className="text-blue-300 text-[10px]">İş numarası</div>

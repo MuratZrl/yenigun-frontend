@@ -1,3 +1,5 @@
+// src/components/modals/EditUserModal.tsx
+
 import React, { useState, useEffect } from "react";
 import JSONDATA from "../../app/data.json";
 import { Poppins } from "next/font/google";
@@ -6,36 +8,108 @@ const PoppinsFont = Poppins({
   subsets: ["latin"],
   weight: ["400", "600"],
 });
-import Select from "react-select";
+import Select, { SingleValue } from "react-select";
 import { toast } from "react-toastify";
 import api from "@/lib/api";
 
-const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
-  const [newUser, setNewUser] = useState({
-    uid: "",
-    image: "",
-    name: "",
-    lastname: "",
-    email: "",
-    address: "",
-    comment: "",
-    country: "",
-    district: "",
-    gender: "",
-    isSmS: false,
-    mernis_no: "",
-    owner_url: "",
-    phones: [],
-    province: "",
-    quarters: "",
-    status: "",
-    turkish_id: "",
-  });
+interface PhoneEntry {
+  number?: string;
+  isAbleToSendSMS?: boolean;
+}
 
-  const [newPhone, setNewPhone] = useState([]) as any;
-  const [firstPhone, setFirstPhone] = useState("") as any;
-  const [districts, setDistricts] = useState<any[]>([]);
-  const [quarters, setQuarters] = useState<any[]>([]);
+interface ReactSelectOption {
+  value: string;
+  label: string;
+}
+
+interface TurkeyDistrict {
+  district: string;
+  quarters: string[];
+}
+
+interface TurkeyCity {
+  province: string;
+  districts: TurkeyDistrict[];
+}
+
+interface EditUserState {
+  uid: string;
+  image: File | string;
+  name: string;
+  lastname: string;
+  email: string;
+  address: string;
+  comment: string;
+  country: string;
+  district: string;
+  gender: string;
+  isSmS: boolean;
+  mernis_no: string;
+  owner_url: string;
+  phones: PhoneEntry[];
+  province: string;
+  quarters: string;
+  status: string;
+  turkish_id: string;
+}
+
+interface UserProp {
+  uid?: string | number;
+  image?: string;
+  name?: string;
+  surname?: string;
+  mail?: { mail?: string } | string | null;
+  fulladdress?: string;
+  ideasAboutCustomer?: string;
+  country?: string;
+  county?: string;
+  gender?: string;
+  phones?: PhoneEntry[];
+  city?: string;
+  neighbourhood?: string;
+  status?: string;
+  tcNumber?: string;
+  mernisNo?: string;
+  ownerUrl?: string;
+  [key: string]: unknown;
+}
+
+interface EditUserModalProps {
+  open: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accepting both plain callback and setState dispatch
+  setOpen: (state: { open: boolean; user: UserProp | null }) => void;
+  user: UserProp | null;
+  cookies: Record<string, string>;
+}
+
+const initialUser: EditUserState = {
+  uid: "",
+  image: "",
+  name: "",
+  lastname: "",
+  email: "",
+  address: "",
+  comment: "",
+  owner_url: "",
+  country: "",
+  district: "",
+  gender: "",
+  isSmS: false,
+  mernis_no: "",
+  phones: [],
+  province: "",
+  quarters: "",
+  status: "",
+  turkish_id: "",
+};
+
+const EditUserModal = ({ open, setOpen, user, cookies }: EditUserModalProps) => {
+  const [newUser, setNewUser] = useState<EditUserState>({ ...initialUser });
+
+  const [newPhone, setNewPhone] = useState<PhoneEntry[]>([]);
+  const [firstPhone, setFirstPhone] = useState("");
+  const [districts, setDistricts] = useState<TurkeyDistrict[]>([]);
+  const [quarters, setQuarters] = useState<string[]>([]);
 
   const formatPhoneNumber = (value: string) => {
     const numbers = value.replace(/\D/g, "");
@@ -48,7 +122,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
     if (formatted.length > 1) {
       formatted = formatted.replace(
         /^(\d{1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/,
-        (match, p1, p2, p3, p4, p5) => {
+        (_match, p1, p2, p3, p4, p5) => {
           let result = p1;
           if (p2) result += ` (${p2}`;
           if (p3) result += `) ${p3}`;
@@ -68,8 +142,8 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
     if (index === null) {
       setFirstPhone(formattedValue);
     } else {
-      setNewPhone((prev: any) =>
-        prev.map((item: any, i: any) =>
+      setNewPhone((prev) =>
+        prev.map((item, i) =>
           i === index ? { ...item, number: formattedValue } : item
         )
       );
@@ -82,7 +156,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
 
   const updateDistricts = (province: string) => {
     const selectedCity = turkeyCities.find(
-      (city: any) => city.province === province
+      (city) => city.province === province
     );
     if (selectedCity) {
       setDistricts(selectedCity.districts || []);
@@ -94,7 +168,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
 
   const updateQuarters = (district: string) => {
     const selectedDistrict = districts.find(
-      (dist: any) => dist.district === district
+      (dist) => dist.district === district
     );
     if (selectedDistrict) {
       setQuarters(selectedDistrict.quarters || []);
@@ -105,19 +179,19 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
 
   useEffect(() => {
     if (user) {
-      const formattedPhones = user.phones
-        ? user.phones.map((phone: any) => ({
+      const formattedPhones: PhoneEntry[] = user.phones
+        ? user.phones.map((phone) => ({
             ...phone,
-            number: formatPhoneNumber(phone.number),
+            number: formatPhoneNumber(phone.number ?? ""),
           }))
         : [];
 
       setNewUser({
-        uid: user.uid || "",
+        uid: String(user.uid ?? ""),
         image: user.image || "",
         name: user.name || "",
         lastname: user.surname || "",
-        email: user.mail?.mail || "",
+        email: (typeof user.mail === "object" && user.mail !== null ? user.mail?.mail : typeof user.mail === "string" ? user.mail : "") || "",
         address: user.fulladdress || "",
         comment: user.ideasAboutCustomer || "",
         country: user.country || "",
@@ -138,9 +212,9 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
       );
       setNewPhone(
         user.phones
-          ? user.phones.slice(1).map((phone: any) => ({
+          ? user.phones.slice(1).map((phone) => ({
               ...phone,
-              number: formatPhoneNumber(phone.number),
+              number: formatPhoneNumber(phone.number ?? ""),
             }))
           : []
       );
@@ -149,12 +223,12 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
 
         if (user.county) {
           const selectedCity = turkeyCities.find(
-            (city: any) => city.province === user.city
+            (city) => city.province === user.city
           );
           if (selectedCity) {
             setDistricts(selectedCity.districts || []);
             const selectedDistrict = selectedCity.districts.find(
-              (dist: any) => dist.district === user.county
+              (dist) => dist.district === user.county
             );
             if (selectedDistrict) {
               setQuarters(selectedDistrict.quarters || []);
@@ -163,26 +237,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
         }
       }
     } else {
-      setNewUser({
-        uid: "",
-        image: "",
-        name: "",
-        lastname: "",
-        email: "",
-        address: "",
-        comment: "",
-        owner_url: "",
-        country: "",
-        district: "",
-        gender: "",
-        isSmS: false,
-        mernis_no: "",
-        phones: [],
-        province: "",
-        quarters: "",
-        status: "",
-        turkish_id: "",
-      });
+      setNewUser({ ...initialUser });
       setNewPhone([]);
       setFirstPhone("");
       setDistricts([]);
@@ -192,9 +247,9 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
 
   const userTypes = ["Mülk Sahibi", "Satınalan", "Kiralayan", "Özel Müşteri"];
 
-  const handleCheckboxChange = (e: any) => {
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
-    setNewUser((prev: any) => ({ ...prev, [name]: checked }));
+    setNewUser((prev) => ({ ...prev, [name]: checked }));
   };
 
   const handleClose = () => {
@@ -205,13 +260,13 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
     }, 1500);
   };
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const cleanedFirstPhone = cleanPhoneNumber(firstPhone);
-    const cleanedNewPhones = newPhone.map((phone: any) => ({
+    const cleanedNewPhones = newPhone.map((phone) => ({
       ...phone,
-      number: cleanPhoneNumber(phone.number),
+      number: cleanPhoneNumber(phone.number ?? ""),
     }));
 
     const lastPhone = [
@@ -219,7 +274,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
         isAbleToSendSMS: newUser.isSmS,
         number: cleanedFirstPhone,
       },
-      ...cleanedNewPhones.map((phone: any) => ({
+      ...cleanedNewPhones.map((phone) => ({
         isAbleToSendSMS: newUser.isSmS,
         number: phone.number,
       })),
@@ -251,26 +306,26 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
 
     api
       .post("/admin/update-customer", payload)
-      .then((res) => {
+      .then(() => {
         toast.success("Kullanıcı başarıyla güncellendi.");
         handleClose();
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         toast.error("Kullanıcı güncellenirken bir hata oluştu.");
         console.error("Hata detayı:", err);
         handleClose();
       });
   };
 
-  const turkeyCities = JSONDATA.map((city: any) => {
+  const turkeyCities: TurkeyCity[] = JSONDATA.map((city) => {
     return {
       province: city.name,
-      districts: city.towns.map((district: any) => {
+      districts: city.towns.map((district) => {
         return {
           district: district.name,
-          quarters: district.districts.reduce((acc: any, district: any) => {
-            const quarterNames = district.quarters.map(
-              (quarter: any) => quarter.name
+          quarters: district.districts.reduce<string[]>((acc, d) => {
+            const quarterNames = d.quarters.map(
+              (quarter) => quarter.name
             );
             return acc.concat(quarterNames);
           }, []),
@@ -283,15 +338,15 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setNewUser((prev: any) => ({
+    setNewUser((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleProvinceChange = (selectedOption: any) => {
+  const handleProvinceChange = (selectedOption: SingleValue<ReactSelectOption>) => {
     const province = selectedOption?.value || "";
-    setNewUser((prev: any) => ({
+    setNewUser((prev) => ({
       ...prev,
       province: province,
       district: "",
@@ -300,9 +355,9 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
     updateDistricts(province);
   };
 
-  const handleDistrictChange = (selectedOption: any) => {
+  const handleDistrictChange = (selectedOption: SingleValue<ReactSelectOption>) => {
     const district = selectedOption?.value || "";
-    setNewUser((prev: any) => ({
+    setNewUser((prev) => ({
       ...prev,
       district: district,
       quarters: "",
@@ -310,9 +365,9 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
     updateQuarters(district);
   };
 
-  const handleQuarterChange = (selectedOption: any) => {
+  const handleQuarterChange = (selectedOption: SingleValue<ReactSelectOption>) => {
     const quarter = selectedOption?.value || "";
-    setNewUser((prev: any) => ({
+    setNewUser((prev) => ({
       ...prev,
       quarters: quarter,
     }));
@@ -372,7 +427,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
                   name="gender"
                   checked={newUser.gender === "Erkek"}
                   onChange={() => {
-                    setNewUser((prev: any) => ({
+                    setNewUser((prev) => ({
                       ...prev,
                       gender: "Erkek",
                     }));
@@ -387,7 +442,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
                   name="gender"
                   checked={newUser.gender === "Kadın"}
                   onChange={() => {
-                    setNewUser((prev: any) => ({
+                    setNewUser((prev) => ({
                       ...prev,
                       gender: "Kadın",
                     }));
@@ -427,7 +482,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
               name="phone"
               placeholder="örn: 0 (555) 555 55 55"
               value={firstPhone}
-              onChange={(e: any) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 handlePhoneChange(e.target.value);
               }}
               autoComplete="off"
@@ -454,7 +509,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
               + Telefon Ekle
             </button>
 
-            {newPhone.map((phone: any, index: any) => (
+            {newPhone.map((phone, index) => (
               <div key={index} className="flex flex-col gap-2">
                 <label htmlFor="phone" className="font-medium">
                   Ek {index + 2}. Telefon
@@ -464,7 +519,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
                     type="text"
                     placeholder="örn: 0 (555) 555 55 55"
                     value={phone.number}
-                    onChange={(e: any) => {
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       handlePhoneChange(e.target.value, index);
                     }}
                     autoComplete="off"
@@ -472,8 +527,8 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
                   />
                   <button
                     onClick={() => {
-                      setNewPhone((prev: any) =>
-                        prev.filter((_: any, i: any) => i !== index)
+                      setNewPhone((prev) =>
+                        prev.filter((_, i) => i !== index)
                       );
                     }}
                     className="bg-red-500 hover:bg-red-600 duration-300 text-white rounded-md px-2 focus:outline-none flex items-center justify-center"
@@ -502,10 +557,10 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
               type="file"
               name="image"
               accept=".jpg, .jpeg, .png"
-              onChange={(e: any) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  setNewUser((prev: any) => ({
+                  setNewUser((prev) => ({
                     ...prev,
                     image: file,
                   }));
@@ -535,7 +590,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
                   : null
               }
               styles={{
-                control: (baseStyles, state) => ({
+                control: (baseStyles) => ({
                   ...baseStyles,
                   border: "1px solid #FFB6C1",
                   boxShadow: "none",
@@ -547,8 +602,8 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
                   },
                 }),
               }}
-              onChange={(selectedOption: any) => {
-                setNewUser((prev: any) => ({
+              onChange={(selectedOption: SingleValue<ReactSelectOption>) => {
+                setNewUser((prev) => ({
                   ...prev,
                   status: selectedOption?.value || "",
                 }));
@@ -596,7 +651,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
               <Select
                 className="basic-single"
                 classNamePrefix="select"
-                options={turkeyCities.map((city: any) => ({
+                options={turkeyCities.map((city) => ({
                   value: city.province,
                   label: city.province,
                 }))}
@@ -606,7 +661,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
                     : null
                 }
                 styles={{
-                  control: (baseStyles, state) => ({
+                  control: (baseStyles) => ({
                     ...baseStyles,
                     border: "1px solid #FFB6C1",
                     boxShadow: "none",
@@ -627,7 +682,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
               <Select
                 className="basic-single"
                 classNamePrefix="select"
-                options={districts.map((dist: any) => ({
+                options={districts.map((dist) => ({
                   value: dist.district,
                   label: dist.district,
                 }))}
@@ -637,7 +692,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
                     : null
                 }
                 styles={{
-                  control: (baseStyles, state) => ({
+                  control: (baseStyles) => ({
                     ...baseStyles,
                     border: "1px solid #FFB6C1",
                     boxShadow: "none",
@@ -669,7 +724,7 @@ const EditUserModal = ({ open, setOpen, user, cookies }: any) => {
                     : null
                 }
                 styles={{
-                  control: (baseStyles, state) => ({
+                  control: (baseStyles) => ({
                     ...baseStyles,
                     border: "1px solid #FFB6C1",
                     boxShadow: "none",

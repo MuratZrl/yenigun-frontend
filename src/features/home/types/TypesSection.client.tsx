@@ -88,7 +88,7 @@ export default function TypesSection() {
   }, [items]);
 
   return (
-    <section id="types" className="py-16 md:py-24 bg-white relative overflow-hidden">
+    <section id="types" className="py-8 md:py-12 bg-white relative overflow-hidden">
       <div className="max-w-6xl mx-auto px-6 md:px-10">
         {/* Header */}
         <motion.div

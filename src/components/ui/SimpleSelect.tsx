@@ -1,9 +1,23 @@
 "use client";
 import React from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, type LucideIcon } from "lucide-react";
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface SimpleSelectProps {
+  label?: string;
+  value: string | undefined;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: (SelectOption | string)[];
+  icon?: LucideIcon;
+  className?: string;
+}
 
 const SimpleSelect = React.memo(
-  ({ label, value, onChange, options, icon: Icon, className = "" }: any) => {
+  ({ label, value, onChange, options, icon: Icon, className = "" }: SimpleSelectProps) => {
     return (
       <div className={`relative ${className}`}>
         {Icon && (
@@ -18,15 +32,19 @@ const SimpleSelect = React.memo(
             Icon ? "pl-11" : "pl-4"
           } outline-none cursor-pointer`}
         >
-          {options.map((option: any) => (
+          {options.map((option) => {
+            const optValue = typeof option === "string" ? option : option.value;
+            const optLabel = typeof option === "string" ? option : option.label;
+            return (
             <option
-              key={option.value || option}
-              value={option.value || option}
+              key={optValue}
+              value={optValue}
               className="text-black"
             >
-              {option.label || option}
+              {optLabel}
             </option>
-          ))}
+            );
+          })}
         </select>
         <label className="absolute -top-2 left-3 bg-white px-2 text-xs text-gray-700 font-semibold pointer-events-none">
           {label}

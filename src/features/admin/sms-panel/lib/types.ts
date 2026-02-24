@@ -31,3 +31,12 @@ export type SmsComposeState = {
 };
 
 export type SmsTab = "compose" | "history" | "stats";
+
+export type SmsRecipient = {
+  id: string;
+  name: string;
+  phone: string;
+  city?: string;
+  district?: string;
+  category?: CustomerCategory;
+};

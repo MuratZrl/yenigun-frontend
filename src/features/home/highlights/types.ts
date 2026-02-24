@@ -30,6 +30,7 @@ export type Listing = {
 
   thoughts?: string | null;
   isHighlight?: boolean | null;
+  active?: boolean | null;
 };
 
 export type HighlightProps = {

@@ -7,7 +7,7 @@ export const whyUsContent: WhyUsContent = {
   subheading:
     "Profesyonel ekibimiz ve geniş ağımızla hayalinizdeki yaşam alanını bulmanız için buradayız.",
   image: {
-    src: "/office.jpeg",
+    src: "https://picsum.photos/seed/yenigun-office/800/600",
     alt: "Neden Yenigün Emlak",
   },
   badge: {

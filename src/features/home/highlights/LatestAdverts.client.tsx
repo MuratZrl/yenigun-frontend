@@ -1,11 +1,11 @@
-// src/features/home/highlights/HighlightsSection.client.tsx
+// src/features/home/highlights/LatestAdverts.client.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 
 import CategorySidebar from "./ui/CategorySidebar.client";
 
@@ -15,9 +15,8 @@ import { useCopyListingLink } from "./hooks/useCopyListing";
 import HighlightMobileRow from "./ui/HighlightMobileRow.client";
 import HighlightCard from "./ui/HighlightCard.client";
 
-export default function HighlightsSection({ data }: HighlightProps) {
+export default function LatestAdverts({ data }: HighlightProps) {
   const router = useRouter();
-  const [visibleCount, setVisibleCount] = useState(12);
   const { copiedId, copy } = useCopyListingLink("/ilan", 2000);
 
   const safeData = useMemo<Listing[]>(() => (Array.isArray(data) ? data : []), [data]);
@@ -26,22 +25,37 @@ export default function HighlightsSection({ data }: HighlightProps) {
     return safeData.filter(hasValidPhoto);
   }, [safeData]);
 
-  const visibleData = useMemo(() => {
-    return filteredData.slice(0, visibleCount);
-  }, [filteredData, visibleCount]);
-
-  const remaining = Math.max(0, filteredData.length - visibleCount);
-
-  const loadMore = () => setVisibleCount((prev) => prev + 12);
-
   const navigateTo = (uid: string) => {
     router.push(`/ilan/${uid}`);
+  };
+
+  // Horizontal scroll navigation
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    updateScrollState();
+  }, [filteredData, updateScrollState]);
+
+  const scroll = (direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const amount = el.clientWidth * 0.75;
+    el.scrollBy({ left: direction === "left" ? -amount : amount, behavior: "smooth" });
   };
 
   return (
     <section
       id="highlights"
-      className="py-16 md:py-24 bg-white relative overflow-hidden"
+      className="py-8 md:py-12 bg-white relative overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-10">
         {/* Header */}
@@ -78,7 +92,7 @@ export default function HighlightsSection({ data }: HighlightProps) {
           <div className="lg:w-4/5">
             {/* Mobile list */}
             <div className="space-y-3 mb-8 block md:hidden">
-              {visibleData.map((listing, index) => (
+              {filteredData.map((listing, index) => (
                 <HighlightMobileRow
                   key={listing.uid || String(index)}
                   listing={listing}
@@ -87,18 +101,49 @@ export default function HighlightsSection({ data }: HighlightProps) {
               ))}
             </div>
 
-            {/* Desktop grid */}
-            <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-              {visibleData.map((listing, index) => (
-                <HighlightCard
-                  key={listing.uid}
-                  listing={listing}
-                  index={index}
-                  copiedId={copiedId}
-                  onNavigate={navigateTo}
-                  onCopy={copy}
-                />
-              ))}
+            {/* Desktop horizontal scroll */}
+            <div className="hidden md:block relative group/scroll">
+              {/* Left arrow */}
+              {canScrollLeft && (
+                <button
+                  type="button"
+                  onClick={() => scroll("left")}
+                  className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-lg flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-[#035DBA] transition-all duration-200"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+              )}
+
+              {/* Right arrow */}
+              {canScrollRight && (
+                <button
+                  type="button"
+                  onClick={() => scroll("right")}
+                  className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white border border-gray-200 shadow-lg flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-[#035DBA] transition-all duration-200"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              )}
+
+              {/* Cards row */}
+              <div
+                ref={scrollRef}
+                onScroll={updateScrollState}
+                className="flex gap-4 md:gap-6 overflow-x-auto pb-4"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                {filteredData.map((listing, index) => (
+                  <div key={listing.uid} className="flex-shrink-0 w-[240px] xl:w-[270px]">
+                    <HighlightCard
+                      listing={listing}
+                      index={index}
+                      copiedId={copiedId}
+                      onNavigate={navigateTo}
+                      onCopy={copy}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Empty state */}
@@ -118,17 +163,6 @@ export default function HighlightsSection({ data }: HighlightProps) {
               </div>
             )}
 
-            {/* Load more */}
-            {filteredData.length > 0 && visibleCount < filteredData.length && (
-              <div className="flex justify-center mt-8 md:mt-12">
-                <button
-                  onClick={loadMore}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors duration-300"
-                >
-                  Daha Fazla Göster ({remaining} ilan kaldı)
-                </button>
-              </div>
-            )}
 
             {/* View all */}
             <motion.div

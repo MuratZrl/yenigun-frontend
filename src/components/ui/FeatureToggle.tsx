@@ -1,8 +1,15 @@
 "use client";
 import React from "react";
 
+interface FeatureToggleProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}
+
 const FeatureToggle = React.memo(
-  ({ label, value, onChange, className = "" }: any) => (
+  ({ label, value, onChange, className = "" }: FeatureToggleProps) => (
     <div
       className={`flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:border-blue-400 transition-colors duration-200 ${className}`}
     >

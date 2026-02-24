@@ -199,8 +199,6 @@ export default function CustomersPageClient() {
         <CreateUserModal
           open={openCreate}
           setOpen={setOpenCreate}
-          newUser={newUser}
-          setNewUser={setNewUser}
           cookies={cookies}
         />
 
@@ -216,7 +214,7 @@ export default function CustomersPageClient() {
         {editUser.user ? (
           <EditUserModal
             open={editUser.open}
-            setOpen={setEditUser}
+            setOpen={(state) => setEditUser({ open: state.open, user: state.user as typeof editUser.user })}
             user={editUser.user}
             cookies={cookies}
           />

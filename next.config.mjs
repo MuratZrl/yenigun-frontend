@@ -28,6 +28,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "api.yenigunemlak.com", pathname: "/public/**" },
       { protocol: "https", hostname: "storage.googleapis.com" },
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "fastly.picsum.photos" },
     ],
   },
 };

@@ -15,7 +15,7 @@ import type {
   RecipientType,
   CustomerCategory,
 } from "../lib/types";
-import { mockStats, mockHistory, mockRecipientCounts, districtsByCity } from "../lib/mockData";
+import { mockStats, mockHistory, mockRecipientCounts, mockRecipients, districtsByCity } from "../lib/mockData";
 
 export function useSmsController() {
   const router = useRouter();
@@ -45,6 +45,7 @@ export function useSmsController() {
     message: "",
   });
   const [sending, setSending] = useState(false);
+  const [excludedRecipientIds, setExcludedRecipientIds] = useState<Set<string>>(new Set());
 
   // Auth check
   useEffect(() => {
@@ -87,6 +88,15 @@ export function useSmsController() {
       selectedDistricts: [],
       selectedCategory: "",
     }));
+    setExcludedRecipientIds(new Set());
+  }, []);
+
+  const excludeRecipient = useCallback((id: string) => {
+    setExcludedRecipientIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
   }, []);
 
   const toggleCity = useCallback((city: string) => {
@@ -137,33 +147,36 @@ export function useSmsController() {
   const charCount = compose.message.length;
   const smsSegments = Math.max(1, Math.ceil(charCount / 160));
 
-  // Estimated recipient count (mock)
+  // Estimated recipient count (derived from actual mockRecipients, minus excluded)
   const estimatedRecipientCount = useMemo(() => {
+    const notExcluded = (r: (typeof mockRecipients)[0]) => !excludedRecipientIds.has(r.id);
+
     switch (compose.recipientType) {
       case "all":
-        return mockRecipientCounts.all;
+        return mockRecipients.filter(notExcluded).length;
       case "city": {
         if (compose.selectedDistricts.length > 0) {
-          return compose.selectedDistricts.reduce(
-            (sum, d) => sum + (mockRecipientCounts[d] ?? 0),
-            0
-          );
+          return mockRecipients.filter(
+            (r) => r.district && compose.selectedDistricts.includes(r.district) && notExcluded(r)
+          ).length;
         }
-        return compose.selectedCities.reduce(
-          (sum, city) => sum + (mockRecipientCounts[city] ?? 0),
-          0
-        );
+        if (compose.selectedCities.length > 0) {
+          return mockRecipients.filter(
+            (r) => r.city && compose.selectedCities.includes(r.city) && notExcluded(r)
+          ).length;
+        }
+        return 0;
       }
       case "category":
         return compose.selectedCategory
-          ? (mockRecipientCounts[compose.selectedCategory] ?? 0)
+          ? mockRecipients.filter((r) => r.category === compose.selectedCategory && notExcluded(r)).length
           : 0;
       case "specific":
         return 0;
       default:
         return 0;
     }
-  }, [compose.recipientType, compose.selectedCities, compose.selectedDistricts, compose.selectedCategory]);
+  }, [compose.recipientType, compose.selectedCities, compose.selectedDistricts, compose.selectedCategory, excludedRecipientIds]);
 
   // Recipient summary text
   const recipientSummary = useMemo(() => {
@@ -250,6 +263,7 @@ export function useSmsController() {
       selectedCategory: "",
       message: "",
     });
+    setExcludedRecipientIds(new Set());
   }, []);
 
   // History pagination
@@ -286,5 +300,8 @@ export function useSmsController() {
     sending,
     handleSend,
     handleReset,
+    recipients: mockRecipients,
+    excludedRecipientIds,
+    excludeRecipient,
   };
 }
