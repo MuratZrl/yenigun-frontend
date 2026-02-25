@@ -48,11 +48,11 @@ export default function CustomerDetailPage() {
         <div className="flex items-center gap-2 mb-6">
           <button
             onClick={c.goBack}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-2xl font-bold text-blue-900">
             Müşteri Detayları
           </h1>
         </div>
@@ -73,9 +73,9 @@ export default function CustomerDetailPage() {
 
           {/* Right Content — Adverts */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-blue-100 p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">
+                <h2 className="text-xl font-semibold text-blue-900">
                   Müşteriye Ait İlanlar
                 </h2>
                 <span className="text-sm text-gray-600">

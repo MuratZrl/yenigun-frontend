@@ -9,7 +9,7 @@ type BannerProps = {
   onClear: () => void;
 };
 
-export function UsersActiveFilterBanner({ filteredOutCount, onClear }: BannerProps) {
+export function AdminUsersActiveFilterBanner({ filteredOutCount, onClear }: BannerProps) {
   if (!filteredOutCount) return null;
 
   return (
@@ -29,7 +29,7 @@ export function UsersActiveFilterBanner({ filteredOutCount, onClear }: BannerPro
   );
 }
 
-export function UsersMobileLoadingCard() {
+export function AdminUsersMobileLoadingCard() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
       <div className="flex flex-col items-center gap-3">
@@ -40,7 +40,7 @@ export function UsersMobileLoadingCard() {
   );
 }
 
-export function UsersMobileEmptyCard() {
+export function AdminUsersMobileEmptyCard() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
       <div className="flex flex-col items-center gap-3 text-gray-500">

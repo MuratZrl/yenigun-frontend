@@ -7,25 +7,32 @@ import { useCookies } from "react-cookie";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
+// Layout
 import AdminLayout from "@/components/layout/AdminLayout";
-import CreateAdmin from "@/components/modals/CreateAdminModal";
-import EditAdminModal from "@/components/modals/EditAdminModal";
 import AreYouSure from "@/components/AreYouSure";
 
+// Shared modals
+import CreateAdmin from "@/components/modals/CreateAdminModal";
+import EditAdminModal from "@/components/modals/EditAdminModal";
+
+// API
 import api from "@/lib/api";
 
-import UsersHeader from "@/features/admin/admins/ui/components/UsersHeader";
-import UsersFiltersBar from "@/features/admin/admins/ui/components/UsersFiltersBar";
-import UsersDesktopTable from "@/features/admin/admins/ui/components/UsersDesktopTable";
-import UsersMobileList from "@/features/admin/admins/ui/components/UsersMobileList";
+// Local components
+import AdminUsersHeader from "@/features/admin/admins/ui/components/AdminUsersHeader";
+import AdminUsersFiltersBar from "@/features/admin/admins/ui/components/AdminUsersFiltersBar";
+import AdminUsersDesktopTable from "@/features/admin/admins/ui/components/AdminUsersDesktopTable";
+import AdminUsersMobileList from "@/features/admin/admins/ui/components/AdminUsersMobileList";
 import {
-  UsersActiveFilterBanner,
-  UsersMobileLoadingCard,
-  UsersMobileEmptyCard,
-} from "@/features/admin/admins/ui/components/UsersStates";
+  AdminUsersActiveFilterBanner,
+  AdminUsersMobileLoadingCard,
+  AdminUsersMobileEmptyCard,
+} from "@/features/admin/admins/ui/components/AdminUsersStates";
 
+// Types
 import type {
   AdminUser,
+  AdminUserRole,
   CreateAdminUserPayload,
   DeleteConfirmState,
   EditUserModalState,
@@ -36,23 +43,26 @@ const PoppinsFont = Poppins({
   weight: ["400", "600", "700"],
 });
 
-function normalizeUser(u: any): AdminUser {
+/* ── Helpers ── */
+function normalizeUser(u: Record<string, unknown>): AdminUser {
+  const birth = u?.birth as Record<string, unknown> | undefined;
   return {
     uid: typeof u?.uid === "string" ? Number(u.uid) : Number(u?.uid ?? 0),
     name: String(u?.name ?? ""),
     surname: String(u?.surname ?? ""),
     mail: u?.mail ? String(u.mail) : undefined,
     gsmNumber: u?.gsmNumber ? String(u.gsmNumber) : undefined,
-    role: (u?.role ? String(u.role) : "admin") as any,
+    role: (u?.role ? String(u.role) : "admin") as AdminUserRole,
     gender: u?.gender ? String(u.gender) : undefined,
-    profilePicture: u?.profilePicture ?? null,
-    birth: u?.birth
+    profilePicture: (u?.profilePicture as string | null) ?? null,
+    birth: birth
       ? {
-          day: Number(u.birth.day ?? 0),
-          month: Number(u.birth.month ?? 0),
-          year: Number(u.birth.year ?? 0),
+          day: Number(birth.day ?? 0),
+          month: Number(birth.month ?? 0),
+          year: Number(birth.year ?? 0),
         }
       : undefined,
+    createdAt: u?.createdAt ? String(u.createdAt) : undefined,
   };
 }
 
@@ -60,18 +70,16 @@ export default function AdminUsersPageClient() {
   const router = useRouter();
   const [cookies] = useCookies(["token"]);
 
-  const [authChecked, setAuthChecked] = useState(false);
+  /* ── State ── */
+  const [authChecked] = useState(true);
   const [loading, setLoading] = useState(true);
-
   const [isMobile, setIsMobile] = useState(false);
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [listUsers, setListUsers] = useState<AdminUser[]>([]);
-
   const [filteredValues, setFilteredValues] = useState("");
 
   const [openCreate, setOpenCreate] = useState(false);
-
   const [newUser, setNewUser] = useState<CreateAdminUserPayload>({
     name: "",
     surname: "",
@@ -94,9 +102,10 @@ export default function AdminUsersPageClient() {
     user: null,
   });
 
-  const [page, setPage] = useState<number>(0); // 0-based
+  const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(25);
 
+  /* ── Effects ── */
   useEffect(() => {
     const checkScreenSize = () => setIsMobile(window.innerWidth < 1024);
     checkScreenSize();
@@ -107,20 +116,13 @@ export default function AdminUsersPageClient() {
   useEffect(() => {
     let alive = true;
 
-    setAuthChecked(true);
-    setLoading(true);
-
-    // önce oturum var mı kontrol et
     api
       .get("/user/auth")
-      .then(() => {
-        // auth OK ise users çek
-        return api.get("/admin/users");
-      })
+      .then(() => api.get("/admin/users"))
       .then((res) => {
         if (!alive) return;
 
-        const raw = (res.data?.data ?? res.data) as any[];
+        const raw = (res.data?.data ?? res.data) as Record<string, unknown>[];
         const normalized = Array.isArray(raw) ? raw.map(normalizeUser) : [];
         setUsers(normalized);
         setListUsers(normalized);
@@ -129,10 +131,8 @@ export default function AdminUsersPageClient() {
         if (!alive) return;
 
         const status = err?.response?.status;
-
-        // login yoksa: burada toast basmak yerine login'e gönder
         if (status === 401 || status === 403) {
-          router.replace("/login");// sizin login route neyse ona göre düzelt
+          router.replace("/login");
           return;
         }
 
@@ -149,6 +149,7 @@ export default function AdminUsersPageClient() {
     };
   }, [router]);
 
+  /* ── Derived state ── */
   const startIndex = page * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
 
@@ -165,6 +166,9 @@ export default function AdminUsersPageClient() {
     return Math.max(0, users.length - listUsers.length);
   }, [users.length, listUsers.length]);
 
+  const showClear = listUsers.length < users.length;
+
+  /* ── Handlers ── */
   const handleChangePage = (newPage: number) => {
     setPage(newPage);
   };
@@ -231,12 +235,13 @@ export default function AdminUsersPageClient() {
       });
   };
 
+  /* ── Loading / Auth gate ── */
   if (!authChecked || loading) {
     return (
       <AdminLayout>
         <div className={`${PoppinsFont.className} p-6`}>
           {isMobile ? (
-            <UsersMobileLoadingCard />
+            <AdminUsersMobileLoadingCard />
           ) : (
             <div className="flex justify-center items-center h-64">
               <div className="flex flex-col items-center gap-3">
@@ -250,8 +255,6 @@ export default function AdminUsersPageClient() {
     );
   }
 
-  const showClear = listUsers.length < users.length;
-
   return (
     <AdminLayout>
       <div
@@ -259,9 +262,12 @@ export default function AdminUsersPageClient() {
         style={PoppinsFont.style}
       >
         <div className="p-4 lg:p-6 max-w-7xl mx-auto">
-          <UsersHeader totalCount={listUsers.length} onOpenCreate={() => setOpenCreate(true)} />
 
-          <UsersFiltersBar
+          {/* ── Page Header ── */}
+          <AdminUsersHeader totalCount={listUsers.length} onOpenCreate={() => setOpenCreate(true)} />
+
+          {/* ── Search & Filters ── */}
+          <AdminUsersFiltersBar
             value={filteredValues}
             onChange={(v) => setFilteredValues(v)}
             onFilter={handleFilterUsers}
@@ -269,10 +275,12 @@ export default function AdminUsersPageClient() {
             showClear={showClear}
           />
 
-          <UsersActiveFilterBanner filteredOutCount={filteredOutCount} onClear={handleCleanFilters} />
+          {/* Active filter warning */}
+          <AdminUsersActiveFilterBanner filteredOutCount={filteredOutCount} onClear={handleCleanFilters} />
 
+          {/* ── Content: Desktop Table / Mobile List ── */}
           {!isMobile ? (
-            <UsersDesktopTable
+            <AdminUsersDesktopTable
               loading={loading}
               rows={paginatedUsers}
               page={page}
@@ -289,9 +297,9 @@ export default function AdminUsersPageClient() {
           ) : (
             <>
               {paginatedUsers.length === 0 ? (
-                <UsersMobileEmptyCard />
+                <AdminUsersMobileEmptyCard />
               ) : (
-                <UsersMobileList
+                <AdminUsersMobileList
                   rows={paginatedUsers}
                   page={page}
                   totalPages={totalPages}
@@ -309,6 +317,7 @@ export default function AdminUsersPageClient() {
           )}
         </div>
 
+        {/* ── Modals ── */}
         <CreateAdmin
           open={openCreate}
           setOpen={setOpenCreate}
@@ -324,6 +333,7 @@ export default function AdminUsersPageClient() {
           cookies={cookies}
         />
 
+        {/* ── Delete Confirmation ── */}
         <AreYouSure
           open={deleteConfirm.open}
           onClose={() => setDeleteConfirm({ open: false, uid: null, user: null })}

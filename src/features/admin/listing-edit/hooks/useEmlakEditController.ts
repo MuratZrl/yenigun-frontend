@@ -18,6 +18,7 @@ import type { Category, FeatureValues } from "@/types/category";
 import type { FormData, MediaItem, SelectionItem, StepState } from "@/types/property";
 import { isLocal, isRemote } from "@/types/property";
 import type Customer from "@/types/customers";
+import type { Advisor } from "@/types/property";
 
 /* ── Helpers ── */
 
@@ -32,13 +33,15 @@ function formatThousandsTR(rawDigits: string) {
   return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-function findNodeByNameLocal(nodes: any[], name: string): any | null {
+type CategoryNode = { name?: string; children?: CategoryNode[]; subcategories?: CategoryNode[]; facilities?: Array<{ title?: string }> };
+
+function findNodeByNameLocal(nodes: CategoryNode[], name: string): CategoryNode | null {
   if (!name) return null;
   const lower = name.toLowerCase().trim();
   for (const n of nodes) {
     if (String(n?.name ?? "").toLowerCase().trim() === lower) return n;
     const kids = Array.isArray(n?.children ?? n?.subcategories) ? (n?.children ?? n?.subcategories) : [];
-    if (kids.length) {
+    if (kids?.length) {
       const found = findNodeByNameLocal(kids, name);
       if (found) return found;
     }
@@ -57,24 +60,29 @@ function parseFee(fee: unknown): { value: string; type: string } {
   return { value: "0", type: "TL" };
 }
 
-function normalizeCategoriesPayload(payload: any): Category[] {
-  const root = payload?.data ?? payload;
-  const data = root?.data?.tree ?? root?.data ?? root?.tree ?? root;
-  return Array.isArray(data) ? data : [];
+function normalizeCategoriesPayload(payload: unknown): Category[] {
+  const p = payload as Record<string, unknown> | undefined;
+  const root = (p?.data as Record<string, unknown>) ?? p;
+  const data = (root?.data as Record<string, unknown>)?.tree ?? root?.data ?? root?.tree ?? root;
+  return Array.isArray(data) ? data as Category[] : [];
 }
 
-function normalizeAdvertPayload(payload: any): any {
-  return payload?.data?.data ?? payload?.data ?? payload ?? null;
+function normalizeAdvertPayload(payload: unknown): Record<string, unknown> | null {
+  const p = payload as Record<string, unknown> | undefined;
+  const d = p?.data as Record<string, unknown> | undefined;
+  return (d?.data as Record<string, unknown>) ?? d ?? (p as Record<string, unknown>) ?? null;
 }
 
-const TURKEY_CITIES = JSONDATA.map((city: any) => ({
+type CityJson = { name: string; towns: Array<{ name: string; districts: Array<{ name: string; quarters?: Array<{ name: string }> }> }> };
+
+const TURKEY_CITIES = (JSONDATA as CityJson[]).map((city) => ({
   province: city.name,
-  districts: city.towns.map((district: any) => ({
+  districts: city.towns.map((district) => ({
     district: district.name,
-    quarters: district.districts.reduce((acc: any, d: any) => {
-      const quarterNames = (d.quarters || []).map((q: any) => q.name);
+    quarters: district.districts.reduce<string[]>((acc, d) => {
+      const quarterNames = (d.quarters || []).map((q) => q.name);
       return acc.concat(quarterNames);
-    }, [] as string[]),
+    }, []),
   })),
 }));
 
@@ -102,7 +110,7 @@ async function fetchAllPaged<T>(endpoint: string, limit = 100): Promise<T[]> {
 export function useEmlakEditController() {
   const params = useParams();
   const router = useRouter();
-  const advertUid = String((params as any)?.uid ?? "");
+  const advertUid = String((params as Record<string, string | string[]>)?.uid ?? "");
 
   /* ── UI state ── */
   const [activeTab, setActiveTab] = useState<number>(1);
@@ -110,9 +118,15 @@ export function useEmlakEditController() {
   const [isLoading, setIsLoading] = useState(true);
 
   /* ── Data ── */
-  const [advertData, setAdvertData] = useState<any>(null);
+  type AdvertDataState = Record<string, unknown> & {
+    categoryId?: string;
+    subcategoryId?: string;
+    steps?: { first?: string; second?: string; third?: string };
+    featureValues?: Array<Record<string, unknown>>;
+  };
+  const [advertData, setAdvertData] = useState<AdvertDataState | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [advisors, setAdvisors] = useState<any[]>([]);
+  const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
   /* ── Media ── */
@@ -139,94 +153,113 @@ export function useEmlakEditController() {
 
   /* ── Fourth step updaters ── */
 
-  const updateFourthStep = useCallback((field: keyof FormData, value: any) => {
+  const updateFourthStep = useCallback((field: keyof FormData, value: FormData[keyof FormData]) => {
     setFourthStep((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const updateNestedFourthStep = useCallback((parentField: keyof FormData, childField: string, value: any) => {
-    setFourthStep((prev) => ({ ...prev, [parentField]: { ...(prev[parentField] as any), [childField]: value } }));
+  const updateNestedFourthStep = useCallback((parentField: keyof FormData, childField: string, value: string | number | boolean) => {
+    setFourthStep((prev) => {
+      const parent = prev[parentField];
+      if (typeof parent === "object" && parent !== null) {
+        return { ...prev, [parentField]: { ...parent, [childField]: value } };
+      }
+      return prev;
+    });
   }, []);
 
   /* ── Apply advert to state ── */
 
-  const applyAdvertToState = useCallback((ad: any) => {
-    setAdvertData(ad);
+  const applyAdvertToState = useCallback((ad: Record<string, unknown>) => {
+    setAdvertData(ad as AdvertDataState);
 
-    setFirstStep((prev) => ({ ...prev, selected: { ...(prev.selected as any), isSelect: true, value: ad?.steps?.first ?? "" } }));
-    setSecondStep((prev) => ({ ...prev, selected: { ...(prev.selected as any), isSelect: true, value: ad?.steps?.second ?? "" } }));
-    setThirdStep((prev) => ({ ...prev, selected: { ...(prev.selected as any), isSelect: true, value: ad?.steps?.third ?? "" } }));
+    const steps = ad?.steps as Record<string, string> | undefined;
+    setFirstStep((prev) => ({ ...prev, selected: { ...prev.selected, isSelect: true, value: steps?.first ?? "" } }));
+    setSecondStep((prev) => ({ ...prev, selected: { ...prev.selected, isSelect: true, value: steps?.second ?? "" } }));
+    setThirdStep((prev) => ({ ...prev, selected: { ...prev.selected, isSelect: true, value: steps?.third ?? "" } }));
 
     const featuresObj: FeatureValues = {};
     console.log("RAW ad.featureValues from API:", JSON.stringify(ad?.featureValues, null, 2));
 
-    if (Array.isArray(ad?.featureValues)) {
-      for (const f of ad.featureValues) {
-        if (f?.featureId && f?.value !== undefined) featuresObj[String(f.featureId)] = f.value;
+    const rawFvs = ad?.featureValues;
+    if (Array.isArray(rawFvs)) {
+      for (const f of rawFvs as Array<Record<string, unknown>>) {
+        if (f?.featureId && f?.value !== undefined) featuresObj[String(f.featureId)] = f.value as string | number | boolean | string[];
       }
     }
     setFeatureValues(featuresObj);
 
-    const initFS: StepState = { selected: { isSelect: false, value: "", featureData: null }, selections: {} };
+    const selectionsMap: Record<string, unknown> = {};
     Object.entries(featuresObj).forEach(([fid, val]) => {
-      (initFS.selections as any)[fid] = { featureId: fid, value: val, featureType: "text" };
+      selectionsMap[fid] = { featureId: fid, value: val, featureType: "text" };
     });
+    const initFS: StepState = { selected: { isSelect: false, value: "", featureData: null }, selections: selectionsMap };
     setFeaturesStep(initFS);
 
     const { value: feeValue, type: feeType } = parseFee(ad?.fee);
 
+    const adContract = ad?.contract as Record<string, unknown> | undefined;
+    const adAdvisor = ad?.advisor as Record<string, unknown> | undefined;
+    const adAddress = ad?.address as Record<string, unknown> | undefined;
+    const adDetails = ad?.details as Record<string, unknown> | undefined;
+    const adQuestions = ad?.questions as Record<string, unknown> | undefined;
+    const adEids = ad?.eids as Record<string, unknown> | undefined;
+    const adCustomer = ad?.customer as Record<string, unknown> | string | number | undefined;
+
+    const customerUid = typeof adCustomer === "object" && adCustomer !== null ? adCustomer.uid : adCustomer;
+
     setFourthStep({
       ...defaultFormData,
-      title: ad?.title ?? "",
-      description: ad?.description ?? "",
-      customer: String(ad?.customer?.uid ?? ad?.customer ?? ""),
-      contract_no: ad?.contract?.no ?? ad?.contractNo ?? "",
-      contract_date: ad?.contract?.date ?? ad?.contractDate ?? "",
-      contract_time: createSelectionItem(ad?.contract?.time ?? ad?.contractTime ?? "", contractTimes),
-      advisor: String(ad?.advisor?.uid ?? ad?.advisor ?? ""),
-      advisor_profile: createSelectionItem(ad?.advisor?.peopleCanSeeProfile ? "Evet" : "Hayır", yesNoOptions),
-      eids: { no: ad?.eidsNo ?? ad?.eids?.no ?? "", date: ad?.eidsDate ?? ad?.eids?.date ?? "", value: ad?.eidsNo ? "Evet" : "Hayır" },
-      key: createSelectionItem(ad?.whoseKey ?? "Yenigün Emlak", keyOptions),
-      adminNote: ad?.adminNote ?? "",
+      title: String(ad?.title ?? ""),
+      description: String(ad?.description ?? ""),
+      customer: String(customerUid ?? ""),
+      contract_no: String(adContract?.no ?? ad?.contractNo ?? ""),
+      contract_date: String(adContract?.date ?? ad?.contractDate ?? ""),
+      contract_time: createSelectionItem(String(adContract?.time ?? ad?.contractTime ?? ""), contractTimes),
+      advisor: String(adAdvisor?.uid ?? ad?.advisor ?? ""),
+      advisor_profile: createSelectionItem(adAdvisor?.peopleCanSeeProfile ? "Evet" : "Hayır", yesNoOptions),
+      eids: { no: String(ad?.eidsNo ?? adEids?.no ?? ""), date: String(ad?.eidsDate ?? adEids?.date ?? ""), value: ad?.eidsNo ? "Evet" : "Hayır" },
+      key: createSelectionItem(String(ad?.whoseKey ?? "Yenigün Emlak"), keyOptions),
+      adminNote: String(ad?.adminNote ?? ""),
       price: { value: feeValue, type: feeType, selections: currencyOptions },
-      province: ad?.address?.province ?? ad?.province ?? "",
-      district: ad?.address?.district ?? ad?.district ?? "",
-      quarter: ad?.address?.quarter ?? ad?.quarter ?? "",
-      address: ad?.address?.full_address ?? ad?.address ?? "",
-      parsel: ad?.address?.parcel ?? ad?.parcel ?? "",
-      roomCount: ad?.details?.roomCount ?? ad?.roomCount ?? "",
-      netArea: ad?.details?.netArea ?? ad?.netArea ?? 0,
-      grossArea: ad?.details?.grossArea ?? ad?.grossArea ?? 0,
-      buildingAge: ad?.details?.buildingAge ?? ad?.buildingAge ?? 0,
-      elevator: createSelectionItem(ad?.details?.elevator ? "Evet" : "Hayır", yesNoOptions),
-      inSite: createSelectionItem(ad?.details?.inSite ? "Evet" : "Hayır", yesNoOptions),
-      whichSide: createSelectionItem(ad?.details?.whichSide ?? ad?.whichSide ?? "", directionOptions),
-      acre: ad?.details?.acre ? parseInt(String(ad.details.acre)) : ad?.acre ?? 0,
-      acreText: ad?.details?.acre ?? ad?.acreText ?? "",
-      floor: ad?.details?.floor ?? ad?.floor ?? 0,
-      totalFloor: ad?.details?.totalFloor ?? ad?.totalFloor ?? 0,
-      balcony: createSelectionItem(ad?.details?.balcony ? "Evet" : "Hayır", yesNoOptions),
-      balconyCount: ad?.details?.balconyCount ?? ad?.balconyCount ?? 0,
-      isFurnished: createSelectionItem(ad?.details?.furniture ? "Evet" : "Hayır", yesNoOptions),
-      heating: createSelectionItem(ad?.details?.heating ?? ad?.heating ?? "", heatingOptions),
-      deedStatus: createSelectionItem(ad?.details?.deed ?? ad?.deedStatus ?? "", deedStatusOptions),
-      zoningStatus: createSelectionItem(ad?.details?.zoningStatus ?? ad?.zoningStatus ?? "", zoningStatusOptions),
-      bathroomCount: ad?.details?.bathroomCount ?? ad?.bathroomCount ?? "",
-      parking: ad?.details?.parking ?? ad?.parking ?? "",
-      agenda_emlak: createSelectionItem(ad?.questions?.agendaEmlak ? "Evet" : "Hayır", yesNoOptions),
-      homepage_emlak: createSelectionItem(ad?.questions?.homepageEmlak ? "Evet" : "Hayır", yesNoOptions),
-      new_emlak: createSelectionItem(ad?.questions?.new_emlak ? "Evet" : "Hayır", yesNoOptions),
-      chance_emlak: createSelectionItem(ad?.questions?.chance_emlak ? "Evet" : "Hayır", yesNoOptions),
-      special_emlak: createSelectionItem(ad?.questions?.special_emlak ? "Evet" : "Hayır", yesNoOptions),
-      onweb_emlak: createSelectionItem(ad?.questions?.onweb_emlak ? "Evet" : "Hayır", yesNoOptions),
+      province: String(adAddress?.province ?? ad?.province ?? ""),
+      district: String(adAddress?.district ?? ad?.district ?? ""),
+      quarter: String(adAddress?.quarter ?? ad?.quarter ?? ""),
+      address: String(adAddress?.full_address ?? ad?.address ?? ""),
+      parsel: String(adAddress?.parcel ?? ad?.parcel ?? ""),
+      roomCount: String(adDetails?.roomCount ?? ad?.roomCount ?? ""),
+      netArea: Number(adDetails?.netArea ?? ad?.netArea ?? 0),
+      grossArea: Number(adDetails?.grossArea ?? ad?.grossArea ?? 0),
+      buildingAge: Number(adDetails?.buildingAge ?? ad?.buildingAge ?? 0),
+      elevator: createSelectionItem(adDetails?.elevator ? "Evet" : "Hayır", yesNoOptions),
+      inSite: createSelectionItem(adDetails?.inSite ? "Evet" : "Hayır", yesNoOptions),
+      whichSide: createSelectionItem(String(adDetails?.whichSide ?? ad?.whichSide ?? ""), directionOptions),
+      acre: adDetails?.acre ? parseInt(String(adDetails.acre)) : Number(ad?.acre ?? 0),
+      acreText: String(adDetails?.acre ?? ad?.acreText ?? ""),
+      floor: Number(adDetails?.floor ?? ad?.floor ?? 0),
+      totalFloor: Number(adDetails?.totalFloor ?? ad?.totalFloor ?? 0),
+      balcony: createSelectionItem(adDetails?.balcony ? "Evet" : "Hayır", yesNoOptions),
+      balconyCount: Number(adDetails?.balconyCount ?? ad?.balconyCount ?? 0),
+      isFurnished: createSelectionItem(adDetails?.furniture ? "Evet" : "Hayır", yesNoOptions),
+      heating: createSelectionItem(String(adDetails?.heating ?? ad?.heating ?? ""), heatingOptions),
+      deedStatus: createSelectionItem(String(adDetails?.deed ?? ad?.deedStatus ?? ""), deedStatusOptions),
+      zoningStatus: createSelectionItem(String(adDetails?.zoningStatus ?? ad?.zoningStatus ?? ""), zoningStatusOptions),
+      bathroomCount: String(adDetails?.bathroomCount ?? ad?.bathroomCount ?? ""),
+      parking: String(adDetails?.parking ?? ad?.parking ?? ""),
+      agenda_emlak: createSelectionItem(adQuestions?.agendaEmlak ? "Evet" : "Hayır", yesNoOptions),
+      homepage_emlak: createSelectionItem(adQuestions?.homepageEmlak ? "Evet" : "Hayır", yesNoOptions),
+      new_emlak: createSelectionItem(adQuestions?.new_emlak ? "Evet" : "Hayır", yesNoOptions),
+      chance_emlak: createSelectionItem(adQuestions?.chance_emlak ? "Evet" : "Hayır", yesNoOptions),
+      special_emlak: createSelectionItem(adQuestions?.special_emlak ? "Evet" : "Hayır", yesNoOptions),
+      onweb_emlak: createSelectionItem(adQuestions?.onweb_emlak ? "Evet" : "Hayır", yesNoOptions),
     });
 
-    setContent(ad?.thoughts ?? "");
+    setContent(String(ad?.thoughts ?? ""));
     setIsActiveAd(ad?.active !== false);
 
-    const photos: string[] = safeArr<string>(ad?.photos ?? ad?.images);
+    const photos: string[] = safeArr<string>((ad?.photos ?? ad?.images) as string[] | undefined);
     setMediaItems(photos.map((url, i) => ({ id: `remote-${i}-${url}`, kind: "remote" as const, url })));
 
-    const mc = ad?.address?.mapCoordinates ?? ad?.mapCoordinates;
+    const mc = (adAddress?.mapCoordinates ?? ad?.mapCoordinates) as Record<string, unknown> | undefined;
     if (mc && typeof mc === "object" && typeof mc.lat === "number" && typeof mc.lng === "number") {
       setMarker([{ lat: mc.lat, lng: mc.lng }]);
     } else {
@@ -244,12 +277,13 @@ export function useEmlakEditController() {
       try {
         const [c, a] = await Promise.all([
           fetchAllPaged<Customer>("/admin/customers", 100),
-          fetchAllPaged<any>("/admin/users", 100),
+          fetchAllPaged<Advisor>("/admin/users", 100),
         ]);
         if (!cancelled) { setCustomers(c); setAdvisors(a); }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (cancelled) return;
-        if (err?.response?.status === 401) { toast.error("Oturum süresi doldu."); router.push("/admin/emlak"); return; }
+        const axiosErr = err as { response?: { status?: number } };
+        if (axiosErr?.response?.status === 401) { toast.error("Oturum süresi doldu."); router.push("/admin/emlak"); return; }
         toast.error("Müşteri/Danışman verileri yüklenemedi.");
       }
     })();
@@ -273,9 +307,10 @@ export function useEmlakEditController() {
         const advert = normalizeAdvertPayload(advertRes);
         if (!advert) { toast.error("İlan bulunamadı"); router.push("/admin/emlak"); return; }
         applyAdvertToState(advert);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (cancelled) return;
-        if (err?.response?.status === 404) { toast.error("İlan bulunamadı"); router.push("/admin/emlak"); return; }
+        const axiosErr = err as { response?: { status?: number } };
+        if (axiosErr?.response?.status === 404) { toast.error("İlan bulunamadı"); router.push("/admin/emlak"); return; }
         toast.error("İlan verileri yüklenemedi");
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -355,8 +390,8 @@ export function useEmlakEditController() {
 
     setIsSubmitting(true);
     try {
-      const eidsTs = fourthStep.eids?.date ? new Date(fourthStep.eids.date as any).getTime() : null;
-      const contractTs = fourthStep.contract_date ? new Date(fourthStep.contract_date as any).getTime() : Date.now();
+      const eidsTs = fourthStep.eids?.date ? new Date(fourthStep.eids.date).getTime() : null;
+      const contractTs = fourthStep.contract_date ? new Date(fourthStep.contract_date).getTime() : Date.now();
       const feeValue = fourthStep.price?.value || "0";
       const feeType = fourthStep.price?.type || "TL";
 
@@ -399,10 +434,11 @@ if (categories?.length) {
 
     // Find MongoDB-ID entries in current featureValues whose names match facility sections
     // These are the old duplicates we want to exclude
-    if (facilityNames.size > 0 && advertData?.featureValues) {
+    const rawFvList = advertData?.featureValues;
+    if (facilityNames.size > 0 && Array.isArray(rawFvList)) {
       // Use position-based matching to identify which MongoDB IDs are facility entries
       // (same logic the server uses)
-      for (const fv of advertData.featureValues) {
+      for (const fv of rawFvList as Array<Record<string, unknown>>) {
         const fid = String(fv?.featureId ?? "").trim();
         if (!fid || fid.startsWith("fac_")) continue;
         const val = fv?.value;
@@ -427,7 +463,7 @@ if (categories?.length) {
     })
     .map(([fid, v]) => ({ featureId: fid, value: v }));
 
-      const req: any = {
+      const req: Record<string, unknown> = {
         uid: Number(advertUid),
         steps: {
           first: firstStep.selected?.value || "",
@@ -486,9 +522,10 @@ if (categories?.length) {
       await handleFileUpdates();
       toast.success("✅ İlan başarıyla güncellendi!");
       router.push("/admin/emlak");
-    } catch (err: any) {
-      const s = err?.response?.status;
-      const m = err?.response?.data?.message || err?.message || "Bilinmeyen hata";
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const s = axiosErr?.response?.status;
+      const m = axiosErr?.response?.data?.message || axiosErr?.message || "Bilinmeyen hata";
       toast.error(`Hata: ${s ?? "-"} - ${m}`);
     } finally {
       setIsSubmitting(false);

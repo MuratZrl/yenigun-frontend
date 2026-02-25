@@ -5,12 +5,13 @@ import React, { useMemo } from "react";
 import CustomerCard from "./CustomerCard";
 import { normalizeCustomers } from "@/features/admin/users/model/utils";
 import type { CustomerUser } from "@/features/admin/users/api/usersApi";
+import type { NormalizedCustomerUser } from "@/features/admin/users/model/types";
 
 type Props = {
   rows: CustomerUser[];
   expandedIds: Set<string>;
   onEdit: (uid: string | number) => void;
-  onDelete: (uid: string | number, user: any) => void;
+  onDelete: (uid: string | number, user: NormalizedCustomerUser) => void;
   onViewDetails: (uid: string | number) => void;
   onViewLists: (uid: string | number) => void;
   onToggleExpand: (uid: string | number) => void;

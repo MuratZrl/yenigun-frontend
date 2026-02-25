@@ -1,4 +1,4 @@
-// src/features/admin/admins/ui/components/UsersHeader.tsx
+// src/features/admin/admins/ui/components/AdminUsersHeader.tsx
 "use client";
 
 import React from "react";
@@ -23,11 +23,11 @@ export default function UsersHeader({ totalCount, onOpenCreate }: Props) {
         </div>
 
         <button
-          className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 group font-semibold text-sm lg:text-base w-full lg:w-auto justify-center"
+          className="bg-slate-900 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl hover:bg-slate-800 active:bg-slate-950 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 font-semibold text-sm lg:text-base w-full lg:w-auto justify-center"
           onClick={onOpenCreate}
           type="button"
         >
-          <Plus size={18} className="group-hover:rotate-90 transition-transform duration-200" />
+          <Plus size={18} />
           Yeni Yetkili Ekle
         </button>
       </div>

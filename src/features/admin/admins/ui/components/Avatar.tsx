@@ -29,7 +29,7 @@ export function Avatar({ name, className = "", title }: AvatarProps) {
       aria-label={title ?? name}
       className={[
         "flex items-center justify-center rounded-full",
-        "bg-linear-to-r from-blue-500 to-purple-600",
+        "bg-blue-600",
         "text-white font-semibold select-none",
         className,
       ].join(" ")}

@@ -20,7 +20,7 @@ export function useAdvisorDetailController(props: AdvisorDetailProps) {
   );
 
   const goBack = useCallback(() => {
-    router.push("/admin/admin");
+    router.push("/admin/admins");
   }, [router]);
 
   const handleAdvertClick = useCallback((advert: Advert) => {

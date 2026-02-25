@@ -27,17 +27,17 @@ export default function CustomerSidebar({
   onCall,
 }: Props) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 h-full">
+    <div className="bg-white rounded-2xl shadow-sm border border-blue-100 p-6 h-full">
       <div className="flex flex-col items-center gap-6">
         {/* Avatar */}
-        <div className="w-32 h-32 bg-custom-orange rounded-full flex items-center justify-center text-white text-4xl font-semibold">
+        <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-white text-4xl font-semibold">
           {customer.name.charAt(0)}
           {customer.surname.charAt(0)}
         </div>
 
         {/* Name & Gender */}
         <div className="flex flex-col items-center gap-2">
-          <h2 className="text-xl font-semibold text-gray-800 text-center">
+          <h2 className="text-xl font-semibold text-blue-900 text-center">
             {customer.name} {customer.surname}
           </h2>
           <span
@@ -57,9 +57,9 @@ export default function CustomerSidebar({
             <button
               onClick={onEmail}
               disabled={!customer.mail.isAbleToSendMail}
-              className="flex items-center gap-2 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full"
+              className="flex items-center gap-2 p-3 border border-blue-200 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full"
             >
-              <Mail size={18} className="text-gray-600" />
+              <Mail size={18} className="text-blue-600" />
               <span className="text-sm truncate">
                 {customer.mail.mail || "E-posta Yok"}
               </span>
@@ -68,9 +68,9 @@ export default function CustomerSidebar({
           {primaryPhone && (
             <button
               onClick={onCall}
-              className="flex items-center gap-2 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors w-full"
+              className="flex items-center gap-2 p-3 border border-blue-200 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors w-full"
             >
-              <Phone size={18} className="text-gray-600" />
+              <Phone size={18} className="text-blue-600" />
               <span className="text-sm">{primaryPhone}</span>
             </button>
           )}

@@ -88,13 +88,13 @@ export default function CustomerCard({
     safeString(user.status).trim() === "Mülk Sahibi" && typeof onViewLists === "function";
 
   // Extra (expanded) alanlar raw üstünden okunuyor çünkü normalize etmedik (ama var)
-  const tc = safeString((user.raw as any)?.tcNumber);
-  const mernis = safeString((user.raw as any)?.mernisNo);
-  const country = safeString((user.raw as any)?.country);
-  const city = safeString((user.raw as any)?.city);
-  const county = safeString((user.raw as any)?.county);
-  const neighbourhood = safeString((user.raw as any)?.neighbourhood);
-  const ideas = safeString((user.raw as any)?.ideasAboutCustomer);
+  const tc = safeString(user.raw?.tcNumber);
+  const mernis = safeString(user.raw?.mernisNo);
+  const country = safeString(user.raw?.country);
+  const city = safeString(user.raw?.city);
+  const county = safeString(user.raw?.county);
+  const neighbourhood = safeString(user.raw?.neighbourhood);
+  const ideas = safeString(user.raw?.ideasAboutCustomer);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
@@ -111,7 +111,7 @@ export default function CustomerCard({
                 src={user.profilePicture}
               />
             ) : (
-              <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0">
                 {initials(user.name, user.surname)}
               </div>
             )}

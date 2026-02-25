@@ -26,7 +26,7 @@ export default function AdvertCard({ advert, onClick }: Props) {
       className="cursor-pointer"
     >
       <div
-        className={`bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden h-full relative ${
+        className={`bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden h-full relative hover:border-blue-300 transition-colors ${
           !advert.active ? "opacity-70" : ""
         }`}
       >
@@ -37,7 +37,7 @@ export default function AdvertCard({ advert, onClick }: Props) {
             className="w-full h-full object-cover"
             style={{ filter: advert.active ? "none" : "blur(1.5px)" }}
           />
-          <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-sm font-medium">
+          <div className="absolute top-2 left-2 bg-blue-600/90 text-white px-2 py-1 rounded text-sm font-medium">
             {advert.fee.toLocaleString()} TL
           </div>
           <div
@@ -49,7 +49,7 @@ export default function AdvertCard({ advert, onClick }: Props) {
           </div>
         </div>
         <div className="p-4">
-          <h3 className="font-semibold text-gray-800 truncate mb-1">
+          <h3 className="font-semibold text-blue-900 truncate mb-1">
             {advert.title}
           </h3>
           <p className="text-sm text-gray-600 mb-2">

@@ -40,7 +40,7 @@ export default function UsersFiltersBar({
 
           <div className="flex gap-2 w-full sm:w-auto">
             <button
-              className="bg-gray-800 text-white hover:bg-gray-900 duration-200 px-4 lg:px-6 py-2 lg:py-3 rounded-xl flex items-center gap-2 font-medium transition-all hover:shadow-lg text-sm lg:text-base flex-1 sm:flex-none justify-center"
+              className="bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 duration-200 px-4 lg:px-6 py-2 lg:py-3 rounded-xl flex items-center gap-2 font-medium transition-all shadow-sm hover:shadow-md text-sm lg:text-base flex-1 sm:flex-none justify-center"
               onClick={onFilter}
               type="button"
             >
@@ -63,3 +63,4 @@ export default function UsersFiltersBar({
     </div>
   );
 }
+  

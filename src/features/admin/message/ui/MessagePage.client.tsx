@@ -15,15 +15,21 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+// Layout
 import AdminLayout from "@/components/layout/AdminLayout";
+
+// Shared modals
 import UserFilterModal from "@/components/modals/UserFilterModals";
 import CreateGroupModal from "@/components/modals/CreateGruopModal";
 import EditGroupModal from "@/components/modals/EditGroupModal";
 import SendMessage from "@/components/modals/SendMessages";
 
+// Local components
+import MessageGroupCard from "./components/MessageGroupCard";
+import MessageUsersTable from "./components/MessageUsersTable";
+
+// Hook
 import { useMessageController } from "../hooks/useMessageController";
-import GroupCard from "./components/GroupCard";
-import UserRow from "./components/UserRow";
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
@@ -33,6 +39,7 @@ const PoppinsFont = Poppins({
 export default function MessagePage() {
   const c = useMessageController();
 
+  /* ── Loading / Auth gate ── */
   if (!c.isAuthenticated || c.loading) {
     return (
       <div className="w-full min-h-screen flex justify-center items-center">
@@ -48,7 +55,8 @@ export default function MessagePage() {
         style={PoppinsFont.style}
       >
         <div className="p-6 max-w-7xl mx-auto">
-          {/* Header */}
+
+          {/* ── Page Header ── */}
           <div className="mb-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div>
@@ -62,7 +70,7 @@ export default function MessagePage() {
               </div>
 
               <button
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2 group font-semibold"
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 group font-semibold"
                 onClick={() => c.setCreateGroupOpen(true)}
               >
                 <Plus
@@ -74,7 +82,7 @@ export default function MessagePage() {
             </div>
           </div>
 
-          {/* Group Cards */}
+          {/* ── Message Groups ── */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <User className="text-blue-600" size={24} />
@@ -82,9 +90,10 @@ export default function MessagePage() {
                 Mesaj Grupları
               </h2>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {c.groups.map((group, index) => (
-                <GroupCard
+                <MessageGroupCard
                   key={index}
                   group={group}
                   onEdit={c.handleEditGroup}
@@ -94,10 +103,11 @@ export default function MessagePage() {
             </div>
           </div>
 
-          {/* Users Table */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Table toolbar */}
-            <div className="p-6 border-b border-gray-100">
+          {/* ── Users Table Card ── */}
+          <div className="bg-white rounded-md shadow-[0_2px_1px_-1px_rgba(0,0,0,0.2),0_1px_1px_0_rgba(0,0,0,0.14),0_1px_3px_0_rgba(0,0,0,0.12)] overflow-hidden">
+
+            {/* Toolbar: title + search + filter */}
+            <div className="p-5 border-b border-black/12">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <Users className="text-blue-600" size={24} />
@@ -138,7 +148,7 @@ export default function MessagePage() {
                 </div>
               </div>
 
-              {/* Filter warning */}
+              {/* Active filter warning */}
               {c.hasActiveFilter && (
                 <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
                   <AlertTriangle
@@ -158,7 +168,7 @@ export default function MessagePage() {
                 </div>
               )}
 
-              {/* Selected items bar */}
+              {/* Bulk selection bar */}
               {c.checkedItems.length > 0 && (
                 <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -182,7 +192,7 @@ export default function MessagePage() {
                       </button>
                       <button
                         onClick={c.handleSendToChecked}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium flex items-center gap-2"
+                        className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium flex items-center gap-2 shadow-sm hover:shadow-md"
                       >
                         <Send size={16} />
                         Seçilenlere Gönder
@@ -196,58 +206,61 @@ export default function MessagePage() {
             {/* Table */}
             <div className="overflow-auto">
               <table className="w-full">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-75">
+                <thead>
                   <tr>
                     {[
-                      { label: "Seçim", width: "w-16" },
-                      { label: "Kullanıcı", width: "w-64" },
-                      { label: "Cinsiyet", width: "w-32" },
-                      { label: "Durum", width: "w-40" },
-                      { label: "İletişim", width: "w-48" },
-                      { label: "Adres", width: "w-64" },
-                      { label: "İşlemler", width: "w-32" },
+                      { label: "Seçim", width: "w-14", pad: "px-4" },
+                      { label: "Profil", width: "w-18", pad: "pl-4 pr-4" },
+                      { label: "Ad Soyad", width: "", pad: "pl-2 pr-4" },
+                      { label: "Cinsiyet", width: "", pad: "px-4" },
+                      { label: "Durum", width: "", pad: "px-4" },
+                      { label: "İletişim", width: "", pad: "px-4" },
+                      { label: "Adres", width: "", pad: "px-4" },
+                      { label: "İşlemler", width: "w-24", pad: "px-4" },
                     ].map((header, index) => (
                       <th
                         key={index}
-                        className={`px-4 py-4 font-semibold text-gray-700 text-left text-sm uppercase tracking-wider border-b border-gray-200 ${header.width}`}
+                        className={`${header.pad} py-3 text-left text-xs font-semibold tracking-wide text-black/60 border-b border-black/12 whitespace-nowrap ${header.width}`}
                       >
                         {header.label}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+
+                <tbody>
+                  {/* Loading state */}
                   {c.loading && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center">
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                          <div className="text-gray-600">Yükleniyor...</div>
+                      <td colSpan={8} className="px-4 py-12 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-sm text-black/60">Yükleniyor...</span>
                         </div>
                       </td>
                     </tr>
                   )}
+
+                  {/* Empty state */}
                   {!c.loading && c.paginatedUsers.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center">
-                        <div className="flex flex-col items-center gap-3 text-gray-500">
-                          <Search size={48} className="text-gray-300" />
-                          <div className="text-lg font-medium">
-                            Kayıt bulunamadı
-                          </div>
-                          <p className="text-gray-400">
-                            Arama kriterlerinize uygun sonuç bulunamadı.
-                          </p>
+                      <td colSpan={8} className="px-4 py-12 text-center">
+                        <div className="flex flex-col items-center gap-2 text-black/38">
+                          <Search size={32} strokeWidth={1.5} />
+                          <span className="text-sm font-medium text-black/60">Kayıt bulunamadı</span>
+                          <p className="text-xs text-black/38">Arama kriterlerinize uygun sonuç bulunamadı.</p>
                         </div>
                       </td>
                     </tr>
                   )}
-                  {c.paginatedUsers.map((row: any) => (
-                    <UserRow
+
+                  {/* User rows */}
+                  {c.paginatedUsers.map((row) => (
+                    <MessageUsersTable
                       key={row.uid}
                       row={row}
                       isChecked={c.checkedItems.some(
-                        (item: any) => item.uid === row.uid,
+                        (item) => item.uid === row.uid,
                       )}
                       onCheck={c.handleCheckItem}
                       onWhatsapp={c.handleSendWhatsapp}
@@ -259,13 +272,13 @@ export default function MessagePage() {
             </div>
 
             {/* Pagination */}
-            <div className="flex flex-col sm:flex-row items-center justify-between p-6 border-t border-gray-100 bg-white">
-              <div className="flex items-center gap-4 mb-4 sm:mb-0">
-                <span className="text-sm text-gray-700">Sayfa başına:</span>
+            <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-black/12">
+              <div className="flex items-center gap-3 mb-3 sm:mb-0">
+                <span className="text-[0.75rem] text-black/60">Sayfa başına:</span>
                 <select
                   value={c.rowsPerPage}
                   onChange={c.handleChangeRowsPerPage}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  className="border border-black/20 rounded px-2 py-1 text-[0.8125rem] text-black/87 focus:ring-1 focus:ring-blue-600 focus:border-blue-600 bg-white"
                 >
                   <option value={5}>5</option>
                   <option value={10}>10</option>
@@ -273,22 +286,17 @@ export default function MessagePage() {
                 </select>
               </div>
 
-              <div className="text-sm text-gray-700 mb-4 sm:mb-0">
-                <span className="font-medium">
-                  {c.startIndex + 1}-
-                  {Math.min(c.endIndex, c.listUsers.length)}
-                </span>{" "}
-                arası, toplam{" "}
-                <span className="font-medium">{c.listUsers.length}</span> kayıt
+              <div className="text-[0.75rem] text-black/60 mb-3 sm:mb-0">
+                {c.startIndex + 1}–{Math.min(c.endIndex, c.listUsers.length)} / {c.listUsers.length}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => c.handleChangePage(c.page - 1)}
                   disabled={c.page === 0}
-                  className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                  className="p-1.5 text-black/54 rounded-full disabled:opacity-38 disabled:cursor-not-allowed hover:bg-black/[0.04] transition-colors"
                 >
-                  <ChevronLeft size={16} />
+                  <ChevronLeft size={18} />
                 </button>
 
                 {Array.from(
@@ -304,10 +312,10 @@ export default function MessagePage() {
                       <button
                         key={i}
                         onClick={() => c.handleChangePage(pageNumber)}
-                        className={`w-10 h-10 rounded-lg border transition-all duration-200 font-medium ${
+                        className={`w-8 h-8 rounded-full text-[0.8125rem] font-medium transition-colors ${
                           c.page === pageNumber
-                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-lg"
-                            : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                            ? "bg-blue-600 text-white"
+                            : "text-black/87 hover:bg-black/[0.04]"
                         }`}
                       >
                         {pageNumber + 1}
@@ -319,15 +327,15 @@ export default function MessagePage() {
                 <button
                   onClick={() => c.handleChangePage(c.page + 1)}
                   disabled={c.page >= c.totalPages - 1}
-                  className="p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                  className="p-1.5 text-black/54 rounded-full disabled:opacity-38 disabled:cursor-not-allowed hover:bg-black/[0.04] transition-colors"
                 >
-                  <ChevronRight size={16} />
+                  <ChevronRight size={18} />
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Modals */}
+          {/* ── Modals ── */}
           <UserFilterModal
             open={c.openFilter}
             setOpen={c.setOpenFilter}

@@ -10,6 +10,8 @@ function getRoleStyles(roleRaw: string) {
   const role = (roleRaw || "").toLowerCase().trim();
 
   switch (role) {
+    case "head_admin":
+      return "bg-amber-100 text-amber-800 border-amber-200";
     case "admin":
       return "bg-purple-100 text-purple-800 border-purple-200";
     case "moderator":
@@ -21,14 +23,31 @@ function getRoleStyles(roleRaw: string) {
   }
 }
 
+function getRoleLabel(roleRaw: string): string {
+  const role = (roleRaw || "").toLowerCase().trim();
+
+  switch (role) {
+    case "head_admin":
+      return "Baş Yetkili";
+    case "admin":
+      return "Yetkili";
+    case "moderator":
+      return "Moderatör";
+    case "editor":
+      return "Editör";
+    default:
+      return roleRaw || "Bilinmiyor";
+  }
+}
+
 export default function StatusBadge({ role, className = "" }: Props) {
-  const label = role?.trim() ? role : "unknown";
+  const label = getRoleLabel(role);
 
   return (
     <span
       className={[
         "px-3 py-1 rounded-full text-xs font-medium border inline-flex items-center",
-        getRoleStyles(label),
+        getRoleStyles(role),
         className,
       ].join(" ")}
       title={label}

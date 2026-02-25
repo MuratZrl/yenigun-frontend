@@ -121,7 +121,7 @@ export default function AdminSidebar({
       {
         key: "admins",
         name: "Yetkili Yönetimi",
-        url: "/admin/admin",
+        url: "/admin/admins",
         icon: <Shield size={20} />,
       },
       {

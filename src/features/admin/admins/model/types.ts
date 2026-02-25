@@ -20,6 +20,7 @@ export type AdminUser = {
   gender?: Gender;
   profilePicture?: string | null;
   birth?: BirthDate;
+  createdAt?: string;
 };
 
 export type AdminUsersListParams = {

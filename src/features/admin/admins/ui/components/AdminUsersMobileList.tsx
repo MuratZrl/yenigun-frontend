@@ -78,7 +78,7 @@ function MobileCard({
             <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-10 min-w-[140px]">
               <button
                 onClick={() => {
-                  window.open(`/admin/details/${row.uid}`, "_blank");
+                  window.open(`/admin/admins/${row.uid}`, "_blank");
                   setShowActions(false);
                 }}
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"

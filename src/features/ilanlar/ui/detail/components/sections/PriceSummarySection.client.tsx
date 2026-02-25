@@ -1,16 +1,15 @@
 // src/features/ads/ui/detail/components/sections/PriceSummarySection.client.tsx
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { MapPin } from "lucide-react";
 
-import type { AdvertData, FeatureValue } from "@/types/advert";
+import type { AdvertData, Contract, Details, FeatureValue } from "@/types/advert";
 import DesktopSpecRow from "../shared/DesktopSpecRow";
 
 type Props = {
   data: AdvertData;
   className?: string;
-  fromWhoLabel?: string;
 };
 
 type Row = {
@@ -39,11 +38,11 @@ const FEATURE_FALLBACK_IDS: Record<string, string[]> = {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function isTruthyString(v: any) {
+function isTruthyString(v: unknown): v is string {
   return typeof v === "string" && v.trim() !== "";
 }
 
-function toText(v: any): string {
+function toText(v: unknown): string {
   if (v === null || v === undefined) return "";
   if (Array.isArray(v)) return v.map(toText).filter(Boolean).join(", ");
   if (typeof v === "number") return String(v);
@@ -52,7 +51,7 @@ function toText(v: any): string {
   return String(v).trim();
 }
 
-function formatTrDate(input: any): string | null {
+function formatTrDate(input: unknown): string | null {
   if (!input) return null;
   const d =
     typeof input === "number" || typeof input === "string"
@@ -65,22 +64,22 @@ function formatTrDate(input: any): string | null {
   return d.toLocaleDateString("tr-TR");
 }
 
-function boolToVarYok(v: any): string | null {
+function boolToVarYok(v: unknown): string | null {
   if (typeof v === "boolean") return v ? "Var" : "Yok";
   if (isTruthyString(v)) return v.trim();
   return null;
 }
 
-function boolToEvetHayir(v: any): string | null {
+function boolToEvetHayir(v: unknown): string | null {
   if (typeof v === "boolean") return v ? "Evet" : "Hayır";
   if (isTruthyString(v)) return v.trim();
   return null;
 }
 
 function formatLocation(data: AdvertData): string {
-  const p = String((data as any)?.address?.province ?? "").trim();
-  const d = String((data as any)?.address?.district ?? "").trim();
-  const q = String((data as any)?.address?.quarter ?? "").trim();
+  const p = String(data.address?.province ?? "").trim();
+  const d = String(data.address?.district ?? "").trim();
+  const q = String(data.address?.quarter ?? "").trim();
   return [p, d, q].filter(Boolean).join(" / ");
 }
 
@@ -91,21 +90,26 @@ function formatLocation(data: AdvertData): string {
 export default function PriceSummarySection({
   data,
   className,
-  fromWhoLabel = "Sahibinden",
 }: Props) {
-  const details: any = (data as any)?.details ?? {};
-  const contract: any = (data as any)?.contract ?? {};
+  const details = useMemo<Details & Record<string, unknown>>(
+    () => ({ ...data.details }) as Details & Record<string, unknown>,
+    [data.details],
+  );
+  const contract = useMemo(
+    () => data.contract ?? ({} as Partial<Contract>),
+    [data.contract],
+  );
 
   const locationText = useMemo(() => formatLocation(data), [data]);
 
   const uidText = useMemo(() => {
-    const uid = (data as any)?.uid;
+    const uid = data.uid;
     if (uid === null || uid === undefined) return "";
     return String(uid).trim();
   }, [data]);
 
-  const stepsSecond = String((data as any)?.steps?.second ?? "").trim();
-  const stepsFirst = String((data as any)?.steps?.first ?? "").trim();
+  const stepsSecond = String(data.steps?.second ?? "").trim();
+  const stepsFirst = String(data.steps?.first ?? "").trim();
   const typeText =
     [stepsSecond, stepsFirst].filter(Boolean).join(" ").trim() || "-";
 
@@ -115,16 +119,13 @@ export default function PriceSummarySection({
 
   const createdDateText = useMemo(() => {
     const ts =
-      contract?.date ??
-      (data as any)?.created?.createdTimestamp ??
-      (data as any)?.createdAt ??
-      (data as any)?.updatedAt ??
+      data.created?.createdTimestamp ??
       null;
     return formatTrDate(ts);
-  }, [data, contract?.date]);
+  }, [data]);
 
   const feeText = useMemo(() => {
-    const fee = toText((data as any)?.fee).trim();
+    const fee = toText(data.fee).trim();
 
     if (fee) {
       // Remove trailing currency symbols/labels to avoid duplication
@@ -138,39 +139,32 @@ export default function PriceSummarySection({
       return cleaned ? `${cleaned} ${label}` : fee;
     }
 
-    const amount = (data as any)?.price?.amount;
-    const currency = toText((data as any)?.price?.currency) || "TL";
-    const currencyLabel = currency === "₺" ? "TL" : currency;
-    if (typeof amount === "number" && Number.isFinite(amount)) {
-      return `${amount.toLocaleString("tr-TR")} ${currencyLabel}`;
-    }
     return "Fiyat yok";
   }, [data]);
 
   const featureValues: FeatureValue[] = useMemo(() => {
-    const raw = (data as any)?.featureValues;
-    return Array.isArray(raw) ? (raw as FeatureValue[]) : [];
+    return Array.isArray(data.featureValues) ? data.featureValues : [];
   }, [data]);
 
   const featureById = useMemo(() => {
-    const m = new Map<string, any>();
+    const m = new Map<string, string | number>();
     for (const fv of featureValues) {
-      const id = String((fv as any)?.featureId ?? "").trim();
+      const id = String(fv.featureId ?? "").trim();
       if (!id) continue;
-      m.set(id, (fv as any)?.value);
+      m.set(id, fv.value);
     }
     return m;
   }, [featureValues]);
 
-  const pick = (...candidates: any[]) => {
+  const pick = useCallback((...candidates: (string | null | undefined)[]) => {
     for (const c of candidates) {
       const t = toText(c);
       if (t) return t;
     }
     return "";
-  };
+  }, []);
 
-  const pickFeature = (ids?: string[]) => {
+  const pickFeature = useCallback((ids?: string[]) => {
     if (!ids?.length) return "";
     for (const id of ids) {
       const v = featureById.get(id);
@@ -178,12 +172,12 @@ export default function PriceSummarySection({
       if (t) return t;
     }
     return "";
-  };
+  }, [featureById]);
 
-  const resolveSpec = (opts: {
-    detailsValue?: any;
+  const resolveSpec = useCallback((opts: {
+    detailsValue?: unknown;
     idsFallback?: string[];
-    formatter?: (v: any) => string | null;
+    formatter?: (v: unknown) => string | null;
   }) => {
     const d = opts.formatter
       ? opts.formatter(opts.detailsValue)
@@ -192,15 +186,15 @@ export default function PriceSummarySection({
     const byIds = pickFeature(opts.idsFallback);
     if (byIds) return byIds;
     return "";
-  };
+  }, [pickFeature]);
 
   /* ---- Spec rows ---- */
 
   const desktopRows: Row[] = useMemo(() => {
     const eidsNo =
-      toText((data as any)?.eidsNo) ||
+      toText(data.eidsNo) ||
       pickFeature(FEATURE_FALLBACK_IDS.eidsNo);
-    const eidsDate = formatTrDate((data as any)?.eidsDate) || "";
+    const eidsDate = formatTrDate(data.eidsDate) || "";
 
     const rows: Row[] = [
       { label: "İlan No", value: uidText || "-", important: true },
@@ -287,7 +281,7 @@ export default function PriceSummarySection({
         ? [{ label: "Kontrat Süresi", value: toText(contract.time) }]
         : []),
       ...(eidsNo ? [{ label: "EIDS No", value: eidsNo }] : []),
-      ...((data as any)?.eidsDate
+      ...(data.eidsDate
         ? [{ label: "EIDS Tarihi", value: eidsDate || "-" }]
         : []),
       ...(shouldShowDeed
@@ -315,10 +309,11 @@ export default function PriceSummarySection({
     createdDateText,
     typeText,
     details,
-    contract?.time,
+    contract,
     shouldShowDeed,
-    fromWhoLabel,
-    featureById,
+    pick,
+    pickFeature,
+    resolveSpec,
   ]);
 
   /* ---- Mobile chips ---- */
@@ -349,7 +344,7 @@ export default function PriceSummarySection({
     if (heating) chips.push({ k: "Isıtma", v: heating });
 
     return chips.slice(0, 4);
-  }, [details, featureById]);
+  }, [details, resolveSpec]);
 
   /* ================================================================ */
   /*  RENDER                                                          */

@@ -22,16 +22,16 @@ export default function CustomersNoteSearchBar({
   onClear,
 }: Props) {
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div className="flex flex-col sm:flex-row gap-2.5">
       <div className="relative flex-1">
         <StickyNote
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-          size={20}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          size={16}
         />
         <input
           type="text"
           placeholder="Müşteri notlarında ara..."
-          className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white shadow-sm placeholder:text-gray-400 text-gray-800 outline-none transition-all duration-150 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 hover:border-gray-300"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && onSearch()}
@@ -42,31 +42,31 @@ export default function CustomersNoteSearchBar({
         <button
           onClick={onSearch}
           disabled={loading}
-          className="flex items-center justify-center gap-2 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2.5 sm:py-3 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none text-sm sm:text-base"
+          className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2.5 rounded-lg font-medium text-sm shadow-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
           type="button"
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
               <span>Aranıyor...</span>
             </>
           ) : (
             <>
-              <StickyNote size={16} className="sm:size-4" />
+              <StickyNote size={14} />
               <span>Notlarda Ara</span>
             </>
           )}
         </button>
 
-        {active ? (
+        {active && (
           <button
             onClick={onClear}
-            className="flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2.5 sm:py-3 rounded-lg font-medium transition-colors duration-200 flex-1 sm:flex-none text-sm sm:text-base"
+            className="flex items-center justify-center gap-1.5 border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 active:bg-gray-100 px-4 py-2.5 rounded-lg font-medium text-sm shadow-sm transition-all duration-150"
             type="button"
           >
-            <span>Not Aramayı Temizle</span>
+            <span>Temizle</span>
           </button>
-        ) : null}
+        )}
       </div>
     </div>
   );

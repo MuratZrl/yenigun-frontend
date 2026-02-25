@@ -4,25 +4,29 @@
 import React, { useMemo } from "react";
 import { Poppins } from "next/font/google";
 
+// Layout
 import AdminLayout from "@/components/layout/AdminLayout";
 import AreYouSure from "@/components/AreYouSure";
 
+// Shared modals
 import CreateUserModal from "@/components/modals/CreateUsersModal";
 import UserFilterModal from "@/components/modals/UserFilterModals";
 import EditUserModal from "@/components/modals/EditUserModal";
 import ListUserModal from "@/components/modals/ListUserModals";
 
+// Shared pagination
 import { Pagination, MobilePagination } from "@/components/Pagination";
 
+// Hook, utils & types
 import { useUsersController } from "@/features/admin/users/hooks/useUsersController";
 import { normalizeCustomers } from "@/features/admin/users/model/utils";
 import type { NormalizedCustomerUser } from "@/features/admin/users/model/types";
 
+// Local components
 import CustomersHeader from "@/features/admin/users/ui/components/CustomersHeader";
 import CustomersSearchBar from "@/features/admin/users/ui/components/CustomersSearchBar";
 import CustomersNoteSearchBar from "@/features/admin/users/ui/components/CustomersNoteSearchBar";
 import CustomersActiveFilterBanner from "@/features/admin/users/ui/components/CustomersActiveFilterBanner";
-
 import CustomersStates from "@/features/admin/users/ui/components/CustomersStates";
 import CustomersGrid from "@/features/admin/users/ui/components/CustomersGrid";
 import CustomersTable from "@/features/admin/users/ui/components/CustomersTable";
@@ -89,6 +93,7 @@ export default function CustomersPageClient() {
     handleViewLists,
   } = useUsersController();
 
+  /* ── Derived state ── */
   const normalizedPaginated: NormalizedCustomerUser[] = useMemo(() => {
     return normalizeCustomers(paginatedUsers ?? []);
   }, [paginatedUsers]);
@@ -102,12 +107,15 @@ export default function CustomersPageClient() {
   return (
     <AdminLayout>
       <div className="w-full min-h-screen bg-gray-50" style={PoppinsFont.style}>
-        <div className="pt-5 pl-5 pr-5 mb-6 lg:mb-8">
+
+        {/* ── Page Header ── */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 lg:pt-8">
           <CustomersHeader onOpenCreate={() => setOpenCreate(true)} />
         </div>
 
+        {/* ── Search & Filters ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="bg-white rounded-xl shadow-sm border p-4 lg:p-6">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 lg:p-5">
             <CustomersSearchBar
               value={filteredValues.fullname || ""}
               onChange={(v) =>
@@ -117,18 +125,16 @@ export default function CustomersPageClient() {
               onOpenFilter={() => setOpenFilter(true)}
             />
 
-            <div className="border-t pt-4">
-              <CustomersNoteSearchBar
-                value={noteSearch.text}
-                loading={noteSearch.loading}
-                active={noteSearch.active}
-                onChange={(v) =>
-                  setNoteSearch((prev) => ({ ...prev, text: v }))
-                }
-                onSearch={() => searchByNote(noteSearch.text)}
-                onClear={clearNoteSearch}
-              />
-            </div>
+            <CustomersNoteSearchBar
+              value={noteSearch.text}
+              loading={noteSearch.loading}
+              active={noteSearch.active}
+              onChange={(v) =>
+                setNoteSearch((prev) => ({ ...prev, text: v }))
+              }
+              onSearch={() => searchByNote(noteSearch.text)}
+              onClear={clearNoteSearch}
+            />
 
             <CustomersActiveFilterBanner
               filteredOutCount={filteredOutCount}
@@ -138,6 +144,7 @@ export default function CustomersPageClient() {
           </div>
         </div>
 
+        {/* ── Content: Table / Grid + Pagination ── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
           {!authChecked || loading ? (
             <CustomersStates kind={isMobile ? "mobileLoading" : "loading"} />
@@ -145,6 +152,7 @@ export default function CustomersPageClient() {
             <CustomersStates kind="empty" onOpenCreate={() => setOpenCreate(true)} onClear={handleCleanFilters} />
           ) : (
             <>
+              {/* Data view */}
               {viewMode === "grid" ? (
                 <CustomersGrid
                   rows={normalizedPaginated}
@@ -167,6 +175,7 @@ export default function CustomersPageClient() {
                 />
               )}
 
+              {/* Pagination */}
               {pagination.total > 0 ? (
                 isMobile ? (
                   <MobilePagination
@@ -196,6 +205,7 @@ export default function CustomersPageClient() {
           )}
         </div>
 
+        {/* ── Modals ── */}
         <CreateUserModal
           open={openCreate}
           setOpen={setOpenCreate}
@@ -227,6 +237,7 @@ export default function CustomersPageClient() {
           cookies={cookies}
         />
 
+        {/* ── Delete Confirmation ── */}
         <AreYouSure
           open={deleteConfirm.open}
           onClose={() => setDeleteConfirm({ open: false, uid: null, user: null })}
