@@ -21,9 +21,7 @@ export default function LatestAdverts({ data }: HighlightProps) {
 
   const safeData = useMemo<Listing[]>(() => (Array.isArray(data) ? data : []), [data]);
 
-  const filteredData = useMemo(() => {
-    return safeData.filter(hasValidPhoto);
-  }, [safeData]);
+  const filteredData = safeData;
 
   const navigateTo = (uid: string) => {
     router.push(`/ilan/${uid}`);

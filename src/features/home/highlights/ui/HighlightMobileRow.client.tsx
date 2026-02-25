@@ -17,7 +17,9 @@ type Props = {
 };
 
 export default function HighlightMobileRow({ listing, onNavigate }: Props) {
-  const imgSrc = getFirstPhotoUrl(listing) || "/logo.png";
+  const firstPhoto = getFirstPhotoUrl(listing);
+  const imgSrc = firstPhoto || "/logo.png";
+  const isFallback = !firstPhoto;
   const feeText = getFeeText(listing.fee) ?? "Fiyat Yok";
   const locationText = getLocationText(listing);
   const areaSqm = getAreaSqm(listing);
@@ -42,7 +44,10 @@ export default function HighlightMobileRow({ listing, onNavigate }: Props) {
         <img
           src={imgSrc}
           alt={listing.title || "İlan görseli"}
-          className="absolute inset-0 w-full h-full object-cover"
+          className={isFallback
+            ? "absolute inset-0 w-full h-full object-contain p-4 bg-gray-50"
+            : "absolute inset-0 w-full h-full object-cover"
+          }
           loading="lazy"
           onError={(e) => {
             e.currentTarget.src = "/logo.png";

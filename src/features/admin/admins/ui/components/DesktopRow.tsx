@@ -8,12 +8,12 @@ import { Eye, Edit, Trash2 } from "lucide-react";
 import Avatar from "./Avatar";
 import StatusBadge from "./StatusBadge";
 
-import type { AdminUser } from "@/features/admin/admins/model/types";
+import type { AdminUser, AdminModalState } from "@/features/admin/admins/model/types";
 import formatPhoneNumber from "@/utils/formatPhoneNumber";
 
 type Props = {
   row: AdminUser;
-  setEdit: (val: { user: AdminUser; open: boolean }) => void;
+  setEdit: (val: AdminModalState) => void;
   setDeleteConfirm: (val: { open: boolean; uid: AdminUser["uid"]; user: AdminUser }) => void;
 };
 
@@ -88,7 +88,7 @@ export default function DesktopRow({ row, setEdit, setDeleteConfirm }: Props) {
           </button>
 
           <button
-            onClick={() => setEdit({ user: row, open: true })}
+            onClick={() => setEdit({ open: true, mode: "edit", user: row })}
             className="p-2.5 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all duration-200 group relative"
           >
             <Edit size={18} />

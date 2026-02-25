@@ -11,7 +11,7 @@ import formatPhoneNumber from "@/utils/formatPhoneNumber";
 import Avatar from "@/features/admin/admins/ui/components/Avatar";
 import StatusBadge from "@/features/admin/admins/ui/components/StatusBadge";
 
-import type { AdminUser, DeleteConfirmState, EditUserModalState } from "@/features/admin/admins/model/types";
+import type { AdminUser, DeleteConfirmState, AdminModalState } from "@/features/admin/admins/model/types";
 
 type Props = {
   loading: boolean;
@@ -27,7 +27,7 @@ type Props = {
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
 
-  setEdit: React.Dispatch<React.SetStateAction<EditUserModalState>>;
+  setEdit: React.Dispatch<React.SetStateAction<AdminModalState>>;
   setDeleteConfirm: React.Dispatch<React.SetStateAction<DeleteConfirmState>>;
 };
 
@@ -147,7 +147,7 @@ export default function UsersDesktopTable({
                       </button>
 
                       <button
-                        onClick={() => setEdit({ open: true, user: row })}
+                        onClick={() => setEdit({ open: true, mode: "edit", user: row })}
                         className="p-1.5 text-black/54 hover:text-green-600 hover:bg-green-600/8 rounded-full transition-colors"
                         type="button"
                         title="Düzenle"

@@ -11,12 +11,12 @@ import StatusBadge from "./StatusBadge";
 import type {
   AdminUser,
   DeleteConfirmState,
-  EditUserModalState,
+  AdminModalState,
 } from "../../model/types";
 
 type Props = {
   row: AdminUser;
-  setEdit: React.Dispatch<React.SetStateAction<EditUserModalState>>;
+  setEdit: React.Dispatch<React.SetStateAction<AdminModalState>>;
   setDeleteConfirm: React.Dispatch<React.SetStateAction<DeleteConfirmState>>;
 };
 
@@ -74,7 +74,7 @@ export default function MobileCard({ row, setEdit, setDeleteConfirm }: Props) {
               <button
                 type="button"
                 onClick={() => {
-                  setEdit({ open: true, user: row });
+                  setEdit({ open: true, mode: "edit", user: row });
                   setShowActions(false);
                 }}
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"

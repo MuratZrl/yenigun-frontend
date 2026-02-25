@@ -1,6 +1,72 @@
 import React from "react";
+import { Poppins } from "next/font/google";
 import { X, AlertTriangle } from "lucide-react";
 
+const PoppinsFont = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
+/* ── Types ── */
+type ConfirmType = "delete" | "warning" | "info" | "success";
+
+type TypeTheme = {
+  gradient: string;
+  gradientHover: string;
+  shadow: string;
+  shadowHover: string;
+  iconBg: string;
+  accentLine: string;
+};
+
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title?: string;
+  message?: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: ConfirmType;
+};
+
+/* ── Theme map ── */
+const themes: Record<ConfirmType, TypeTheme> = {
+  delete: {
+    gradient: "from-red-500 to-red-600",
+    gradientHover: "hover:from-red-600 hover:to-red-700",
+    shadow: "shadow-red-500/25",
+    shadowHover: "hover:shadow-red-600/30",
+    iconBg: "from-red-500 to-red-600",
+    accentLine: "from-red-500 via-rose-500 to-orange-500",
+  },
+  warning: {
+    gradient: "from-amber-500 to-amber-600",
+    gradientHover: "hover:from-amber-600 hover:to-amber-700",
+    shadow: "shadow-amber-500/25",
+    shadowHover: "hover:shadow-amber-600/30",
+    iconBg: "from-amber-500 to-amber-600",
+    accentLine: "from-amber-500 via-orange-500 to-yellow-500",
+  },
+  info: {
+    gradient: "from-blue-600 to-blue-700",
+    gradientHover: "hover:from-blue-700 hover:to-blue-800",
+    shadow: "shadow-blue-600/25",
+    shadowHover: "hover:shadow-blue-700/30",
+    iconBg: "from-blue-500 to-blue-600",
+    accentLine: "from-blue-500 via-indigo-500 to-purple-500",
+  },
+  success: {
+    gradient: "from-emerald-500 to-emerald-600",
+    gradientHover: "hover:from-emerald-600 hover:to-emerald-700",
+    shadow: "shadow-emerald-500/25",
+    shadowHover: "hover:shadow-emerald-600/30",
+    iconBg: "from-emerald-500 to-emerald-600",
+    accentLine: "from-emerald-500 via-teal-500 to-cyan-500",
+  },
+};
+
+/* ── Component ── */
 const AreYouSure = ({
   open,
   onClose,
@@ -10,64 +76,59 @@ const AreYouSure = ({
   confirmText = "Evet, Sil",
   cancelText = "İptal",
   type = "delete",
-}: any) => {
-  const typeColors = {
-    delete: { main: "#ef4444", light: "#fef2f2", text: "#dc2626" },
-    warning: { main: "#f59e0b", light: "#fffbeb", text: "#d97706" },
-    info: { main: "#3b82f6", light: "#eff6ff", text: "#2563eb" },
-    success: { main: "#10b981", light: "#ecfdf5", text: "#059669" },
-  } as any;
-
-  const colors = typeColors[type] || typeColors.delete;
+}: Props) => {
+  const theme = themes[type] ?? themes.delete;
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-lg max-w-md w-full overflow-hidden relative">
-        {/* Kapatma butonu */}
-        <button
-          onClick={onClose}
-          className="absolute right-3 top-3 p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
-        >
-          <X size={20} />
-        </button>
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full max-w-[420px] mx-4 rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]"
+        style={PoppinsFont.style}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ── Header ── */}
+        <div className="relative px-6 pt-6 pb-5">
+          {/* Gradient accent line */}
+          <div className={`absolute top-0 left-6 right-6 h-[3px] bg-gradient-to-r ${theme.accentLine} rounded-full`} />
 
-        {/* İkon bölümü */}
-        <div className="flex justify-center mt-6 mb-2">
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: colors.light }}
-          >
-            <AlertTriangle size={32} style={{ color: colors.main }} />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className={`w-11 h-11 bg-gradient-to-br ${theme.iconBg} rounded-xl flex items-center justify-center shadow-lg ${theme.shadow}`}>
+                <AlertTriangle size={20} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-black/87">{title}</h2>
+                <p className="text-xs text-black/38 mt-0.5">{message}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 text-black/30 hover:text-black/60 hover:bg-black/[0.04] rounded-full transition-colors"
+            >
+              <X size={18} />
+            </button>
           </div>
         </div>
 
-        {/* Başlık */}
-        <div className="text-center px-6 pb-1">
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-        </div>
-
-        {/* Mesaj */}
-        <div className="text-center px-6 pb-6">
-          <p className="text-gray-600 leading-relaxed">{message}</p>
-        </div>
-
-        {/* Butonlar */}
-        <div className="flex justify-center gap-3 pb-6 px-6">
+        {/* ── Actions ── */}
+        <div className="flex gap-3 px-6 pb-6 pt-1 border-t border-black/6">
           <button
+            type="button"
             onClick={onClose}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium min-w-[120px]"
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-black/50 border border-black/10 rounded-xl hover:bg-black/[0.03] hover:text-black/70 transition-all"
           >
             {cancelText}
           </button>
           <button
+            type="button"
             onClick={onConfirm}
-            style={{
-              backgroundColor: colors.main,
-              color: "white",
-            }}
-            className="px-6 py-2 rounded-lg hover:opacity-90 transition-opacity font-medium min-w-[120px]"
+            className={`flex-1 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r ${theme.gradient} rounded-xl ${theme.gradientHover} shadow-lg ${theme.shadow} ${theme.shadowHover} transition-all`}
           >
             {confirmText}
           </button>
@@ -78,3 +139,4 @@ const AreYouSure = ({
 };
 
 export default AreYouSure;
+

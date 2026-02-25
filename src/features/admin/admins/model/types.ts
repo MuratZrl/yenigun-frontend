@@ -66,3 +66,9 @@ export type CreateUserModalState = {
   open: boolean;
   form: CreateAdminUserPayload;
 };
+
+export type AdminModalState = {
+  open: boolean;
+  mode: "create" | "edit";
+  user: AdminUser | null;
+};

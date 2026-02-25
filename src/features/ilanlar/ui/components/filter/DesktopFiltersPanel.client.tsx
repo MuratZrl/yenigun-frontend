@@ -9,7 +9,7 @@ import CategoryOptionsBox from "./CategoryOptionBox.client";
 import MapPreview from "./MapPreview.client";
 import AddressBox from "./AddressBox.client";
 import PriceBox from "./PriceBox.client";
-import AreaBox from "./AreaBox.client";
+import { GrossAreaBox, NetAreaBox } from "./AreaBox.client";
 import RoomCountBox from "./RoomCountBox.client";
 import BuildingAgeBox from "./BuildingAgeBox.client";
 import FloorBox from "./FloorBox.client";
@@ -31,7 +31,6 @@ import SwapBox from "./SwapBox.client";
 // import MediaFilterBox from "./MediaFilterBox.client";
 // import MapFilterBox from "./MapFilterBox.client";
 import KeywordFilterBox from "./KeywordFilterBox.client";
-import MoreOptionsModal from "./MoreOptionsModal.client";
 import FilterActions from "./FilterActions.client";
 
 import type { Category, FilterState, Subcategory } from "@/types/advert";
@@ -175,8 +174,6 @@ export default function DesktopFiltersPanel({
   autoApply,
   setAutoApply,
 }: Props) {
-  const [moreOpen, setMoreOpen] = React.useState(false);
-
   const isDisabled = !hasActiveFilters(filters, selectedCategory, featureFilters);
 
   return (
@@ -212,115 +209,110 @@ export default function DesktopFiltersPanel({
           />
         </div>
 
-        <div className="mt-3 bg-white">
+        <div className="mt-1.5 bg-white">
           <MapPreview filters={filters} href="/ilanlar?view=map" />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <AddressBox filters={filters} setFilters={setFilters} citiesData={citiesData} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <PriceBox filters={filters} setFilters={setFilters} />
         </div>
 
-        <div className="mt-3">
-          <AreaBox filters={filters} setFilters={setFilters} />
+        <div className="mt-1.5">
+          <GrossAreaBox filters={filters} setFilters={setFilters} defaultOpen={false} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
+          <NetAreaBox filters={filters} setFilters={setFilters} defaultOpen={false} />
+        </div>
+
+        <div className="mt-1.5">
           <RoomCountBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.roomCount} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <BuildingAgeBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.buildingAge} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <FloorBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.floor} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <TotalFloorsBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.totalFloors} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <HeatingBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.heating} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <BathroomCountBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.bathroomCount} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <KitchenTypeBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.kitchenType} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <BalconyBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.balcony} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <ElevatorBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.elevator} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <ParkingBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.parking} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <FurnishedBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.furnished} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <UsageStatusBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.usageStatus} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <InSiteBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.inSite} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <CreditEligibleBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.creditEligible} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <DeedStatusBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.deedStatus} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <FromWhoBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.fromWho} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <SwapBox filters={filters} setFilters={setFilters} defaultOpen={FILTER_DEFAULT_OPEN.swap} />
         </div>
 
-        {/* <div className="mt-3">
+        {/* <div className="mt-1.5">
           <ListingDateBox filters={filters} setFilters={setFilters} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <MediaFilterBox filters={filters} setFilters={setFilters} />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <MapFilterBox filters={filters} setFilters={setFilters} />
         </div> */}
 
-        <div className="mt-3">
+        <div className="mt-1.5">
           <KeywordFilterBox filters={filters} setFilters={setFilters} />
         </div>
 
-        <div className="mt-3 px-3">
-          <button
-            type="button"
-            onClick={() => setMoreOpen(true)}
-            className="text-[13px] text-blue-700 hover:underline"
-          >
-            Daha fazla seçenek göster
-          </button>
-        </div>
 
         {/* ✅ Artık debounce/effect burada yok. Sadece UI kontrol. */}
         <FilterActions
@@ -331,16 +323,6 @@ export default function DesktopFiltersPanel({
         />
       </div>
 
-      <MoreOptionsModal
-        open={moreOpen}
-        initialFilters={filters}
-        onClose={() => setMoreOpen(false)}
-        onApply={(next) => {
-          setFilters(next as any);
-          if (setCurrentPage) setCurrentPage(1);
-          void handleFilter();
-        }}
-      />
     </div>
   );
 }

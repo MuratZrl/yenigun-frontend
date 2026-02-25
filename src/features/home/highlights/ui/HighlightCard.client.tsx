@@ -46,7 +46,9 @@ export default function HighlightCard({
   onNavigate,
   onCopy,
 }: Props) {
-  const imgSrc = getFirstPhotoUrl(listing);
+  const firstPhoto = getFirstPhotoUrl(listing);
+  const imgSrc = firstPhoto || "/logo.png";
+  const isFallback = !firstPhoto;
   const feeText = getFeeText(listing.fee) ?? "Fiyat Yok";
   const locationText = getLocationText(listing);
   const areaSqm = getAreaSqm(listing);
@@ -66,9 +68,12 @@ export default function HighlightCard({
       {/* Image */}
       <div className="relative aspect-[3/2] overflow-hidden">
         <img
-          src={imgSrc || "/logo.png"}
+          src={imgSrc}
           alt={listing.title || "İlan görseli"}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className={isFallback
+            ? "absolute inset-0 w-full h-full object-contain p-8 bg-gray-50"
+            : "absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          }
           onError={(e) => {
             e.currentTarget.src = "/logo.png";
             e.currentTarget.alt = "Logo";

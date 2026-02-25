@@ -11,7 +11,7 @@ import formatPhoneNumber from "@/utils/formatPhoneNumber";
 import Avatar from "@/features/admin/admins/ui/components/Avatar";
 import StatusBadge from "@/features/admin/admins/ui/components/StatusBadge";
 
-import type { AdminUser, DeleteConfirmState, EditUserModalState } from "@/features/admin/admins/model/types";
+import type { AdminUser, DeleteConfirmState, AdminModalState } from "@/features/admin/admins/model/types";
 
 type Props = {
   rows: AdminUser[];
@@ -26,7 +26,7 @@ type Props = {
   onPageChange: (newPage: number) => void;
   onRowsPerPageChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
 
-  setEdit: React.Dispatch<React.SetStateAction<EditUserModalState>>;
+  setEdit: React.Dispatch<React.SetStateAction<AdminModalState>>;
   setDeleteConfirm: React.Dispatch<React.SetStateAction<DeleteConfirmState>>;
 };
 
@@ -36,7 +36,7 @@ function MobileCard({
   setDeleteConfirm,
 }: {
   row: AdminUser;
-  setEdit: React.Dispatch<React.SetStateAction<EditUserModalState>>;
+  setEdit: React.Dispatch<React.SetStateAction<AdminModalState>>;
   setDeleteConfirm: React.Dispatch<React.SetStateAction<DeleteConfirmState>>;
 }) {
   const [showActions, setShowActions] = useState(false);
@@ -90,7 +90,7 @@ function MobileCard({
 
               <button
                 onClick={() => {
-                  setEdit({ open: true, user: row });
+                  setEdit({ open: true, mode: "edit", user: row });
                   setShowActions(false);
                 }}
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"

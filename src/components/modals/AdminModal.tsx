@@ -1,10 +1,11 @@
-// src/components/modals/EditAdminModal.tsx
+// src/components/modals/AdminModal.tsx
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Poppins } from "next/font/google";
 import { toast } from "react-toastify";
 import {
   X,
+  UserPlus,
   UserPen,
   Mail,
   Phone,
@@ -17,10 +18,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 
-import type {
-  AdminUser,
-  EditUserModalState,
-} from "@/features/admin/admins/model/types";
+import type { AdminUser } from "@/features/admin/admins/model/types";
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
@@ -40,14 +38,14 @@ type FormState = {
   gsmNumber: string;
   gender: string;
   link: string;
-  image?: string;
+  image?: File | null;
 };
 
 type Props = {
   open: boolean;
-  setOpen: (state: EditUserModalState) => void;
+  mode: "create" | "edit";
   user: AdminUser | null;
-  cookies: string;
+  onClose: () => void;
 };
 
 /* ── Helpers ── */
@@ -63,19 +61,17 @@ const EMPTY_FORM: FormState = {
   password: "",
   gsmNumber: "",
   gender: "",
+  image: null,
 };
 
 function formatPhoneNumber(value: string): string {
   let digits = value.replace(/\D/g, "");
 
-  // Strip leading 90 or 0 so we always work with the 10-digit local number
   if (digits.startsWith("90") && digits.length > 10) digits = digits.slice(2);
   if (digits.startsWith("0")) digits = digits.slice(1);
 
-  // Cap at 10 digits
   digits = digits.slice(0, 10);
 
-  // Format: (5XX) XXX XX XX
   let result = "";
   if (digits.length > 0) result = "(" + digits.slice(0, Math.min(3, digits.length));
   if (digits.length >= 3) result += ") ";
@@ -88,7 +84,6 @@ function formatPhoneNumber(value: string): string {
 
 function cleanPhoneNumber(formattedPhone: string): string {
   const digits = formattedPhone.replace(/\D/g, "");
-  // Return with leading 0 for API: 05XXXXXXXXX (11 digits)
   if (digits.startsWith("0")) return digits.slice(0, 11);
   return "0" + digits.slice(0, 10);
 }
@@ -147,6 +142,16 @@ function displayToDate(formatted: string): Date | string {
   return new Date(yearFull, month, day);
 }
 
+function parseDateToISO(formatted: string): string {
+  const parts = formatted.split("/");
+  if (parts.length !== 3 || parts[2].length !== 2) return "";
+  const day = parts[0];
+  const month = parts[1];
+  const yearShort = parts[2];
+  const yearFull = parseInt(yearShort) > 50 ? `19${yearShort}` : `20${yearShort}`;
+  return `${yearFull}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
 function buildFormFromUser(user: AdminUser): FormState {
   const formattedGsmNumber = user.gsmNumber
     ? formatPhoneNumber(user.gsmNumber)
@@ -164,10 +169,39 @@ function buildFormFromUser(user: AdminUser): FormState {
     role: user.role ?? "",
     password: "",
     gsmNumber: formattedGsmNumber,
-    gender: user.gender === "male" ? "Erkek" : "Kadın",
+    gender: user.gender === "male" ? "Erkek" : user.gender === "female" ? "Kadın" : "",
     link: "",
+    image: null,
   };
 }
+
+/* ── Mode config ── */
+const MODE_CONFIG = {
+  create: {
+    icon: UserPlus,
+    title: "Yeni Yetkili Oluştur",
+    subtitle: "Yetkili bilgilerini doldurun",
+    accentLine: "from-emerald-500 via-blue-500 to-purple-500",
+    iconBg: "from-emerald-500 to-emerald-600",
+    iconShadow: "shadow-emerald-500/25",
+    submitText: "Yetkili Oluştur",
+    passwordLabel: "Şifre",
+    passwordPlaceholder: "Min. 6 karakter",
+    passwordRequired: true,
+  },
+  edit: {
+    icon: UserPen,
+    title: "Yetkiliyi Düzenle",
+    subtitle: "Yetkili bilgilerini güncelleyin",
+    accentLine: "from-blue-500 via-indigo-500 to-purple-500",
+    iconBg: "from-blue-500 to-blue-600",
+    iconShadow: "shadow-blue-500/25",
+    submitText: "Yetkiliyi Kaydet",
+    passwordLabel: "Yeni Şifre",
+    passwordPlaceholder: "Boş bırakılabilir",
+    passwordRequired: false,
+  },
+} as const;
 
 /* ── Styles ── */
 const inputBase =
@@ -178,39 +212,95 @@ const labelClass = "block text-xs font-medium text-black/50 uppercase tracking-w
 const sectionClass = "space-y-4";
 
 /* ── Component ── */
-const EditAdminModal = ({ open, setOpen, user }: Props) => {
-  const [newUser, setNewUser] = useState<FormState>(EMPTY_FORM);
+const AdminModal = ({ open, mode, user, onClose }: Props) => {
+  const config = MODE_CONFIG[mode];
+  const Icon = config.icon;
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [fileName, setFileName] = useState<string>("");
 
-  React.useEffect(() => {
-    if (user) {
-      setNewUser(buildFormFromUser(user));
+  useEffect(() => {
+    if (!open) return;
+
+    if (mode === "edit" && user) {
+      setForm(buildFormFromUser(user));
     } else {
-      setNewUser(EMPTY_FORM);
+      setForm(EMPTY_FORM);
     }
-  }, [user]);
+    setFileName("");
+  }, [open, mode, user]);
 
   const handleClose = () => {
-    setOpen({ open: false, user: null });
+    onClose();
+    setForm(EMPTY_FORM);
     setFileName("");
-    setTimeout(() => {
-      window.location.reload();
-    }, 1500);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmitCreate = () => {
+    const cleanedGsmNumber = cleanPhoneNumber(form.gsmNumber);
 
-    const cleanedGsmNumber = cleanPhoneNumber(newUser.gsmNumber);
-    const birthDate = newUser.birth instanceof Date ? newUser.birth : null;
+    let birthPayload: { day: number; month: number; year: number } | undefined;
+    if (form.birth) {
+      const iso = typeof form.birth === "string" ? form.birth : "";
+      if (iso && iso.includes("-")) {
+        const d = new Date(iso);
+        birthPayload = {
+          day: d.getDate(),
+          month: d.getMonth() + 1,
+          year: d.getFullYear(),
+        };
+      } else if (form.birth instanceof Date) {
+        birthPayload = {
+          day: form.birth.getDate(),
+          month: form.birth.getMonth() + 1,
+          year: form.birth.getFullYear(),
+        };
+      }
+    }
+
+    api
+      .post("/admin/create-admin", {
+        name: form.name,
+        surname: form.surname,
+        mail: form.mail,
+        gender: form.gender === "Erkek" ? "male" : "female",
+        gsmNumber: cleanedGsmNumber,
+        password: form.password,
+        role: form.role,
+        birth: birthPayload,
+      })
+      .then((res) => {
+        toast.success("Yetkili başarıyla oluşturuldu.");
+        if (!form.image) return;
+
+        const formData = new FormData();
+        formData.append("uid", res.data.data.uid);
+        formData.append("image", form.image);
+
+        api.post("/admin/upload-user-image", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : "Yetkili oluşturulurken bir hata oluştu.";
+        toast.error(message);
+      });
+
+    handleClose();
+  };
+
+  const handleSubmitEdit = () => {
+    const cleanedGsmNumber = cleanPhoneNumber(form.gsmNumber);
+    const birthDate = form.birth instanceof Date ? form.birth : null;
 
     api
       .post("/admin/update-admin", {
-        uid: newUser.uid,
-        name: newUser.name,
-        surname: newUser.surname,
-        mail: newUser.mail,
+        uid: form.uid,
+        name: form.name,
+        surname: form.surname,
+        mail: form.mail,
         birth: birthDate
           ? {
               day: birthDate.getDate(),
@@ -218,23 +308,33 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
               year: birthDate.getFullYear(),
             }
           : undefined,
-        role: newUser.role,
-        password: newUser.password,
+        role: form.role,
+        password: form.password,
         gsmNumber: cleanedGsmNumber,
-        link: newUser.link,
-        gender: newUser.gender === "Erkek" ? "male" : "female",
+        link: form.link,
+        gender: form.gender === "Erkek" ? "male" : "female",
       })
       .then(() => {
         toast.success("Yetkili başarıyla güncellendi.");
         handleClose();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       })
       .catch((err: unknown) => {
         toast.error("Yetkili güncellenirken bir hata oluştu.");
         console.log(err);
         handleClose();
       });
+  };
 
-    setNewUser(EMPTY_FORM);
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (mode === "create") {
+      handleSubmitCreate();
+    } else {
+      handleSubmitEdit();
+    }
   };
 
   if (!open) return null;
@@ -251,17 +351,16 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
       >
         {/* ── Header ── */}
         <div className="relative px-6 pt-6 pb-5">
-          {/* Subtle gradient accent line */}
-          <div className="absolute top-0 left-6 right-6 h-[3px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full" />
+          <div className={`absolute top-0 left-6 right-6 h-[3px] bg-gradient-to-r ${config.accentLine} rounded-full`} />
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                <UserPen size={20} className="text-white" />
+              <div className={`w-11 h-11 bg-gradient-to-br ${config.iconBg} rounded-xl flex items-center justify-center shadow-lg ${config.iconShadow}`}>
+                <Icon size={20} className="text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-black/87">Yetkiliyi Düzenle</h2>
-                <p className="text-xs text-black/38 mt-0.5">Yetkili bilgilerini güncelleyin</p>
+                <h2 className="text-lg font-semibold text-black/87">{config.title}</h2>
+                <p className="text-xs text-black/38 mt-0.5">{config.subtitle}</p>
               </div>
             </div>
             <button
@@ -293,15 +392,12 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                 </label>
                 <input
                   type="text"
-                  name="name"
-                  value={newUser.name}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setNewUser((prev) => ({ ...prev, name: e.target.value }));
-                  }}
+                  value={form.name}
+                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                   autoComplete="off"
                   required
                   placeholder="Ad"
-                  className={`${inputBase} px-3`}
+                  className={`${inputBase} px-3 py-2.5`}
                 />
               </div>
               <div>
@@ -310,15 +406,12 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                 </label>
                 <input
                   type="text"
-                  name="surname"
-                  value={newUser.surname}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setNewUser((prev) => ({ ...prev, surname: e.target.value }));
-                  }}
+                  value={form.surname}
+                  onChange={(e) => setForm((prev) => ({ ...prev, surname: e.target.value }))}
                   autoComplete="off"
                   required
                   placeholder="Soyad"
-                  className={`${inputBase} px-3`}
+                  className={`${inputBase} px-3 py-2.5`}
                 />
               </div>
             </div>
@@ -331,7 +424,7 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                   <label
                     key={g}
                     className={`flex-1 flex items-center justify-center gap-2 h-[42px] rounded-lg border cursor-pointer transition-all text-sm font-medium ${
-                      newUser.gender === g
+                      form.gender === g
                         ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm shadow-blue-500/10"
                         : "border-black/8 bg-gray-50/50 text-black/40 hover:bg-gray-50 hover:text-black/60 hover:border-black/12"
                     }`}
@@ -340,10 +433,8 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                       type="radio"
                       name="gender"
                       value={g}
-                      checked={newUser.gender === g}
-                      onChange={() => {
-                        setNewUser((prev) => ({ ...prev, gender: g }));
-                      }}
+                      checked={form.gender === g}
+                      onChange={() => setForm((prev) => ({ ...prev, gender: g }))}
                       className="sr-only"
                     />
                     {g}
@@ -360,13 +451,17 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                   <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/25 pointer-events-none" />
                   <input
                     type="text"
-                    name="birth"
                     placeholder="GG/AA/YY"
-                    value={dateToDisplay(newUser.birth)}
+                    value={dateToDisplay(form.birth)}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       const display = formatDateInput(e.target.value);
-                      const parsed = displayToDate(display);
-                      setNewUser((prev) => ({ ...prev, birth: parsed }));
+                      if (mode === "create") {
+                        const iso = parseDateToISO(display);
+                        setForm((prev) => ({ ...prev, birth: iso || display }));
+                      } else {
+                        const parsed = displayToDate(display);
+                        setForm((prev) => ({ ...prev, birth: parsed }));
+                      }
                     }}
                     maxLength={8}
                     autoComplete="off"
@@ -379,13 +474,12 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  name="image"
                   accept=".jpg, .jpeg, .png"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const file = e.target.files?.[0];
                     if (file) {
                       setFileName(file.name);
-                      setNewUser((prev) => ({ ...prev, image: e.target.value }));
+                      setForm((prev) => ({ ...prev, image: file }));
                     }
                   }}
                   className="hidden"
@@ -421,15 +515,12 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                   <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/25 pointer-events-none" />
                   <input
                     type="email"
-                    name="mail"
                     placeholder="mail@example.com"
-                    value={newUser.mail}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setNewUser((prev) => ({ ...prev, mail: e.target.value }));
-                    }}
+                    value={form.mail}
+                    onChange={(e) => setForm((prev) => ({ ...prev, mail: e.target.value }))}
                     autoComplete="off"
                     required
-                    className={`${inputBase} pl-9 pr-3`}
+                    className={`${inputBase} pl-9 pr-3 py-2.5`}
                   />
                 </div>
               </div>
@@ -444,12 +535,11 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                   </div>
                   <input
                     type="text"
-                    name="gsmNumber"
                     placeholder="(5XX) XXX XX XX"
-                    value={newUser.gsmNumber}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    value={form.gsmNumber}
+                    onChange={(e) => {
                       const formattedValue = formatPhoneNumber(e.target.value);
-                      setNewUser((prev) => ({ ...prev, gsmNumber: formattedValue }));
+                      setForm((prev) => ({ ...prev, gsmNumber: formattedValue }));
                     }}
                     autoComplete="off"
                     required
@@ -472,20 +562,18 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>
-                  Yeni Şifre
+                  {config.passwordLabel} {config.passwordRequired && <span className="text-red-400">*</span>}
                 </label>
                 <div className="relative">
                   <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/25 pointer-events-none" />
                   <input
                     type="password"
-                    name="password"
-                    value={newUser.password}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setNewUser((prev) => ({ ...prev, password: e.target.value }));
-                    }}
+                    value={form.password}
+                    onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
                     autoComplete="off"
-                    placeholder="Boş bırakılabilir"
-                    className={`${inputBase} pl-9 pr-3`}
+                    placeholder={config.passwordPlaceholder}
+                    required={config.passwordRequired}
+                    className={`${inputBase} pl-9 pr-3 py-2.5`}
                   />
                 </div>
               </div>
@@ -495,14 +583,11 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                   <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/25 pointer-events-none" />
                   <input
                     type="text"
-                    name="link"
-                    value={newUser.link}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setNewUser((prev) => ({ ...prev, link: e.target.value }));
-                    }}
+                    value={form.link}
+                    onChange={(e) => setForm((prev) => ({ ...prev, link: e.target.value }))}
                     autoComplete="off"
                     placeholder="örn: yenigunemlak"
-                    className={`${inputBase} pl-9 pr-3`}
+                    className={`${inputBase} pl-9 pr-3 py-2.5`}
                   />
                 </div>
               </div>
@@ -521,7 +606,7 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                   <label
                     key={r.value}
                     className={`flex items-center gap-3 px-3.5 h-[54px] rounded-xl border cursor-pointer transition-all ${
-                      newUser.role === r.value
+                      form.role === r.value
                         ? "border-blue-500 bg-blue-50 shadow-sm shadow-blue-500/10"
                         : "border-black/8 bg-gray-50/50 hover:bg-gray-50 hover:border-black/12"
                     }`}
@@ -530,26 +615,24 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
                       type="radio"
                       name="role"
                       value={r.value}
-                      checked={newUser.role === r.value}
-                      onChange={() => {
-                        setNewUser((prev) => ({ ...prev, role: r.value }));
-                      }}
+                      checked={form.role === r.value}
+                      onChange={() => setForm((prev) => ({ ...prev, role: r.value }))}
                       className="sr-only"
                     />
                     <r.icon
                       size={18}
                       className={
-                        newUser.role === r.value ? "text-blue-600" : "text-black/25"
+                        form.role === r.value ? "text-blue-600" : "text-black/25"
                       }
                     />
                     <div>
                       <p className={`text-sm font-medium ${
-                        newUser.role === r.value ? "text-blue-700" : "text-black/60"
+                        form.role === r.value ? "text-blue-700" : "text-black/60"
                       }`}>
                         {r.label}
                       </p>
                       <p className={`text-[10px] ${
-                        newUser.role === r.value ? "text-blue-500" : "text-black/30"
+                        form.role === r.value ? "text-blue-500" : "text-black/30"
                       }`}>
                         {r.desc}
                       </p>
@@ -573,7 +656,7 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
               type="submit"
               className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-600/25 hover:shadow-blue-700/30 transition-all"
             >
-              Yetkiliyi Kaydet
+              {config.submitText}
             </button>
           </div>
         </form>
@@ -582,4 +665,4 @@ const EditAdminModal = ({ open, setOpen, user }: Props) => {
   );
 };
 
-export default EditAdminModal;
+export default AdminModal;

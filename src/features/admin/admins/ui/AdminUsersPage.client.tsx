@@ -12,8 +12,7 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import AreYouSure from "@/components/AreYouSure";
 
 // Shared modals
-import CreateAdmin from "@/components/modals/CreateAdminModal";
-import EditAdminModal from "@/components/modals/EditAdminModal";
+import AdminModal from "@/components/modals/AdminModal";
 
 // API
 import api from "@/lib/api";
@@ -33,9 +32,8 @@ import {
 import type {
   AdminUser,
   AdminUserRole,
-  CreateAdminUserPayload,
+  AdminModalState,
   DeleteConfirmState,
-  EditUserModalState,
 } from "@/features/admin/admins/model/types";
 
 const PoppinsFont = Poppins({
@@ -79,20 +77,9 @@ export default function AdminUsersPageClient() {
   const [listUsers, setListUsers] = useState<AdminUser[]>([]);
   const [filteredValues, setFilteredValues] = useState("");
 
-  const [openCreate, setOpenCreate] = useState(false);
-  const [newUser, setNewUser] = useState<CreateAdminUserPayload>({
-    name: "",
-    surname: "",
-    mail: "",
-    gsmNumber: "",
-    password: "",
-    role: "",
-    image: "",
-    birthDate: "",
-  });
-
-  const [editUser, setEditUser] = useState<EditUserModalState>({
+  const [adminModal, setAdminModal] = useState<AdminModalState>({
     open: false,
+    mode: "create",
     user: null,
   });
 
@@ -264,7 +251,7 @@ export default function AdminUsersPageClient() {
         <div className="p-4 lg:p-6 max-w-7xl mx-auto">
 
           {/* ── Page Header ── */}
-          <AdminUsersHeader totalCount={listUsers.length} onOpenCreate={() => setOpenCreate(true)} />
+          <AdminUsersHeader totalCount={listUsers.length} onOpenCreate={() => setAdminModal({ open: true, mode: "create", user: null })} />
 
           {/* ── Search & Filters ── */}
           <AdminUsersFiltersBar
@@ -291,7 +278,7 @@ export default function AdminUsersPageClient() {
               endIndex={Math.min(endIndex, listUsers.length)}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
-              setEdit={setEditUser}
+              setEdit={setAdminModal}
               setDeleteConfirm={setDeleteConfirm}
             />
           ) : (
@@ -309,7 +296,7 @@ export default function AdminUsersPageClient() {
                   endIndex={Math.min(endIndex, listUsers.length)}
                   onPageChange={handleChangePage}
                   onRowsPerPageChange={handleChangeRowsPerPage}
-                  setEdit={setEditUser}
+                  setEdit={setAdminModal}
                   setDeleteConfirm={setDeleteConfirm}
                 />
               )}
@@ -317,20 +304,12 @@ export default function AdminUsersPageClient() {
           )}
         </div>
 
-        {/* ── Modals ── */}
-        <CreateAdmin
-          open={openCreate}
-          setOpen={setOpenCreate}
-          newUser={newUser}
-          setNewUser={setNewUser}
-          cookies={cookies}
-        />
-
-        <EditAdminModal
-          open={editUser.open}
-          setOpen={setEditUser}
-          user={editUser.user}
-          cookies={cookies}
+        {/* ── Modal ── */}
+        <AdminModal
+          open={adminModal.open}
+          mode={adminModal.mode}
+          user={adminModal.user}
+          onClose={() => setAdminModal({ open: false, mode: "create", user: null })}
         />
 
         {/* ── Delete Confirmation ── */}
