@@ -41,14 +41,14 @@ export default function AdvertListAdCard({
   const address = renderAddressSafely(ad.address);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 hover:border-custom-orange transition-colors overflow-hidden group">
+    <div className="flex flex-col h-full bg-white rounded-xl border border-gray-200 hover:border-[#035DBA]/40 hover:shadow-md transition-all duration-300 overflow-hidden group">
       {/* Image */}
-      <div className="relative h-48 bg-gray-100 overflow-hidden">
+      <div className="relative h-48 bg-gray-100 overflow-hidden shrink-0">
         {hasPhotos ? (
           <img
             src={firstPhoto || ""}
             alt={ad.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.src = "/logo.png";
               e.currentTarget.className =
@@ -65,16 +65,19 @@ export default function AdvertListAdCard({
           </div>
         )}
 
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
         {/* Type badge */}
         <div className="absolute top-3 left-3">
-          <span className="bg-black/80 text-white text-xs font-medium px-2 py-1 rounded">
+          <span className="bg-[#000066]/90 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-lg">
             {ad.steps.second}/{ad.steps.first}
           </span>
         </div>
 
         {/* Price */}
-        <div className="absolute top-3 right-3">
-          <span className="bg-custom-orange text-white text-sm font-bold px-3 py-1 rounded-lg">
+        <div className="absolute bottom-3 left-3">
+          <span className="bg-white/95 backdrop-blur-sm text-[#000066] text-sm font-bold px-3 py-1.5 rounded-lg shadow-sm">
             {ad.fee}
           </span>
         </div>
@@ -82,104 +85,121 @@ export default function AdvertListAdCard({
         {/* Activity toggle */}
         <button
           onClick={() => onToggleActivity(ad.uid)}
-          className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm rounded-lg p-1.5 hover:scale-110 transition-transform"
+          className={`absolute top-3 right-3 backdrop-blur-sm rounded-lg p-1.5 transition-all duration-200 hover:scale-110 ${
+            ad.active
+              ? "bg-emerald-500/90 text-white"
+              : "bg-red-500/90 text-white"
+          }`}
         >
           {ad.active ? (
-            <Eye size={16} className="text-green-500" />
+            <Eye size={16} />
           ) : (
-            <EyeOff size={16} className="text-red-500" />
+            <EyeOff size={16} />
           )}
         </button>
       </div>
 
-      {/* Content */}
-      <div className="p-4">
-        {/* Title */}
-        <Link href={`/ads/${ad.uid}`} className="block mb-2">
-          <h3 className="font-semibold text-gray-900 line-clamp-2 hover:text-custom-orange transition-colors">
-            {ad.title}
-          </h3>
-        </Link>
+      {/* Content — grows to fill, pushes actions to bottom */}
+      <div className="flex flex-col flex-1 p-4">
+        {/* Top info section */}
+        <div className="flex-1">
+          {/* Title — fixed 2-line height */}
+          <Link href={`/ads/${ad.uid}`} className="block mb-2">
+            <h3 className="font-semibold text-gray-900 line-clamp-2 min-h-[2.75rem] hover:text-[#035DBA] transition-colors">
+              {ad.title}
+            </h3>
+          </Link>
 
-        {/* Location */}
-        <div className="flex items-center gap-1 text-gray-600 text-sm mb-3">
-          <MapPin size={14} className="text-custom-orange shrink-0" />
-          <span className="line-clamp-1">{location}</span>
-        </div>
-
-        {/* Address */}
-        <p className="text-gray-500 text-sm mb-3 line-clamp-2">{address}</p>
-
-        {/* Customer + advisor info */}
-        <div className="space-y-2 mb-4 text-sm">
-          <div className="flex items-center gap-2 text-gray-600">
-            <User size={14} className="text-custom-orange shrink-0" />
-            <span>
-              {ad.customer.name} {ad.customer.surname}
-            </span>
+          {/* Location */}
+          <div className="flex items-center gap-1.5 text-gray-600 text-sm mb-1.5">
+            <MapPin size={14} className="text-[#035DBA] shrink-0" />
+            <span className="line-clamp-1">{location}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-gray-600">
-            <Phone size={14} className="text-custom-orange shrink-0" />
-            <div className="flex gap-1 flex-wrap">
-              {ad.customer?.phones?.slice(0, 2).map((phone, idx) => (
-                <span
-                  key={idx}
-                  className="bg-gray-100 rounded px-1.5 py-0.5 text-xs"
-                >
-                  {phone.number.startsWith("0")
-                    ? phone.number
-                    : `0${phone.number}`}
-                </span>
-              ))}
+          {/* Address — fixed 1-line */}
+          <p className="text-gray-400 text-xs mb-3 line-clamp-1">{address}</p>
+
+          {/* Divider */}
+          <div className="border-t border-gray-100 mb-3" />
+
+          {/* Customer + advisor info */}
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2 text-gray-600">
+              <div className="w-6 h-6 rounded-md bg-[#035DBA]/10 flex items-center justify-center shrink-0">
+                <User size={12} className="text-[#035DBA]" />
+              </div>
+              <span className="truncate">
+                {ad.customer.name} {ad.customer.surname}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 text-gray-600">
+              <div className="w-6 h-6 rounded-md bg-[#035DBA]/10 flex items-center justify-center shrink-0">
+                <Phone size={12} className="text-[#035DBA]" />
+              </div>
+              <div className="flex gap-1 flex-wrap">
+                {ad.customer?.phones?.slice(0, 2).map((phone, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-gray-50 border border-gray-100 rounded-md px-1.5 py-0.5 text-xs text-gray-600"
+                  >
+                    {phone.number.startsWith("0")
+                      ? phone.number
+                      : `0${phone.number}`}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-gray-600">
+              <div className="w-6 h-6 rounded-md bg-[#035DBA]/10 flex items-center justify-center shrink-0">
+                <Users size={12} className="text-[#035DBA]" />
+              </div>
+              <span className={ad.advisor.name ? "truncate" : "text-red-500 text-xs"}>
+                {ad.advisor.name || "Danışman Yok"} {ad.advisor.surname}
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-gray-600">
-            <Users size={14} className="text-custom-orange shrink-0" />
-            <span className={ad.advisor.name ? "" : "text-red-500"}>
-              {ad.advisor.name || "Danışman Yok"} {ad.advisor.surname}
-            </span>
+          {/* Admin note link */}
+          {ad.adminNote && (
+            <button
+              onClick={() => onAdminNote(ad)}
+              className="w-full text-left text-[#035DBA] hover:text-[#000066] text-sm mt-3 flex items-center gap-1.5 transition-colors"
+            >
+              <FileText size={14} />
+              <span className="font-medium">Admin Notunu Gör</span>
+            </button>
+          )}
+        </div>
+
+        {/* Actions — always at the bottom */}
+        <div className="pt-4 mt-auto border-t border-gray-100">
+          <div className="flex gap-2">
+            <Link
+              href={`/admin/emlak/${ad.uid}`}
+              className="flex-1 bg-[#035DBA] hover:bg-[#000066] text-white py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-sm font-medium"
+            >
+              <Edit size={14} />
+              Düzenle
+            </Link>
+            <button
+              onClick={() => onDelete(ad)}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-sm font-medium"
+            >
+              <Trash2 size={14} />
+              Sil
+            </button>
           </div>
-        </div>
 
-        {/* Admin note link */}
-        {ad.adminNote && (
           <button
-            onClick={() => onAdminNote(ad)}
-            className="w-full text-left text-blue-600 hover:text-blue-700 text-sm mb-3 flex items-center gap-1 transition-colors"
+            onClick={() => onUserNotes(ad)}
+            className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-sm font-medium"
           >
-            <FileText size={14} />
-            <span>Admin Notunu Gör</span>
-          </button>
-        )}
-
-        {/* Action buttons */}
-        <div className="flex gap-2">
-          <Link
-            href={`/admin/emlak/${ad.uid}`}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors text-sm font-medium"
-          >
-            <Edit size={14} />
-            Düzenle
-          </Link>
-          <button
-            onClick={() => onDelete(ad)}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors text-sm font-medium"
-          >
-            <Trash2 size={14} />
-            Sil
+            <Users size={14} />
+            Kullanıcı Notları
           </button>
         </div>
-
-        {/* User notes */}
-        <button
-          onClick={() => onUserNotes(ad)}
-          className="w-full mt-2 bg-gray-600 hover:bg-gray-700 text-white py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors text-sm font-medium"
-        >
-          <Users size={14} />
-          Kullanıcı Notları
-        </button>
       </div>
     </div>
   );

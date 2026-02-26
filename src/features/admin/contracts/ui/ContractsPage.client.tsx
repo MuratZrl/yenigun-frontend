@@ -3,9 +3,10 @@
 
 import React from "react";
 import { Poppins } from "next/font/google";
-import { Search, AlertTriangle, ChevronDown } from "lucide-react";
+import { Search, Filter, AlertTriangle, ChevronDown, Plus, FileText } from "lucide-react";
 
 import AdminLayout from "@/components/layout/AdminLayout";
+import { Pagination } from "@/components/Pagination";
 import Rent_Contract from "@/components/modals/RentContrant";
 
 import { useContractsController } from "../hooks/useContractsController";
@@ -29,99 +30,144 @@ export default function ContractsPage() {
 
   if (!c.isAuthenticated || c.loading) {
     return (
-      <div className="w-full min-h-screen flex justify-center items-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900" />
-      </div>
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="text-lg text-gray-600">Yükleniyor...</div>
+          </div>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
     <AdminLayout>
       <div
-        className="w-full min-h-screen gap-5 flex flex-col"
+        className="w-full min-h-screen bg-linear-to-br from-gray-50 to-blue-50/30"
         style={PoppinsFont.style}
       >
-        <div className="p-5 gap-5 flex flex-col">
-          {/* Header */}
-          <div className="flex flex-row items-center justify-center">
-            <h1 className="text-2xl font-bold">Sözleşmeler</h1>
+        <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+
+          {/* ── Page Header ── */}
+          <div className="mb-6 lg:mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                  Sözleşme Yönetimi
+                </h1>
+                <p className="text-gray-600 mt-2 text-sm lg:text-base">
+                  Toplam {c.listContracts.length} sözleşme bulunuyor
+                </p>
+              </div>
+
+              {/* New contract dropdown */}
+              <div className="relative">
+                <button
+                  className="bg-slate-900 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl hover:bg-slate-800 active:bg-slate-950 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 font-semibold text-sm lg:text-base w-full lg:w-auto justify-center"
+                  onClick={c.toggleDropdown}
+                  type="button"
+                >
+                  <Plus size={18} />
+                  Yeni Sözleşme
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform duration-200 ${c.showContractDropdown ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {c.showContractDropdown && (
+                  <ul className="absolute z-50 right-0 w-48 py-1 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                    <li>
+                      <button
+                        className="px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-700 cursor-pointer w-full text-left transition-colors flex items-center gap-2"
+                        onClick={() => c.openNewContract(0)}
+                      >
+                        <FileText size={14} className="text-gray-400" />
+                        Kira Sözleşmesi
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className="px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-700 cursor-pointer w-full text-left transition-colors flex items-center gap-2"
+                        onClick={() => c.openNewContract(1)}
+                      >
+                        <FileText size={14} className="text-gray-400" />
+                        Satış Sözleşmesi
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className="px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-700 cursor-pointer w-full text-left transition-colors flex items-center gap-2"
+                        onClick={() => c.openNewContract(2)}
+                      >
+                        <FileText size={14} className="text-gray-400" />
+                        İş Sözleşmesi
+                      </button>
+                    </li>
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="w-full overflow-hidden shadow-sm border border-gray-200 rounded-lg">
-            {/* Toolbar */}
-            <div className="flex flex-col gap-2 p-4 bg-white">
-              <div className="flex flex-col xs:flex-row items-center justify-between my-2">
-                <div className="flex flex-row gap-2 items-center">
+          {/* ── Search & Filters ── */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-6 mb-6">
+            <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+              <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full">
+                <div className="relative flex-1">
+                  <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
                   <input
                     type="text"
-                    placeholder="Tüm Sözleşmelerde Ara..."
-                    className="p-2 border border-gray-300 rounded-md w-[200px] md:w-[300px]"
+                    placeholder="Tüm sözleşmelerde ara..."
+                    className="w-full pl-10 pr-4 py-2 lg:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50/50 text-sm lg:text-base"
                   />
-                  <div className="flex flex-row gap-4 items-center">
-                    <button className="bg-gray-700 text-white hover:bg-gray-900 duration-200 p-2 rounded-md flex flex-row gap-2 items-center">
-                      <Search size={20} /> Filtrele
-                    </button>
-                  </div>
                 </div>
 
-                {/* New contract dropdown */}
-                <div className="relative">
+                <div className="flex gap-2 w-full sm:w-auto">
                   <button
-                    className="bg-custom-orange text-white group px-4 py-2 rounded-md flex items-center gap-2 hover:bg-custom-orange-dark transition-colors"
-                    onClick={c.toggleDropdown}
+                    className="bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 duration-200 px-4 lg:px-6 py-2 lg:py-3 rounded-xl flex items-center gap-2 font-medium transition-all shadow-sm hover:shadow-md text-sm lg:text-base flex-1 sm:flex-none justify-center"
+                    type="button"
                   >
-                    Yeni Sözleşme
-                    <ChevronDown size={16} />
+                    <Filter size={16} />
+                    Filtrele
                   </button>
 
-                  {c.showContractDropdown && (
-                    <ul className="absolute z-50 w-[146px] text-sm text-nowrap left-1/2 -translate-x-1/2 py-2 mt-2 bg-white border border-gray-200 rounded-md shadow-lg top-full">
-                      <li>
-                        <button
-                          className="px-4 py-2 hover:bg-gray-100 duration-200 cursor-pointer w-full text-left"
-                          onClick={() => c.openNewContract(0)}
-                        >
-                          Kira Sözleşmesi
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          className="px-4 py-2 hover:bg-gray-100 duration-200 cursor-pointer w-full text-left"
-                          onClick={() => c.openNewContract(1)}
-                        >
-                          Satış Sözleşmesi
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          className="px-4 py-2 hover:bg-gray-100 duration-200 cursor-pointer w-full text-left"
-                          onClick={() => c.openNewContract(2)}
-                        >
-                          İş Sözleşmesi
-                        </button>
-                      </li>
-                    </ul>
+                  {c.hasActiveFilter && (
+                    <button
+                      className="border border-gray-300 text-gray-700 hover:bg-gray-50 duration-200 px-4 py-2 lg:py-3 rounded-xl flex items-center gap-2 font-medium transition-all text-sm lg:text-base flex-1 sm:flex-none justify-center"
+                      onClick={c.clearFilter}
+                      type="button"
+                    >
+                      Temizle
+                    </button>
                   )}
                 </div>
               </div>
-
-              {/* Active filter warning */}
-              {c.hasActiveFilter && (
-                <p className="flex flex-row gap-2 items-center text-sm text-gray-600">
-                  <AlertTriangle size={20} className="text-yellow-600" />
-                  Aktif bir filtreleme mevcut temizlemek için{" "}
-                  <button
-                    className="underline text-custom-orange-dark hover:text-custom-orange"
-                    onClick={c.clearFilter}
-                  >
-                    basınız
-                  </button>
-                  .
-                </p>
-              )}
             </div>
 
-            {/* Table */}
+            {/* Active filter warning */}
+            {c.hasActiveFilter && (
+              <div className="mt-4 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 rounded-xl px-4 py-2.5">
+                <AlertTriangle size={16} />
+                <span>
+                  Aktif bir filtreleme mevcut.{" "}
+                  <button
+                    className="underline font-medium hover:text-amber-900 transition-colors"
+                    onClick={c.clearFilter}
+                  >
+                    Temizle
+                  </button>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* ── Table ── */}
+          <div className="bg-white rounded-md shadow-[0_2px_1px_-1px_rgba(0,0,0,0.2),0_1px_1px_0_rgba(0,0,0,0.14),0_1px_3px_0_rgba(0,0,0,0.12)] overflow-hidden">
             <div className="overflow-auto max-h-[62vh]">
               <Table>
                 <TableHead>
@@ -140,9 +186,12 @@ export default function ContractsPage() {
                     <TableRow>
                       <TableCell
                         colSpan={7}
-                        className="text-center px-4 py-8 text-gray-500"
+                        className="text-center px-4 py-12"
                       >
-                        Yükleniyor...
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-sm text-black/60">Yükleniyor...</span>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -151,9 +200,13 @@ export default function ContractsPage() {
                     <TableRow>
                       <TableCell
                         colSpan={7}
-                        className="text-center px-4 py-8 text-gray-500"
+                        className="text-center px-4 py-12"
                       >
-                        Kayıt bulunamadı
+                        <div className="flex flex-col items-center gap-2 text-black/38">
+                          <Search size={32} strokeWidth={1.5} />
+                          <span className="text-sm font-medium text-black/60">Kayıt bulunamadı</span>
+                          <p className="text-xs text-black/38">Arama kriterlerinize uygun sonuç bulunamadı.</p>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -172,56 +225,18 @@ export default function ContractsPage() {
             </div>
 
             {/* Pagination */}
-            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-gray-200 bg-white">
-              <div className="flex items-center gap-2 mb-2 sm:mb-0">
-                <span className="text-sm text-gray-700">Sayfa başına:</span>
-                <select
-                  value={c.rowsPerPage}
-                  onChange={c.handleChangeRowsPerPage}
-                  className="border border-gray-300 rounded px-2 py-1 text-sm"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                </select>
-              </div>
-
-              <div className="text-sm text-gray-700 mb-2 sm:mb-0">
-                {c.startIndex + 1}-
-                {Math.min(c.endIndex, c.listContracts.length)} arası toplam{" "}
-                {c.listContracts.length}
-              </div>
-
-              <div className="flex gap-1">
-                <button
-                  onClick={() => c.handleChangePage(c.page - 1)}
-                  disabled={c.page === 0}
-                  className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Önceki
-                </button>
-                {Array.from({ length: c.totalPages }, (_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => c.handleChangePage(i)}
-                    className={`px-3 py-1 border border-gray-300 rounded ${
-                      c.page === i
-                        ? "bg-custom-orange text-white border-custom-orange"
-                        : "hover:bg-gray-50"
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-                <button
-                  onClick={() => c.handleChangePage(c.page + 1)}
-                  disabled={c.page >= c.totalPages - 1}
-                  className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Sonraki
-                </button>
-              </div>
-            </div>
+            {c.listContracts.length > 0 && (
+              <Pagination
+                page={c.page}
+                totalPages={c.totalPages}
+                rowsPerPage={c.rowsPerPage}
+                totalItems={c.listContracts.length}
+                startIndex={c.startIndex}
+                endIndex={Math.min(c.endIndex, c.listContracts.length)}
+                onPageChange={c.handleChangePage}
+                onRowsPerPageChange={c.handleChangeRowsPerPage}
+              />
+            )}
           </div>
         </div>
 

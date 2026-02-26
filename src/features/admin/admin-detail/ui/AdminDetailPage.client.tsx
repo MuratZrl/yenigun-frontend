@@ -35,7 +35,7 @@ export default function AdminDetailPage() {
         <div className="p-6 max-w-4xl mx-auto">
           <div className="flex items-center justify-center min-h-96">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <div className="w-10 h-10 border-3 border-[#035DBA] border-t-transparent rounded-full animate-spin" />
               <div className="text-base text-gray-500 font-medium">
                 Yükleniyor...
               </div>
@@ -61,7 +61,7 @@ export default function AdminDetailPage() {
               </div>
               <button
                 onClick={c.goBack}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="px-4 py-2 bg-[#035DBA] text-white rounded-lg hover:bg-[#000066] transition-colors text-sm font-medium"
               >
                 Geri Dön
               </button>
@@ -83,39 +83,39 @@ export default function AdminDetailPage() {
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={c.goBack}
-            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+            className="p-2 text-gray-500 hover:text-[#035DBA] hover:bg-[#E9EEF7] rounded-xl transition-colors"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-2xl font-bold text-gray-900">
             Yetkili Detayları
           </h1>
         </div>
 
         {/* Single Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Gradient Banner */}
-          <div className="h-28 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-t-2xl" />
+          <div className="h-32 bg-gradient-to-r from-[#000066] via-[#03409F] to-[#035DBA]" />
 
           <div className="px-6 pb-6">
             {/* Avatar + Name */}
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4 mt-5 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10 mb-6">
               {admin.profilePicture ? (
                 <Image
                   width={96}
                   height={96}
-                  className="w-20 h-20 rounded-2xl border-2 border-gray-200 shadow-sm object-cover shrink-0"
+                  className="w-20 h-20 rounded-2xl border-4 border-white shadow-lg object-cover shrink-0 ring-1 ring-gray-100"
                   alt={`${admin.name} ${admin.surname}`}
                   src={admin.profilePicture}
                 />
               ) : (
-                <div className="w-20 h-20 rounded-2xl border-2 border-gray-200 shadow-sm bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-semibold shrink-0">
+                <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-lg bg-gradient-to-br from-[#000066] to-[#035DBA] flex items-center justify-center text-white text-xl font-bold shrink-0 ring-1 ring-gray-100">
                   {initials}
                 </div>
               )}
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pb-1">
-                <h2 className="text-xl font-bold text-gray-800">
+                <h2 className="text-xl font-bold text-gray-900">
                   {admin.name} {admin.surname}
                 </h2>
                 <span
@@ -131,7 +131,7 @@ export default function AdminDetailPage() {
               <button
                 onClick={c.handleEmail}
                 disabled={!admin.mail}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#E9EEF7] text-[#000066] rounded-xl hover:bg-[#035DBA]/15 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Mail size={15} />
                 E-posta Gönder
@@ -139,7 +139,7 @@ export default function AdminDetailPage() {
               <button
                 onClick={c.handleCall}
                 disabled={!admin.gsmNumber}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl hover:bg-emerald-100 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Phone size={15} />
                 Ara
@@ -150,7 +150,7 @@ export default function AdminDetailPage() {
             <div className="border-t border-gray-100 mb-6" />
 
             {/* Info Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <InfoRow
                 icon={<Hash size={16} />}
                 iconBg="bg-gray-100"
@@ -161,16 +161,16 @@ export default function AdminDetailPage() {
 
               <InfoRow
                 icon={<Mail size={16} />}
-                iconBg="bg-indigo-50"
-                iconColor="text-indigo-500"
+                iconBg="bg-[#E9EEF7]"
+                iconColor="text-[#035DBA]"
                 label="E-posta"
                 value={admin.mail || "Belirtilmemiş"}
               />
 
               <InfoRow
                 icon={<Phone size={16} />}
-                iconBg="bg-green-50"
-                iconColor="text-green-500"
+                iconBg="bg-emerald-50"
+                iconColor="text-emerald-600"
                 label="Telefon"
                 value={
                   admin.gsmNumber
@@ -181,32 +181,32 @@ export default function AdminDetailPage() {
 
               <InfoRow
                 icon={<User size={16} />}
-                iconBg="bg-pink-50"
-                iconColor="text-pink-500"
+                iconBg="bg-[#E9EEF7]"
+                iconColor="text-[#03409F]"
                 label="Cinsiyet"
                 value={getGenderText(admin.gender)}
               />
 
               <InfoRow
                 icon={<Shield size={16} />}
-                iconBg="bg-purple-50"
-                iconColor="text-purple-500"
+                iconBg="bg-[#E9EEF7]"
+                iconColor="text-[#000066]"
                 label="Rol"
                 value={getRoleLabel(admin.role)}
               />
 
               <InfoRow
                 icon={<Calendar size={16} />}
-                iconBg="bg-orange-50"
-                iconColor="text-orange-500"
+                iconBg="bg-amber-50"
+                iconColor="text-amber-600"
                 label="Doğum Tarihi"
                 value={formatBirthDate(admin.birth)}
               />
 
               <InfoRow
                 icon={<CalendarPlus size={16} />}
-                iconBg="bg-teal-50"
-                iconColor="text-teal-500"
+                iconBg="bg-[#E9EEF7]"
+                iconColor="text-[#035DBA]"
                 label="Eklenme Tarihi"
                 value={formatCreatedAt(admin.createdAt)}
               />
@@ -233,15 +233,15 @@ function InfoRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors">
+    <div className="flex items-center gap-3 p-3.5 rounded-xl bg-gray-50/60 border border-gray-100 hover:border-[#035DBA]/20 hover:bg-[#E9EEF7]/20 transition-all duration-200">
       <div
-        className={`w-9 h-9 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}
+        className={`w-9 h-9 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}
       >
         <span className={iconColor}>{icon}</span>
       </div>
       <div className="min-w-0">
-        <div className="text-xs text-gray-400 font-medium">{label}</div>
-        <div className="text-sm font-semibold text-gray-800 truncate">
+        <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">{label}</div>
+        <div className="text-sm font-semibold text-gray-900 truncate">
           {value}
         </div>
       </div>

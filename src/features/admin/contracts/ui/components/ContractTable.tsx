@@ -16,7 +16,7 @@ export function Table({
 }
 
 export function TableHead({ children }: { children: React.ReactNode }) {
-  return <thead className="bg-gray-50 sticky top-0">{children}</thead>;
+  return <thead>{children}</thead>;
 }
 
 export function TableBody({ children }: { children: React.ReactNode }) {
@@ -31,7 +31,7 @@ export function TableRow({
   className?: string;
 }) {
   return (
-    <tr className={`border-b border-gray-200 ${className}`}>{children}</tr>
+    <tr className={`border-b border-black/6 last:border-b-0 ${className}`}>{children}</tr>
   );
 }
 
@@ -46,7 +46,7 @@ export function TableCell({
 }) {
   return (
     <td
-      className={`px-4 py-3 border-x border-gray-200 ${className}`}
+      className={`px-4 py-3 text-[0.875rem] leading-6 text-black/87 ${className}`}
       colSpan={colSpan}
     >
       {children}
@@ -65,7 +65,7 @@ export function TableHeaderCell({
 }) {
   return (
     <th
-      className={`px-4 py-3 font-semibold text-gray-700 text-left border-x border-gray-200 bg-gray-50 ${className}`}
+      className={`px-4 py-3 text-left text-xs font-semibold tracking-wide text-black/60 border-b border-black/12 whitespace-nowrap ${className}`}
       colSpan={colSpan}
     >
       {children}

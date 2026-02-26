@@ -54,7 +54,7 @@ export default function TopAdvertCard({ listing, index, onNavigate }: Props) {
         <img
           src={imgSrc || "/logo.png"}
           alt={listing.title || "İlan görseli"}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+          className="absolute inset-0 w-full h-full object-cover"
           onError={(e) => {
             e.currentTarget.src = "/logo.png";
             e.currentTarget.alt = "Logo";

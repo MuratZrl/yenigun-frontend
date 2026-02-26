@@ -1,3 +1,4 @@
+// src/features/admin/statistics/ui/components/MoreStatsCard.client.tsx
 "use client";
 
 import { Crown, Home, UserCheck } from "lucide-react";
@@ -57,7 +58,7 @@ export default function MoreStatsCard({ advisors, loading }: MoreStatsCardProps)
   const maxAdverts = topAdvisors.length > 0 ? topAdvisors[0].activeAdvertCount : 1;
 
   return (
-    <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white rounded-xl p-4 flex flex-col justify-between h-full w-full relative overflow-hidden">
+    <div className="bg-gradient-to-br from-[#000066] via-[#000066] via-30% to-[#035DBA] text-white rounded-xl p-4 flex flex-col justify-between h-full w-full relative overflow-hidden">
       {/* Decorative blurs */}
       <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
       <div className="absolute -bottom-8 -left-8 w-20 h-20 bg-purple-400/15 rounded-full blur-2xl" />

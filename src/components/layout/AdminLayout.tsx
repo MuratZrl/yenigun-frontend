@@ -1,6 +1,6 @@
 // src/components/layout/AdminLayout.tsx
 import React, { useState, useEffect } from "react";
-import AdminSidebar from "./AdminSidebar";
+import AdminSidebar from "@/features/admin/sidebar";
 import { useCookies } from "react-cookie";
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {

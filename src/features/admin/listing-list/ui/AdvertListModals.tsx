@@ -4,7 +4,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { X, FileText, Pencil } from "lucide-react";
 import { useCookies } from "react-cookie";
 
 import FilterAdminAds from "@/components/modals/FilterAdminAds";
@@ -64,39 +64,50 @@ export default function AdvertListModals({
     <>
       {/* Admin note modal */}
       {adminNote.isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Admin Notu</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#000066] to-[#035DBA] px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-white/15 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                  <FileText size={18} className="text-white" />
+                </div>
+                <h3 className="text-base font-semibold text-white">Admin Notu</h3>
+              </div>
               <button
                 onClick={onCloseAdminNote}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-white/70 hover:text-white transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 mb-4 max-h-40 overflow-y-auto">
-              <p className="text-gray-700 text-sm">
-                {"adminNote" in adminNote.ad && adminNote.ad.adminNote
-                  ? adminNote.ad.adminNote
-                  : "Not bulunamadı"}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Link
-                href={`/admin/emlak/${
-                  "uid" in adminNote.ad ? adminNote.ad.uid : ""
-                }`}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-center text-sm font-medium transition-colors"
-              >
-                Notu Düzenle
-              </Link>
-              <button
-                onClick={onCloseAdminNote}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors"
-              >
-                Kapat
-              </button>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="bg-[#E9EEF7]/50 border border-[#035DBA]/10 rounded-xl p-4 mb-5 max-h-40 overflow-y-auto">
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  {"adminNote" in adminNote.ad && adminNote.ad.adminNote
+                    ? adminNote.ad.adminNote
+                    : "Not bulunamadı"}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Link
+                  href={`/admin/emlak/${
+                    "uid" in adminNote.ad ? adminNote.ad.uid : ""
+                  }`}
+                  className="flex-1 bg-[#035DBA] hover:bg-[#000066] text-white py-2.5 px-3 rounded-xl text-center text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Pencil size={14} />
+                  Notu Düzenle
+                </Link>
+                <button
+                  onClick={onCloseAdminNote}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 px-3 rounded-xl text-sm font-medium transition-colors"
+                >
+                  Kapat
+                </button>
+              </div>
             </div>
           </div>
         </div>

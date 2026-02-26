@@ -11,11 +11,11 @@ interface Props {
 
 const DEVICE_META: Record<
   string,
-  { name: string; color: string; icon: typeof Monitor }
+  { name: string; color: string; bg: string; icon: typeof Monitor }
 > = {
-  DESKTOP: { name: "Masaüstü", color: "#1f2937", icon: Monitor },
-  MOBILE: { name: "Mobil", color: "#3b82f6", icon: Smartphone },
-  TABLET: { name: "Tablet", color: "#93c5fd", icon: Tablet },
+  DESKTOP: { name: "Masaüstü", color: "#000066", bg: "bg-[#000066]/10", icon: Monitor },
+  MOBILE: { name: "Mobil", color: "#035DBA", bg: "bg-[#035DBA]/10", icon: Smartphone },
+  TABLET: { name: "Tablet", color: "#03409F", bg: "bg-[#03409F]/10", icon: Tablet },
 };
 
 function buildDonut(
@@ -90,17 +90,18 @@ export default function GSCDevicesCard({ byDevice, loading }: Props) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 h-full w-full">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">
+      <h3 className="text-sm font-semibold text-gray-900 mb-4">
         Cihaz Dağılımı
       </h3>
 
-      {/* Donut + legend */}
-      <div className="flex items-center gap-4">
+      {/* Donut */}
+      <div className="flex justify-center mb-4">
         <div
           className="relative flex-shrink-0"
-          style={{ width: 100, height: 100 }}
+          style={{ width: 130, height: 130 }}
         >
           <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+            <circle cx="50" cy="50" r={r} fill="none" stroke="#f3f4f6" strokeWidth="10" />
             {segments.map((seg, i) => (
               <circle
                 key={i}
@@ -117,43 +118,42 @@ export default function GSCDevicesCard({ byDevice, loading }: Props) {
             ))}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-lg font-bold text-gray-900">
+            <span className="text-xl font-bold text-[#000066]">
               {devices[0]?.percent ?? 0}%
             </span>
-            <span className="text-[9px] text-gray-400">
+            <span className="text-[9px] text-gray-400 font-medium">
               {devices[0]?.name ?? ""}
             </span>
           </div>
         </div>
+      </div>
 
-        <div className="flex-1 space-y-2">
-          {devices.map((device) => {
-            const Icon = device.icon;
-            return (
-              <div
-                key={device.name}
-                className="flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: device.color }}
-                  />
-                  <Icon size={12} className="text-gray-400" />
-                  <span className="text-xs text-gray-600">{device.name}</span>
+      {/* Legend */}
+      <div className="space-y-2.5">
+        {devices.map((device) => {
+          const Icon = device.icon;
+          return (
+            <div
+              key={device.name}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`w-7 h-7 rounded-lg ${device.bg} flex items-center justify-center`}
+                >
+                  <Icon size={14} style={{ color: device.color }} />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-gray-400">
-                    {formatNum(device.clicks)}
-                  </span>
-                  <span className="text-xs font-semibold text-gray-900 w-8 text-right">
-                    {device.percent}%
-                  </span>
+                <div>
+                  <span className="text-xs font-medium text-gray-800 block leading-tight">{device.name}</span>
+                  <span className="text-[10px] text-gray-400">{formatNum(device.clicks)} tıklama</span>
                 </div>
               </div>
-            );
-          })}
-        </div>
+              <span className="text-sm font-bold text-[#000066]">
+                {device.percent}%
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

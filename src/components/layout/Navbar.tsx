@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { Search, ChevronDown, LogOut, User, Menu, X } from "lucide-react";
+import { Search, ChevronDown, LogOut, User, Menu, X, LayoutDashboard } from "lucide-react";
 import api from "@/lib/api";
 import { getClientToken, removeClientToken, removeClientUser } from "@/lib/auth";
 import type { User as UserType } from "@/types/user";
@@ -132,7 +132,9 @@ const Navbar: React.FC = () => {
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200"
+        className={`fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 transition-shadow duration-300 ${
+          scrolled ? "shadow-sm" : ""
+        }`}
       >
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex items-center gap-5 h-16">
@@ -159,7 +161,7 @@ const Navbar: React.FC = () => {
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
                     placeholder="İlan ara..."
-                    className="w-full h-9 rounded-lg bg-gray-100 text-gray-900 pl-9 pr-3 text-sm outline-none transition-colors duration-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-400"
+                    className="w-full h-9 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 pl-9 pr-3 text-sm outline-none transition-all duration-200 focus:bg-white focus:border-[#035DBA] focus:ring-2 focus:ring-[#035DBA]/20 placeholder:text-gray-400"
                   />
                 </div>
               </form>
@@ -170,8 +172,8 @@ const Navbar: React.FC = () => {
                   href={link.href}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
                     isActive(link.href)
-                      ? "bg-indigo-50 text-indigo-700"
-                      : "text-gray-600 hover:text-gray-900"
+                      ? "bg-[#E9EEF7] text-[#000066]"
+                      : "text-gray-600 hover:text-[#000066] hover:bg-gray-50"
                   }`}
                 >
                   {link.label}
@@ -187,7 +189,7 @@ const Navbar: React.FC = () => {
               {!loadingUser && !isLoggedIn && (
                 <Link
                   href="/login"
-                  className="text-sm font-semibold px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors duration-150"
+                  className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#035DBA] text-white hover:bg-[#000066] transition-colors duration-150"
                 >
                   Giriş Yap
                 </Link>
@@ -199,7 +201,7 @@ const Navbar: React.FC = () => {
                     onClick={() => setOpenUserMenu((v) => !v)}
                     className="h-9 flex items-center gap-2 px-2 rounded-lg hover:bg-gray-50 transition-colors duration-150"
                   >
-                    <span className="w-8 h-8 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold">
+                    <span className="w-8 h-8 rounded-full bg-gradient-to-br from-[#000066] to-[#035DBA] text-white flex items-center justify-center text-xs font-bold">
                       {userInitials || <User className="w-4 h-4" />}
                     </span>
                     <span className="hidden lg:inline text-sm font-medium text-gray-700">
@@ -213,7 +215,7 @@ const Navbar: React.FC = () => {
                   </button>
 
                   <div
-                    className={`absolute right-0 mt-2 w-52 rounded-lg bg-white shadow-lg border border-gray-200 overflow-hidden transition-all duration-200 origin-top-right ${
+                    className={`absolute right-0 mt-2 w-52 rounded-xl bg-white shadow-lg border border-gray-200 overflow-hidden transition-all duration-200 origin-top-right ${
                       openUserMenu
                         ? "opacity-100 scale-100"
                         : "opacity-0 scale-95 pointer-events-none"
@@ -222,9 +224,9 @@ const Navbar: React.FC = () => {
                     <Link
                       href="/admin/emlak"
                       onClick={() => setOpenUserMenu(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-[#E9EEF7] hover:text-[#000066] transition-colors duration-150"
                     >
-                      <User className="w-4 h-4" />
+                      <LayoutDashboard className="w-4 h-4" />
                       Yönetim Paneli
                     </Link>
                     <div className="border-t border-gray-100" />
@@ -259,14 +261,14 @@ const Navbar: React.FC = () => {
       {/* Mobile menu overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/30 md:hidden"
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm md:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
       {/* Mobile menu panel */}
       <div
-        className={`fixed right-0 top-16 z-40 w-72 h-[calc(100dvh-4rem)] bg-white border-l border-gray-200 shadow-lg transform transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed right-0 top-16 z-40 w-72 h-[calc(100dvh-4rem)] bg-white border-l border-gray-200 shadow-xl transform transition-transform duration-300 ease-in-out md:hidden ${
           mobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -282,7 +284,7 @@ const Navbar: React.FC = () => {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="İlan ara..."
-                  className="w-full h-10 rounded-lg bg-gray-100 text-gray-900 pl-9 pr-3 text-sm outline-none transition-colors duration-200 focus:bg-white focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-400"
+                  className="w-full h-10 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 pl-9 pr-3 text-sm outline-none transition-all duration-200 focus:bg-white focus:border-[#035DBA] focus:ring-2 focus:ring-[#035DBA]/20 placeholder:text-gray-400"
                 />
               </div>
             </form>
@@ -296,8 +298,8 @@ const Navbar: React.FC = () => {
                 href={link.href}
                 className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors duration-150 ${
                   isActive(link.href)
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-700 hover:text-gray-900"
+                    ? "bg-[#E9EEF7] text-[#000066]"
+                    : "text-gray-700 hover:text-[#000066] hover:bg-gray-50"
                 }`}
               >
                 {link.label}
@@ -310,7 +312,7 @@ const Navbar: React.FC = () => {
             {!loadingUser && !isLoggedIn && (
               <Link
                 href="/login"
-                className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors duration-150"
+                className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-[#035DBA] text-white text-sm font-semibold hover:bg-[#000066] transition-colors duration-150"
               >
                 <User className="w-4 h-4" />
                 Giriş Yap
@@ -319,8 +321,8 @@ const Navbar: React.FC = () => {
 
             {!loadingUser && isLoggedIn && user && (
               <div className="space-y-1">
-                <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-gray-50">
-                  <span className="w-9 h-9 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-[#E9EEF7]/50">
+                  <span className="w-9 h-9 rounded-full bg-gradient-to-br from-[#000066] to-[#035DBA] text-white flex items-center justify-center text-xs font-bold shrink-0">
                     {userInitials || <User className="w-4 h-4" />}
                   </span>
                   <span className="text-sm font-medium text-gray-900 truncate">
@@ -329,9 +331,9 @@ const Navbar: React.FC = () => {
                 </div>
                 <Link
                   href="/admin/emlak"
-                  className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                  className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-[#E9EEF7] hover:text-[#000066] transition-colors duration-150"
                 >
-                  <User className="w-4 h-4" />
+                  <LayoutDashboard className="w-4 h-4" />
                   Yönetim Paneli
                 </Link>
                 <button

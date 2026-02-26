@@ -1,22 +1,22 @@
 // src/features/home/why-us/WhyUsSection.client.tsx
 "use client";
 
-import React, { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import React from "react";
+import { motion } from "framer-motion";
 import { whyUsContent } from "./data/content";
 import { staggerContainer, fadeUp } from "./motion/variants";
 import WhyUsImageBlock from "./ui/WhyUsImageBlock.client";
 import WhyUsListItem from "./ui/WhyUsListItem.client";
-import StatCard from "./ui/StatCard.client";
+import StatsBanner from "./ui/StatsBanner.client";
 import JoinCta from "./ui/JoinCta.client";
 
 export default function WhyUsSection() {
-  const statsRef = useRef<HTMLDivElement>(null);
-  const isStatsInView = useInView(statsRef, { once: true, amount: 0.3 });
-
   return (
-    <section className="py-8 md:py-12 bg-white relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 md:px-10">
+    <section className="py-12 md:py-20 bg-gradient-to-b from-white via-blue-50/30 to-white relative overflow-hidden">
+      {/* Decorative blur */}
+      <div className="absolute top-20 -left-20 w-72 h-72 bg-blue-100/40 rounded-full blur-3xl" />
+
+      <div className="max-w-7xl mx-auto px-6 md:px-10 relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -57,19 +57,10 @@ export default function WhyUsSection() {
           </motion.div>
         </motion.div>
 
-        {/* Stats */}
-        <motion.div
-          ref={statsRef}
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10 md:mb-14"
-        >
-          {whyUsContent.stats.map((item) => (
-            <StatCard key={item.title} item={item} isActive={isStatsInView} />
-          ))}
-        </motion.div>
+        {/* Stats Banner */}
+        <div className="mb-10 md:mb-14">
+          <StatsBanner stats={whyUsContent.stats} />
+        </div>
 
         {/* CTA */}
         <JoinCta cta={whyUsContent.cta} />

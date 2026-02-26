@@ -133,7 +133,7 @@ export default function StatisticsPage() {
             </div>
 
             {/* Row 4: GSC Top Sayfalar + Son Ilanlar (REAL) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 mb-3 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3 items-stretch">
               <div className="flex">
                 <GSCTopPagesCard
                   byPage={gsc.data?.byPage ?? []}
@@ -149,7 +149,7 @@ export default function StatisticsPage() {
             </div>
 
             {/* Row 5: Danışmanlar + Cihazlar + Arama Sorguları + Ülkeler */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
               <div className="flex w-full">
                 <MoreStatsCard
                   advisors={data?.advisors ?? []}

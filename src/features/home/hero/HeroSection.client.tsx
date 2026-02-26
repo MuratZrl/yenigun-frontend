@@ -62,9 +62,6 @@ export default function HeroSection() {
       {/* Centered content: heading + search bar */}
       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4">
         <div className="text-center mb-10">
-          <p className="text-white/60 text-sm md:text-base font-medium tracking-[0.2em] uppercase mb-3">
-            Yenigün Emlak
-          </p>
           <h1
             className="text-white font-medium text-3xl md:text-5xl lg:text-6xl tracking-tight leading-[1.05]"
             style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", textShadow: "0 4px 20px rgba(0,0,0,0.4)" }}

@@ -7,7 +7,7 @@ import { WhyUsSection } from "@/features/home/why-us";
 import { LocationsSection }from "@/features/home/locations";
 import { TypesSection } from "@/features/home/types";
 import { CommentsSection } from "@/features/home/comments";
-import { HeroSection } from "@/features/home/image-slider";
+import { HeroSection } from "@/features/home/hero";
 import { TopAdvertsSection } from "@/features/home/top-adverts";
 import { RepresentativesSection } from "@/features/home/representatives";
 import { RecommendedCategories } from "@/features/home/recommended-categories";
