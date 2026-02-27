@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import type { AdvertData, FeatureValue } from "@/types/advert";
 import { Check, ChevronDown } from "lucide-react";
-import MarkdownRenderer from "@/components/MarkdownRenderer";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 import type { FacilitySection } from "@/features/ilanlar/server/loadAdvertPageData";
 

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Calendar, MapPin, ArrowLeft } from "lucide-react";
 
 import AdminLayout from "@/components/layout/AdminLayout";
-import CategorySection from "@/components/CategorySection";
+import CategorySection from "@/components/ui/CategorySection";
 
 import { useArchivedDetail } from "../hooks/useArchivedDetail";
 import { usePhotoGallery } from "../hooks/usePhotoGallery";

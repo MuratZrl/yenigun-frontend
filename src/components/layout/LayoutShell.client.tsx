@@ -5,7 +5,7 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import GoToTop from "@/components/GoToTop";
+import GoToTop from "@/components/ui/GoToTop";
 import BreadcrumbBar from "@/components/layout/Breadcrumb.client";
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {

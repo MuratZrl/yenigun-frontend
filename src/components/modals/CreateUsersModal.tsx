@@ -63,6 +63,7 @@ interface CreateUserModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   cookies: Record<string, string>;
+  onSuccess?: () => void;
 }
 
 const initialUser: NewUserState = {
@@ -96,7 +97,7 @@ const initialUser: NewUserState = {
   isSmS: true,
 };
 
-const CreateUserModal = ({ open, setOpen, cookies }: CreateUserModalProps) => {
+const CreateUserModal = ({ open, setOpen, cookies, onSuccess }: CreateUserModalProps) => {
   const [newUser, setNewUser] = useState<NewUserState>({ ...initialUser });
   const [newPhone, setNewPhone] = useState<PhoneEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -271,10 +272,7 @@ const CreateUserModal = ({ open, setOpen, cookies }: CreateUserModalProps) => {
       }
 
       handleClose();
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      if (onSuccess) onSuccess();
     } catch (error: unknown) {
       console.error("Kullanıcı oluşturma hatası:", error);
       const err = error as { response?: { data?: { message?: string } } };

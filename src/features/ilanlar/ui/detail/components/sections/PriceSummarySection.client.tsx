@@ -316,49 +316,17 @@ export default function PriceSummarySection({
     resolveSpec,
   ]);
 
-  /* ---- Mobile chips ---- */
-
-  const mobileChips = useMemo(() => {
-    const chips: Array<{ k: string; v: string }> = [];
-
-    const net = resolveSpec({
-      detailsValue: details?.netArea,
-      idsFallback: FEATURE_FALLBACK_IDS.netArea,
-    });
-    const room = resolveSpec({
-      detailsValue: details?.roomCount,
-      idsFallback: FEATURE_FALLBACK_IDS.roomCount,
-    });
-    const floor = resolveSpec({
-      detailsValue: details?.floor,
-      idsFallback: FEATURE_FALLBACK_IDS.floor,
-    });
-    const heating = resolveSpec({
-      detailsValue: details?.heating,
-      idsFallback: FEATURE_FALLBACK_IDS.heating,
-    });
-
-    if (net) chips.push({ k: "Net m²", v: net });
-    if (room) chips.push({ k: "Oda", v: room });
-    if (floor) chips.push({ k: "Kat", v: floor });
-    if (heating) chips.push({ k: "Isıtma", v: heating });
-
-    return chips.slice(0, 4);
-  }, [details, resolveSpec]);
-
   /* ================================================================ */
   /*  RENDER                                                          */
   /* ================================================================ */
 
   return (
     <section className={["w-full", className || ""].join(" ")}>
-      {/* ============================================================ */}
-      {/*  DESKTOP                                                     */}
-      {/* ============================================================ */}
-      <div className="hidden lg:block bg-white px-4 pt-1 pb-4">
-        {/* Price + credit link */}
+      {/* Price + Spec rows (unified desktop + mobile) */}
+      <div className="bg-white px-4 pt-1 pb-4">
+        {/* Price */}
         <div className="flex items-baseline justify-between gap-3">
-          <span className="text-xl font-semibold text-blue-700 tracking-tight leading-tight">
+          <span className="text-lg sm:text-xl font-semibold text-blue-700 tracking-tight leading-tight">
             {feeText}
           </span>
         </div>
@@ -386,66 +354,6 @@ export default function PriceSummarySection({
             />
           ))}
         </div>
-
-      </div>
-
-      {/* ============================================================ */}
-      {/*  MOBILE                                                      */}
-      {/* ============================================================ */}
-      <div className="lg:hidden bg-white border-b border-gray-100 px-4 py-3.5">
-        <div className="flex items-start justify-between gap-3">
-          {/* Left: price + location + meta */}
-          <div className="min-w-0">
-            <span className="text-lg font-semibold text-blue-700 leading-tight tracking-tight">
-              {feeText}
-            </span>
-
-            <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-              <MapPin size={13} className="shrink-0 text-gray-400" />
-              <span className="truncate">
-                {locationText || "Konum belirtilmemiş"}
-              </span>
-            </div>
-
-            {(uidText || createdDateText) && (
-              <div className="mt-1 text-[11px] text-gray-400">
-                {uidText ? `#${uidText}` : ""}
-                {uidText && createdDateText ? " · " : ""}
-                {createdDateText ?? ""}
-              </div>
-            )}
-          </div>
-
-          {/* Right: credit + type */}
-          <div className="shrink-0 text-right space-y-1">
-            <div className="text-[10px] text-gray-400 uppercase tracking-wide">
-              Emlak Tipi
-            </div>
-            <div className="text-xs font-bold text-gray-800">{typeText}</div>
-          </div>
-        </div>
-
-        {/* Chips */}
-        {mobileChips.length > 0 && (
-          <>
-            <div className="my-3 h-px bg-gray-100" />
-            <div className="grid grid-cols-2 gap-2">
-              {mobileChips.map((c) => (
-                <div
-                  key={c.k}
-                  className="rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2"
-                >
-                  <div className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">
-                    {c.k}
-                  </div>
-                  <div className="text-sm font-bold text-gray-800 mt-0.5">
-                    {c.v}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
       </div>
     </section>
   );

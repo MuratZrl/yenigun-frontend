@@ -2,8 +2,7 @@
 "use client";
 
 import React from "react";
-import { Home } from "lucide-react";
-import { motion } from "framer-motion";
+import { Home, MapPin, Maximize, Eye, EyeOff } from "lucide-react";
 import type { Advert } from "../../lib/types";
 
 type Props = {
@@ -11,59 +10,99 @@ type Props = {
   onClick: () => void;
 };
 
-const DEFAULT_IMAGE =
-  "https://as1.ftcdn.net/v2/jpg/04/34/72/82/1000_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg";
-
 export default function AdvertCard({ advert, onClick }: Props) {
   const imageUrl =
-    advert.photos?.find((photo: any) => typeof photo === "string") ||
-    DEFAULT_IMAGE;
+    advert.photos?.find((photo: string) => typeof photo === "string" && photo.trim()) ||
+    "/logo.png";
+  const hasRealPhoto = imageUrl !== "/logo.png";
 
   return (
-    <motion.div
-      whileHover={{ y: -4 }}
+    <div
       onClick={onClick}
-      className="cursor-pointer"
+      className={`group cursor-pointer bg-white rounded-2xl border border-gray-200 overflow-hidden h-full hover:border-[#035DBA]/40 hover:shadow-md transition-all duration-300 ${
+        !advert.active ? "opacity-75" : ""
+      }`}
     >
-      <div
-        className={`bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden h-full relative hover:border-blue-300 transition-colors ${
-          !advert.active ? "opacity-70" : ""
-        }`}
-      >
-        <div className="relative h-40">
+      {/* Image */}
+      <div className="relative h-44 bg-gray-100 overflow-hidden">
+        {hasRealPhoto ? (
           <img
             src={imageUrl}
             alt={advert.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             style={{ filter: advert.active ? "none" : "blur(1.5px)" }}
+            onError={(e) => {
+              e.currentTarget.src = "/logo.png";
+              e.currentTarget.className =
+                "w-full h-full object-contain p-8 bg-gray-100";
+            }}
           />
-          <div className="absolute top-2 left-2 bg-blue-600/90 text-white px-2 py-1 rounded text-sm font-medium">
-            {advert.fee.toLocaleString()} TL
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="h-14 object-contain opacity-40"
+            />
           </div>
-          <div
-            className={`absolute top-2 right-2 px-2 py-1 rounded text-sm font-medium text-white ${
-              advert.active ? "bg-green-500" : "bg-red-500"
+        )}
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+        {/* Price badge */}
+        <div className="absolute bottom-3 left-3">
+          <span className="bg-white/95 backdrop-blur-sm text-[#000066] text-sm font-bold px-3 py-1.5 rounded-lg shadow-sm">
+            {advert.fee} TL
+          </span>
+        </div>
+
+        {/* Active/Passive badge */}
+        <div className="absolute top-3 right-3">
+          <span
+            className={`inline-flex items-center gap-1 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-lg ${
+              advert.active ? "bg-emerald-500/90" : "bg-red-500/90"
             }`}
           >
+            {advert.active ? <Eye size={12} /> : <EyeOff size={12} />}
             {advert.active ? "Aktif" : "Pasif"}
-          </div>
-        </div>
-        <div className="p-4">
-          <h3 className="font-semibold text-blue-900 truncate mb-1">
-            {advert.title}
-          </h3>
-          <p className="text-sm text-gray-600 mb-2">
-            {advert.address.district}, {advert.address.province}
-          </p>
-          <div className="flex justify-between items-center text-sm text-gray-700">
-            <div className="flex items-center gap-1">
-              <Home size={14} />
-              <span>{advert.details.roomCount} Oda</span>
-            </div>
-            <span>{advert.details.netArea} m²</span>
-          </div>
+          </span>
         </div>
       </div>
-    </motion.div>
+
+      {/* Content */}
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 line-clamp-2 min-h-[2.75rem] group-hover:text-[#035DBA] transition-colors">
+          {advert.title}
+        </h3>
+
+        <div className="flex items-center gap-1.5 text-gray-500 text-sm mt-1.5">
+          <MapPin size={13} className="text-[#035DBA] shrink-0" />
+          <span className="truncate">
+            {advert.address.district}, {advert.address.province}
+          </span>
+        </div>
+
+        {/* Specs */}
+        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 text-sm text-gray-600">
+          {advert.details.roomCount && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-6 rounded-md bg-[#E9EEF7] flex items-center justify-center shrink-0">
+                <Home size={12} className="text-[#035DBA]" />
+              </div>
+              <span className="font-medium">{advert.details.roomCount}</span>
+            </div>
+          )}
+          {advert.details.netArea && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-6 rounded-md bg-[#E9EEF7] flex items-center justify-center shrink-0">
+                <Maximize size={12} className="text-[#035DBA]" />
+              </div>
+              <span className="font-medium">{advert.details.netArea} m²</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

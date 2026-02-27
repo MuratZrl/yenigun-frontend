@@ -6,7 +6,7 @@ import { ChevronDown, ChevronUp, Upload, Video, X, Camera, Move, Trash2, GripVer
 import { motion } from "framer-motion";
 import Select from "react-select";
 
-import RichTextEditor from "@/components/RichTextEditor";
+import RichTextEditor from "@/components/ui/RichTextEditor";
 import AdminGoogleMap from "@/components/layout/AdminGoogleMap";
 
 import type { FormData, ImageItem, StepState, TurkeyCity } from "@/types/property";

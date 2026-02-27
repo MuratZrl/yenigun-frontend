@@ -128,9 +128,18 @@ export default function AdvertListAdCard({
               <div className="w-6 h-6 rounded-md bg-[#035DBA]/10 flex items-center justify-center shrink-0">
                 <User size={12} className="text-[#035DBA]" />
               </div>
-              <span className="truncate">
-                {ad.customer.name} {ad.customer.surname}
-              </span>
+              {ad.customer.uid ? (
+                <Link
+                  href={`/admin/customers/${ad.customer.uid}`}
+                  className="truncate hover:text-[#035DBA] hover:underline underline-offset-2 transition-colors"
+                >
+                  {ad.customer.name} {ad.customer.surname}
+                </Link>
+              ) : (
+                <span className="truncate">
+                  {ad.customer.name} {ad.customer.surname}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2 text-gray-600">

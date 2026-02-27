@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { MoreVertical, Eye, Edit, Trash2 } from "lucide-react";
 
-import { MobilePagination } from "@/components/Pagination";
+import { MobilePagination } from "@/components/ui/Pagination";
 import formatPhoneNumber from "@/utils/formatPhoneNumber";
 
 import Avatar from "@/features/admin/admins/ui/components/Avatar";

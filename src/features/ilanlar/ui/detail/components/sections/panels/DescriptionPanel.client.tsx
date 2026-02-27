@@ -4,7 +4,7 @@
 import React, { useMemo } from "react";
 import type { AdvertData } from "@/types/advert";
 import { FileText } from "lucide-react";
-import MarkdownRenderer from "@/components/MarkdownRenderer";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 type Props = {
   data: AdvertData;

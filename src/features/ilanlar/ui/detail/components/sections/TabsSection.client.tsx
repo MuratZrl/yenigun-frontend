@@ -56,9 +56,9 @@ export default function TabsSection({
 
   return (
     <section className={cls("w-full", className)}>
-      {/* DESKTOP */}
-      <div className="hidden lg:block">
-        <div className="flex items-end gap-2">
+      {/* Tabs (unified desktop + mobile) */}
+      <div>
+        <div className="flex items-end gap-1 sm:gap-2">
           {tabs.map((t) => {
             const isActive = active === t.key;
             return (
@@ -88,40 +88,6 @@ export default function TabsSection({
             )}
             {active === "location" && <LocationPanel data={data} />}
           </div>
-        </div>
-      </div>
-
-      {/* MOBILE */}
-      <div className="block lg:hidden bg-white border border-gray-200">
-        <div className="flex">
-          {tabs.map((t) => {
-            const isActive = active === t.key;
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setActive(t.key)}
-                className={cls(
-                  "flex-1 h-11 inline-flex items-center justify-center",
-                  "text-[13px] font-semibold border-b border-gray-200",
-                  isActive ? "bg-[#005299] text-white" : "bg-white text-blue-700",
-                )}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-        <div className="p-3">
-          {active === "details" && (
-            <DetailsPanel
-              data={data}
-              emptyText={detailsEmptyText}
-              featureNameMap={featureNameMap}
-              facilitiesSchema={facilitiesSchema}
-            />
-          )}
-          {active === "location" && <LocationPanel data={data} />}
         </div>
       </div>
     </section>

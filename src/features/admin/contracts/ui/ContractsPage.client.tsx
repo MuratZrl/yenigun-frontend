@@ -6,7 +6,7 @@ import { Poppins } from "next/font/google";
 import { Search, Filter, AlertTriangle, ChevronDown, Plus, FileText } from "lucide-react";
 
 import AdminLayout from "@/components/layout/AdminLayout";
-import { Pagination } from "@/components/Pagination";
+import { Pagination } from "@/components/ui/Pagination";
 import Rent_Contract from "@/components/modals/RentContrant";
 
 import { useContractsController } from "../hooks/useContractsController";

@@ -6,7 +6,7 @@ import React from "react";
 import { Poppins } from "next/font/google";
 
 import AdminLayout from "@/components/layout/AdminLayout";
-import { Pagination, MobilePagination } from "@/components/Pagination";
+import { Pagination, MobilePagination } from "@/components/ui/Pagination";
 
 import { useArchivedAdverts } from "../hooks/useArchivedAdverts";
 import { useArchivedFilters } from "../hooks/useArchivedFilters";

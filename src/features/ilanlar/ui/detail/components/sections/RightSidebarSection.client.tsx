@@ -22,6 +22,16 @@ export default function RightSidebarSection({ data, className }: Props) {
     return full || "Danışman";
   }, [data]);
 
+  const profilePicture = useMemo(() => {
+    return safeText((data as any)?.advisor?.profilePicture);
+  }, [data]);
+
+  const initials = useMemo(() => {
+    const n = safeText((data as any)?.advisor?.name);
+    const s = safeText((data as any)?.advisor?.surname);
+    return `${n.charAt(0)}${s.charAt(0)}`.toUpperCase() || "D";
+  }, [data]);
+
   const phoneRaw = useMemo(() => {
     return (
       safeText((data as any)?.advisor?.gsmNumber) ||
@@ -53,8 +63,21 @@ export default function RightSidebarSection({ data, className }: Props) {
         {/* Danışman Kartı */}
         <div className="border border-gray-300 bg-white">
           <div className="p-3">
-            <div className="text-[14px] font-semibold text-gray-900">
-              {advisorName}
+            <div className="flex items-center gap-3">
+              {profilePicture ? (
+                <img
+                  src={profilePicture}
+                  alt={advisorName}
+                  className="w-10 h-10 rounded-full object-cover shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm shrink-0">
+                  {initials}
+                </div>
+              )}
+              <div className="text-[14px] font-semibold text-gray-900 min-w-0 truncate">
+                {advisorName}
+              </div>
             </div>
 
             <div className="mt-3 border border-gray-200 bg-white">

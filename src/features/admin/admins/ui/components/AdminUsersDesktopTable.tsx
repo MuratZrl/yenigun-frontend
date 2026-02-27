@@ -5,7 +5,7 @@ import React from "react";
 import Image from "next/image";
 import { Eye, Edit, Trash2, Search } from "lucide-react";
 
-import { Pagination } from "@/components/Pagination";
+import { Pagination } from "@/components/ui/Pagination";
 import formatPhoneNumber from "@/utils/formatPhoneNumber";
 
 import Avatar from "@/features/admin/admins/ui/components/Avatar";

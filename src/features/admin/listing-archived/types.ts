@@ -17,6 +17,7 @@ export interface AdvertAddress {
 }
 
 export interface AdvertCustomer {
+  uid?: string | number;
   name: string;
   surname: string;
   phones: Array<{ number: string }>;

@@ -133,7 +133,7 @@ const Navbar: React.FC = () => {
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 transition-shadow duration-300 ${
-          scrolled ? "shadow-sm" : ""
+          ""
         }`}
       >
         <div className="mx-auto max-w-6xl px-4">

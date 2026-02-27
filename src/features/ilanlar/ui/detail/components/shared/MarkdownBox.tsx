@@ -3,7 +3,7 @@
 
 import React from "react";
 import { FileText } from "lucide-react";
-import MarkdownRenderer from "@/components/MarkdownRenderer";
+import MarkdownRenderer from "@/components/ui/MarkdownRenderer";
 
 export type MarkdownBoxProps = {
   title: string;

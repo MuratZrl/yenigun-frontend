@@ -10,7 +10,7 @@ import {
   Building,
   FolderTree,
 } from "lucide-react";
-import JSONDATA from "../app/data.json";
+import JSONDATA from "../../app/data.json";
 
 interface TurkeyCity {
   province: string;

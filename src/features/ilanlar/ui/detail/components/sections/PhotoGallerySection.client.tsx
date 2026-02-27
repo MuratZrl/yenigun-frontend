@@ -208,8 +208,8 @@ export default function PhotoGallerySection({
   return (
     <section className={["w-full", className || ""].join(" ")}>
 
-      {/* DESKTOP */}
-      <div className="hidden lg:block bg-white border border-gray-300">
+      {/* Gallery (unified desktop + mobile) */}
+      <div className="bg-white border border-gray-300">
         {/* Büyük foto (ok yok, tık = next) */}
         <div className="relative">
           <img
@@ -222,7 +222,7 @@ export default function PhotoGallerySection({
             }}
             onLoad={() => setImageLoading(false)}
             onError={handleImageError}
-            className={`w-full h-[360px] select-none ${hasPhotos ? "object-cover cursor-pointer" : "object-contain p-8 bg-gray-50"}`}
+            className={`w-full h-[260px] sm:h-[360px] select-none ${hasPhotos ? "object-cover cursor-pointer" : "object-contain p-8 bg-gray-50"}`}
             alt={hasPhotos ? `İlan Fotoğrafı ${selectedIndex + 1}` : "İlan"}
             loading={hasPhotos ? "lazy" : "eager"}
             decoding="async"
@@ -282,7 +282,7 @@ export default function PhotoGallerySection({
         {/* Thumbnail grid + alt navigasyon */}
         {hasPhotos && resolvedPhotos.length > 1 && (
           <div className="border-t border-gray-300 bg-white px-3 py-3">
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
               {visibleThumbs.map((p, i) => {
                 const realIndex = thumbStart + i;
                 const active = realIndex === selectedIndex;
@@ -359,51 +359,6 @@ export default function PhotoGallerySection({
           </div>
         )}
       </div>
-
-      {/* MOBILE */}
-      <div
-        className="lg:hidden relative bg-white border border-gray-200"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {imageLoading && hasPhotos && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1f6f93]" />
-          </div>
-        )}
-
-        <img
-          ref={(el) => {
-            if (el?.complete && el.naturalWidth > 0) setImageLoading(false);
-          }}
-          src={currentPhoto}
-          onClick={() => resolvedPhotos.length > 1 && goNext()}
-          onLoad={() => setImageLoading(false)}
-          onError={handleImageError}
-          className={[
-            `w-full h-[260px] select-none ${hasPhotos ? "object-cover cursor-pointer" : "object-contain p-8 bg-gray-50"}`,
-            imageLoading && hasPhotos ? "opacity-0" : "opacity-100",
-          ].join(" ")}
-          alt={hasPhotos ? `İlan Fotoğrafı ${selectedIndex + 1}` : "İlan"}
-          loading={hasPhotos ? "lazy" : "eager"}
-          decoding="async"
-          draggable={false}
-        />
-
-        {!!ilanNo && (
-          <div className="absolute left-2 top-2 text-[12px] text-white bg-black/40 px-2 py-1 rounded select-none">
-            #{ilanNo}
-          </div>
-        )}
-
-        {hasPhotos && resolvedPhotos.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-gray-700/70 text-white text-xs px-3 py-1 rounded-full">
-            {selectedIndex + 1} / {resolvedPhotos.length}
-          </div>
-        )}
-      </div>
-
 
       {/* VIDEO MODAL */}
       {openVideo && resolvedVideoUrl && (

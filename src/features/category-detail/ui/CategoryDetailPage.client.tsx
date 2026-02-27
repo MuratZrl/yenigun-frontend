@@ -3,7 +3,7 @@
 
 import React from "react";
 import { Home, ChevronRight, Loader2 } from "lucide-react";
-import DynamicSearch from "@/components/DynamicSearch";
+import DynamicSearch from "@/components/ui/DynamicSearch";
 import useCategoryDetail from "../hooks/useCategoryDetail";
 import LoadingState from "./components/LoadingState.client";
 import ErrorState from "./components/ErrorState.client";

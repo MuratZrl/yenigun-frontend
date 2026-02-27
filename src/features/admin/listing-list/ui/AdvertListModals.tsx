@@ -9,7 +9,7 @@ import { useCookies } from "react-cookie";
 
 import FilterAdminAds from "@/components/modals/FilterAdminAds";
 import AdUserNotes from "@/components/modals/AddUserNotes";
-import AreYouSure from "@/components/AreYouSure";
+import AreYouSure from "@/components/ui/AreYouSure";
 
 import type {
   FilterState,

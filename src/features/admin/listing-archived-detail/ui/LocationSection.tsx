@@ -4,7 +4,7 @@
 
 import React from "react";
 import { MapPin } from "lucide-react";
-import MapComponent from "@/components/MapComponnet";
+import MapComponent from "@/components/ui/MapComponnet";
 import type { AdvertData } from "../types";
 import { getAddressText } from "../utils/helpers";
 

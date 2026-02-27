@@ -9,10 +9,10 @@ import { toast } from "react-toastify";
 
 // Layout
 import AdminLayout from "@/components/layout/AdminLayout";
-import AreYouSure from "@/components/AreYouSure";
+import AreYouSure from "@/components/ui/AreYouSure";
 
 // Shared modals
-import AdminModal from "@/components/modals/AdminModal";
+import AdminModal from "@/features/admin/admins/ui/components/AdminModal";
 
 // API
 import api from "@/lib/api";

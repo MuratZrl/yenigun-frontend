@@ -16,6 +16,7 @@ export interface Advisor {
   name: string;
   surname: string;
   gsmNumber?: string;
+  profilePicture?: string;
 }
 
 export interface Details {

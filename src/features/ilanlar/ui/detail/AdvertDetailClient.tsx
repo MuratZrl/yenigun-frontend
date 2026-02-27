@@ -2,14 +2,14 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
-import GoToTop from "@/components/GoToTop";
+import GoToTop from "@/components/ui/GoToTop";
 import type { AdvertData, SimilarAd } from "@/types/advert";
 import HeaderSection from "./components/sections/HeaderSection.client";
 import PhotoGallerySection from "./components/sections/PhotoGallerySection.client";
 import PriceSummarySection from "./components/sections/PriceSummarySection.client";
 import TabsSection from "./components/sections/TabsSection.client";
-import BottomActionBar from "./components/sections/BottomActionBar.client";
 import RightSidebarSection from "./components/sections/RightSidebarSection.client";
+import StickyInfoBar from "./components/sections/StickyInfoBar.client";
 import BottomInfoSection from "./components/sections/BottomInfoSection.client";
 import {
   useBreadcrumb,
@@ -84,10 +84,11 @@ export default function AdvertDetailClient({
 
   return (
     <main className="min-h-screen">
-      <div className="w-full lg:mx-auto lg:max-w-[1200px]">
+      <StickyInfoBar data={data} />
+      <div className="w-full mx-auto max-w-[1200px] px-3 sm:px-4 lg:px-0">
         <HeaderSection data={data} />
 
-        <div className="hidden lg:block border-t border-gray-300 mb-2" />
+        <div className="border-t border-gray-300 mb-2" />
 
         <div className="grid grid-cols-1 lg:grid-cols-12">
           <div className="lg:col-span-6">
@@ -115,7 +116,7 @@ export default function AdvertDetailClient({
 
         <GoToTop />
       </div>
-      <BottomActionBar data={data} />
+{/* BottomActionBar removed — contact actions are in RightSidebarSection */}
     </main>
   );
 }

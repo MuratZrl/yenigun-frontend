@@ -4,7 +4,7 @@
 import React, { useMemo } from "react";
 import type { AdvertData } from "@/types/advert";
 import { MapPin, AlertTriangle } from "lucide-react";
-import PublicGoogleMap from "@/components/PublicGoogleMap";
+import PublicGoogleMap from "@/components/ui/PublicGoogleMap";
 
 type Props = {
   data: AdvertData;

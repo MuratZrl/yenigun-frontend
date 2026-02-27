@@ -1,10 +1,11 @@
+// src/features/map/ui/MapPage.client.tsx
 "use client";
 
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import useMapListings from "../hooks/useMapListings";
 
-const HaritaClient = dynamic(() => import("@/components/HaritaClient"), {
+const HaritaClient = dynamic(() => import("@/components/ui/HaritaClient"), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">

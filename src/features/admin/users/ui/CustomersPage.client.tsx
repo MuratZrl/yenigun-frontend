@@ -6,16 +6,16 @@ import { Poppins } from "next/font/google";
 
 // Layout
 import AdminLayout from "@/components/layout/AdminLayout";
-import AreYouSure from "@/components/AreYouSure";
+import AreYouSure from "@/components/ui/AreYouSure";
 
 // Shared modals
 import CreateUserModal from "@/components/modals/CreateUsersModal";
 import UserFilterModal from "@/components/modals/UserFilterModals";
-import EditUserModal from "@/components/modals/EditUserModal";
+import EditUserModal from "@/features/admin/users/ui/components/EditCustomerModal";
 import ListUserModal from "@/components/modals/ListUserModals";
 
 // Shared pagination
-import { Pagination, MobilePagination } from "@/components/Pagination";
+import { Pagination, MobilePagination } from "@/components/ui/Pagination";
 
 // Hook, utils & types
 import { useUsersController } from "@/features/admin/users/hooks/useUsersController";
@@ -91,6 +91,8 @@ export default function CustomersPageClient() {
     handleEdit,
     handleViewDetails,
     handleViewLists,
+
+    refetch,
   } = useUsersController();
 
   /* ── Derived state ── */
@@ -210,6 +212,7 @@ export default function CustomersPageClient() {
           open={openCreate}
           setOpen={setOpenCreate}
           cookies={cookies}
+          onSuccess={refetch}
         />
 
         <UserFilterModal
@@ -227,6 +230,7 @@ export default function CustomersPageClient() {
             setOpen={(state) => setEditUser({ open: state.open, user: state.user as typeof editUser.user })}
             user={editUser.user}
             cookies={cookies}
+            onSuccess={refetch}
           />
         ) : null}
 

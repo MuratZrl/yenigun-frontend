@@ -214,7 +214,8 @@ export function useUsersController() {
   useEffect(() => {
     setAuthChecked(true);
     fetchAllCustomers();
-  }, [cookies.token, fetchAllCustomers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchAllCustomers]);
 
   useEffect(() => {
     const start = pagination.page * pagination.rowsPerPage;
