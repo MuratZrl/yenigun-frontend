@@ -152,9 +152,9 @@ export default function AdvertListAdCard({
                     key={idx}
                     className="bg-gray-50 border border-gray-100 rounded-md px-1.5 py-0.5 text-xs text-gray-600"
                   >
-                    {phone.number.startsWith("0")
-                      ? phone.number
-                      : `0${phone.number}`}
+                    {phone.number
+                      ? phone.number.startsWith("0") ? phone.number : `0${phone.number}`
+                      : "Bulunamadı"}
                   </span>
                 ))}
               </div>

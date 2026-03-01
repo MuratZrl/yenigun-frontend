@@ -130,9 +130,9 @@ export default function ArchivedAdCard({
                   key={idx}
                   className="bg-gray-100 rounded px-1.5 py-0.5 text-xs"
                 >
-                  {phone.number.startsWith("0")
-                    ? phone.number
-                    : `0${phone.number}`}
+                  {phone.number
+                    ? phone.number.startsWith("0") ? phone.number : `0${phone.number}`
+                    : "Bulunamadı"}
                 </span>
               ))}
             </div>

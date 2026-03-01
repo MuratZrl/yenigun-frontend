@@ -1,109 +1,153 @@
 import React, { useEffect, useState } from "react";
 import { Poppins } from "next/font/google";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  X,
+  UserPen,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
-  weight: ["400", "600"],
+  weight: ["400", "500", "600"],
 });
 
+/* ── Styles ── */
+const inputBase =
+  "w-full h-[42px] text-sm text-black/87 bg-gray-50 border border-black/12 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-black/30";
+
+const labelClass =
+  "block text-xs font-medium text-black/50 uppercase tracking-wider mb-1.5";
+
+/* ── Row component ── */
 const Row = ({ row, formData, setFormData }: any) => {
-  const handleChange = (event: any, row: any) => {
-    if (event.target.checked) {
-      setFormData({ ...formData, users: [...formData.users, row.uid] });
+  const isChecked = formData.users.includes(row.uid);
+
+  const handleChange = () => {
+    if (isChecked) {
+      setFormData({
+        ...formData,
+        users: formData.users.filter((item: any) => item !== row.uid),
+      });
     } else {
-      const filteredUsers = formData.users.filter(
-        (item: any) => item !== row.uid
-      );
-      setFormData({ ...formData, users: filteredUsers });
+      setFormData({ ...formData, users: [...formData.users, row.uid] });
     }
   };
 
   return (
-    <tr className="hover:bg-custom-orange-dark/10 duration-300 border-b">
-      <td className="p-3 border-x">
+    <tr
+      className={`border-b border-black/6 transition-colors cursor-pointer ${
+        isChecked
+          ? "bg-blue-50/60"
+          : "hover:bg-black/[0.02]"
+      }`}
+      onClick={handleChange}
+    >
+      <td className="px-4 py-3">
         <input
           type="checkbox"
-          checked={formData.users.includes(row.uid)}
-          onChange={(e) => handleChange(e, row)}
-          name={row.uid.toString()}
+          checked={isChecked}
+          onChange={handleChange}
+          onClick={(e) => e.stopPropagation()}
           className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
         />
       </td>
-      <td className="p-3 border-x flex items-center gap-3">
-        {row.image ? (
-          <img
-            src={row.image}
-            alt={`${row.name} ${row.surname}`}
-            className="w-8 h-8 rounded-full object-cover"
-          />
-        ) : (
-          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-sm font-semibold">
-            {row.name[0]}
-          </div>
-        )}
-        {`${row.name} ${row.surname}`}
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          {row.image ? (
+            <img
+              src={row.image}
+              alt={`${row.name} ${row.surname}`}
+              className="w-7 h-7 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-[11px] font-semibold text-white">
+              {row.name[0]}
+            </div>
+          )}
+          <span className="text-sm text-black/87 font-medium">
+            {row.name} {row.surname}
+          </span>
+        </div>
       </td>
-      <td className="p-3 border-x">{row.mail.mail}</td>
-      <td className="p-3 border-x">
+      <td className="px-4 py-3 text-sm text-black/60">{row.mail.mail}</td>
+      <td className="px-4 py-3 text-sm text-black/60">
         {row.gender === "male" ? "Erkek" : "Kadın"}
       </td>
-      <td className="p-3 border-x">{row.status}</td>
-      <td className="p-3 border-x">
+      <td className="px-4 py-3">
+        <span
+          className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+            row.status === "active" || row.status === "Aktif"
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-gray-100 text-black/40"
+          }`}
+        >
+          {row.status}
+        </span>
+      </td>
+      <td className="px-4 py-3">
         {row.phones.map((phone: any, index: number) => (
-          <div key={index} className="flex items-center gap-2">
-            <p>
-              {phone.number.startsWith("0") ? phone.number : "0" + phone.number}
-            </p>
+          <div key={index} className="flex items-center gap-1.5">
+            <span className="text-sm text-black/60">
+              {phone.number
+                ? phone.number.startsWith("0")
+                  ? phone.number
+                  : "0" + phone.number
+                : "Bulunamadı"}
+            </span>
             {phone.isAbleToSendSMS ? (
-              <p className="text-green-500 text-xs">SMS</p>
+              <span className="text-[10px] font-medium text-emerald-600">SMS</span>
             ) : (
-              <p className="text-red-500 text-xs">SMS</p>
+              <span className="text-[10px] font-medium text-red-400">SMS</span>
             )}
           </div>
         ))}
       </td>
-      <td className="p-3 border-x">
+      <td className="px-4 py-3 text-sm text-black/60">
         {row.city} / {row.county} / {row.neighbourhood}
       </td>
     </tr>
   );
 };
 
-const App = ({ open, setOpen, users, groups, setGroups, group }: any) => {
+/* ── Main component ── */
+const EditGroupModal = ({
+  open,
+  setOpen,
+  users,
+  groups,
+  setGroups,
+  group,
+}: any) => {
   const handleClose = () => {
-    setOpen({
-      ...open,
-      open: false,
-    });
+    setOpen({ ...open, open: false });
   };
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    users: [],
+    users: [] as any[],
   });
 
   useEffect(() => {
     if (group) {
       setFormData({
-        name: group.name ? group.name : "",
-        description: group.description ? group.description : "",
-        users: group.users ? group.users : [],
+        name: group.name ?? "",
+        description: group.description ?? "",
+        users: group.users ?? [],
       });
     } else {
-      setFormData({
-        name: "",
-        description: "",
-        users: [],
-      });
+      setFormData({ name: "", description: "", users: [] });
     }
   }, [group]);
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const currentGroup = groups.find((item: any) => item.uid === group.uid);
-    const filteredGroups = groups.filter((item: any) => item.uid !== group.uid);
+    const filteredGroups = groups.filter(
+      (item: any) => item.uid !== group.uid
+    );
     const updatedGroup = {
       ...currentGroup,
       name: formData.name,
@@ -115,24 +159,45 @@ const App = ({ open, setOpen, users, groups, setGroups, group }: any) => {
     handleClose();
   };
 
+  /* Pagination */
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  const handleChangePage = (newPage: number) => {
-    setPage(newPage);
-  };
+  const handleChangePage = (newPage: number) => setPage(newPage);
 
-  const handleChangeRowsPerPage = (event: any) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+  const handleChangeRowsPerPage = (e: any) => {
+    setRowsPerPage(parseInt(e.target.value, 10));
     setPage(0);
   };
 
-  const [filterAll, setFilterAll] = useState("");
+  /* Search */
   const [filteredUsers, setFilteredUsers] = useState(users);
 
   useEffect(() => {
     setFilteredUsers(users);
   }, [users]);
+
+  const handleSearch = (value: string) => {
+    const q = value.toLowerCase();
+    if (!q) {
+      setFilteredUsers(users);
+      return;
+    }
+    setFilteredUsers(
+      users.filter(
+        (user: any) =>
+          user.name?.toLowerCase().includes(q) ||
+          user.surname?.toLowerCase().includes(q) ||
+          user.mail?.mail?.toLowerCase().includes(q) ||
+          user.gender?.toLowerCase().includes(q) ||
+          user.status?.toLowerCase().includes(q) ||
+          user.city?.toLowerCase().includes(q) ||
+          user.county?.toLowerCase().includes(q) ||
+          user.neighbourhood?.toLowerCase().includes(q)
+      )
+    );
+    setPage(0);
+  };
 
   if (!open) return null;
 
@@ -142,177 +207,236 @@ const App = ({ open, setOpen, users, groups, setGroups, group }: any) => {
   const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white w-[95vw] max-w-[500px] max-h-[95vh] overflow-y-auto flex flex-col relative p-5 gap-3 rounded-xl shadow-lg"
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+      onClick={handleClose}
+    >
+      <div
+        className="bg-white w-full max-w-[1100px] mx-4 max-h-[92vh] overflow-y-auto rounded-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]"
         style={PoppinsFont.style}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Kapatma Butonu */}
-        <button
-          type="button"
-          onClick={handleClose}
-          className="absolute right-3 top-3 bg-red-100 text-red-500 w-8 h-8 rounded-full p-1 flex items-center justify-center hover:bg-red-200 transition-colors"
-        >
-          <X size={16} />
-        </button>
+        {/* ── Header ── */}
+        <div className="relative px-6 pt-6 pb-5">
+          <div className="absolute top-0 left-6 right-6 h-[3px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full" />
 
-        <h2 className="text-xl font-bold mb-2">Grubu Düzenle</h2>
-
-        {/* Grup Adı */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="name" className="font-medium">
-            Grup Adı
-            <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="name"
-            placeholder="örn: Sakarya Ev Sahipleri"
-            onChange={(e: any) => {
-              setFormData({ ...formData, name: e.target.value });
-            }}
-            value={formData.name}
-            autoComplete="off"
-            required
-            className="px-2 py-1 focus:outline-none border border-gray-300 rounded-md bg-gray-100 focus:ring-2 focus:ring-custom-orange focus:border-transparent"
-          />
-        </div>
-
-        {/* Grup Açıklaması */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="description" className="font-medium">
-            Grup Açıklaması
-          </label>
-          <textarea
-            name="description"
-            onChange={(e: any) => {
-              setFormData({ ...formData, description: e.target.value });
-            }}
-            value={formData.description}
-            required
-            autoComplete="off"
-            placeholder="Grup hakkında kısa bir açıklama yapınız."
-            className="px-2 py-1 focus:outline-none border border-gray-300 rounded-md bg-gray-100 focus:ring-2 focus:ring-custom-orange focus:border-transparent resize-vertical"
-            rows={3}
-          />
-        </div>
-
-        {/* Kullanıcı Listesi */}
-        <div className="flex flex-col gap-3">
-          <input
-            type="text"
-            placeholder="Arama Yap"
-            className="px-2 py-1 focus:outline-none border border-gray-300 rounded-md bg-gray-100 focus:ring-2 focus:ring-custom-orange focus:border-transparent"
-            onChange={(e) => {
-              setFilterAll(e.target.value);
-              setFilteredUsers(
-                users.filter(
-                  (user: any) =>
-                    user.name.includes(e.target.value) ||
-                    user.surname.includes(e.target.value) ||
-                    user.mail.mail.includes(e.target.value) ||
-                    user.gender.includes(e.target.value) ||
-                    user.status.includes(e.target.value) ||
-                    user.city.includes(e.target.value) ||
-                    user.county.includes(e.target.value) ||
-                    user.neighbourhood.includes(e.target.value)
-                )
-              );
-            }}
-          />
-
-          <div className="overflow-auto max-h-[300px] border rounded-lg">
-            <table className="w-full border-collapse">
-              <thead className="sticky top-0 bg-gray-100">
-                <tr className="border-b">
-                  <th className="p-3 text-left font-semibold text-gray-700 border-x bg-gray-100">
-                    Seçim
-                  </th>
-                  <th className="p-3 text-left font-semibold text-gray-700 border-x bg-gray-100">
-                    Ad Soyad
-                  </th>
-                  <th className="p-3 text-left font-semibold text-gray-700 border-x bg-gray-100">
-                    Email
-                  </th>
-                  <th className="p-3 text-left font-semibold text-gray-700 border-x bg-gray-100">
-                    Cinsiyet
-                  </th>
-                  <th className="p-3 text-left font-semibold text-gray-700 border-x bg-gray-100">
-                    Durum
-                  </th>
-                  <th className="p-3 text-left font-semibold text-gray-700 border-x bg-gray-100">
-                    Telefon
-                  </th>
-                  <th className="p-3 text-left font-semibold text-gray-700 border-x bg-gray-100">
-                    Adres
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedUsers.map((row: any) => (
-                  <Row
-                    key={row.uid}
-                    row={row}
-                    formData={formData}
-                    setFormData={setFormData}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Sayfalama */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700">Sayfa başına:</span>
-              <select
-                value={rowsPerPage}
-                onChange={handleChangeRowsPerPage}
-                className="border border-gray-300 rounded px-2 py-1 text-sm"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-              </select>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <UserPen size={20} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-black/87">
+                  Grubu Düzenle
+                </h2>
+                <p className="text-xs text-black/38 mt-0.5">
+                  Grup bilgilerini ve üyelerini güncelleyin
+                </p>
+              </div>
             </div>
-
-            <div className="text-sm text-gray-700">
-              {startIndex + 1}-{Math.min(endIndex, filteredUsers.length)} arası
-              toplam {filteredUsers.length}
-            </div>
-
-            <div className="flex gap-1">
-              <button
-                type="button"
-                onClick={() => handleChangePage(page - 1)}
-                disabled={page === 0}
-                className="p-2 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleChangePage(page + 1)}
-                disabled={page >= totalPages - 1}
-                className="p-2 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="p-2 text-black/30 hover:text-black/60 hover:bg-black/[0.04] rounded-full transition-colors"
+            >
+              <X size={18} />
+            </button>
           </div>
         </div>
 
-        {/* Kaydet Butonu */}
-        <button
-          type="submit"
-          className=" bg-orange-500 bg-custom-orange hover:bg-custom-orange-dark duration-300 py-2 text-white rounded-md mt-3 text-lg focus:outline-none focus:ring-2 focus:ring-custom-orange focus:ring-offset-2 transition-colors"
-        >
-          Grubu Düzenle
-        </button>
-      </form>
+        {/* ── Form ── */}
+        <form onSubmit={handleSubmit} className="px-6 pb-6">
+          {/* ─ Section: Grup Bilgileri ─ */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-1">
+              <div className="h-px flex-1 bg-black/6" />
+              <span className="text-[10px] font-semibold text-black/30 uppercase tracking-widest">
+                Grup Bilgileri
+              </span>
+              <div className="h-px flex-1 bg-black/6" />
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                Grup Adı <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                autoComplete="off"
+                required
+                placeholder="örn: Sakarya Ev Sahipleri"
+                className={`${inputBase} px-3 py-2.5`}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>Grup Açıklaması</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                autoComplete="off"
+                placeholder="Grup hakkında kısa bir açıklama yapınız."
+                rows={3}
+                className="w-full text-sm text-black/87 bg-gray-50 border border-black/12 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-black/30 px-3 py-2.5 resize-vertical"
+              />
+            </div>
+          </div>
+
+          {/* ─ Section: Kullanıcılar ─ */}
+          <div className="space-y-4 mt-5">
+            <div className="flex items-center gap-2 pb-1">
+              <div className="h-px flex-1 bg-black/6" />
+              <span className="text-[10px] font-semibold text-black/30 uppercase tracking-widest">
+                Kullanıcılar
+              </span>
+              <div className="h-px flex-1 bg-black/6" />
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-black/25 pointer-events-none"
+              />
+              <input
+                type="text"
+                placeholder="İsim, email veya adres ile ara..."
+                onChange={(e) => handleSearch(e.target.value)}
+                className={`${inputBase} pl-9 pr-3`}
+              />
+            </div>
+
+            {/* Selected count */}
+            {formData.users.length > 0 && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="w-6 h-6 bg-blue-500 rounded-md flex items-center justify-center text-white text-xs font-semibold">
+                  {formData.users.length}
+                </div>
+                <span className="text-xs text-blue-700 font-medium">
+                  kişi seçildi
+                </span>
+              </div>
+            )}
+
+            {/* Table */}
+            <div className="overflow-auto max-h-[300px] border border-black/8 rounded-xl">
+              <table className="w-full">
+                <thead className="sticky top-0 bg-gray-50/95 backdrop-blur-sm">
+                  <tr>
+                    {[
+                      "Seçim",
+                      "Ad Soyad",
+                      "Email",
+                      "Cinsiyet",
+                      "Durum",
+                      "Telefon",
+                      "Adres",
+                    ].map((header) => (
+                      <th
+                        key={header}
+                        className="px-4 py-2.5 text-left text-[10px] font-semibold text-black/40 uppercase tracking-wider border-b border-black/8"
+                      >
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedUsers.map((row: any) => (
+                    <Row
+                      key={row.uid}
+                      row={row}
+                      formData={formData}
+                      setFormData={setFormData}
+                    />
+                  ))}
+                  {paginatedUsers.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-4 py-8 text-center text-sm text-black/30"
+                      >
+                        Kullanıcı bulunamadı
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[0.75rem] text-black/40">
+                  Sayfa başına:
+                </span>
+                <select
+                  value={rowsPerPage}
+                  onChange={handleChangeRowsPerPage}
+                  className="border border-black/12 rounded-lg px-2 py-1 text-xs text-black/60 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                </select>
+              </div>
+
+              <span className="text-[0.75rem] text-black/40">
+                {filteredUsers.length > 0
+                  ? `${startIndex + 1}–${Math.min(
+                      endIndex,
+                      filteredUsers.length
+                    )} / ${filteredUsers.length}`
+                  : "0 kayıt"}
+              </span>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleChangePage(page - 1)}
+                  disabled={page === 0}
+                  className="p-1.5 text-black/40 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/[0.04] transition-colors"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChangePage(page + 1)}
+                  disabled={page >= totalPages - 1}
+                  className="p-1.5 text-black/40 rounded-full disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/[0.04] transition-colors"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Actions ── */}
+          <div className="flex gap-3 mt-6 pt-5 border-t border-black/6">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-black/50 border border-black/10 rounded-xl hover:bg-black/[0.03] hover:text-black/70 transition-all"
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-600/25 hover:shadow-blue-700/30 transition-all"
+            >
+              Grubu Düzenle
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
 
-export default App;
+export default EditGroupModal;

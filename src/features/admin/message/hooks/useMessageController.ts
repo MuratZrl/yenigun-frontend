@@ -198,13 +198,45 @@ export function useMessageController() {
     });
   }, [checkedItems]);
 
+  const handleWhatsappGroup = useCallback((group: any) => {
+    const groupUserIds = group.users ?? [];
+    const phones: string[] = users
+      .filter((u: any) => groupUserIds.includes(u.id) || groupUserIds.includes(u.uid))
+      .map((u: any) => u.phones?.[0]?.number?.replace(/\D/g, "") || "")
+      .filter(Boolean);
+
+    if (phones.length === 0) return;
+
+    // Open wa.me for each user in the group
+    for (const phone of phones) {
+      window.open(`https://wa.me/90${phone}`, "_blank");
+    }
+  }, [users]);
+
   /* ── Group actions ── */
   const handleEditGroup = useCallback((group: any) => {
     setEditModal({ open: true, group });
   }, []);
 
+  /* ── Delete confirmation ── */
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; group: any }>({
+    open: false,
+    group: null,
+  });
+
   const handleDeleteGroup = useCallback((group: any) => {
-    setGroups((prev) => prev.filter((g) => g.name !== group.name));
+    setDeleteConfirm({ open: true, group });
+  }, []);
+
+  const confirmDeleteGroup = useCallback(() => {
+    if (deleteConfirm.group) {
+      setGroups((prev) => prev.filter((g) => g.name !== deleteConfirm.group.name));
+    }
+    setDeleteConfirm({ open: false, group: null });
+  }, [deleteConfirm.group]);
+
+  const cancelDeleteGroup = useCallback(() => {
+    setDeleteConfirm({ open: false, group: null });
   }, []);
 
   return {
@@ -252,6 +284,10 @@ export function useMessageController() {
     setCreateGroupOpen,
     handleEditGroup,
     handleDeleteGroup,
+    handleWhatsappGroup,
+    deleteConfirm,
+    confirmDeleteGroup,
+    cancelDeleteGroup,
 
     /* modals */
     editModal,

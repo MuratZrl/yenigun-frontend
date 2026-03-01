@@ -13,12 +13,15 @@ type Props = {
   onSms: (id: any) => void;
 };
 
+function getCleanPhone(row: any): string {
+  const raw = row.phones?.[0]?.number || "";
+  return raw.replace(/\D/g, "");
+}
+
 export default function MessageUsersTable({
   row,
   isChecked,
   onCheck,
-  onWhatsapp,
-  onSms,
 }: Props) {
   return (
     <tr className="border-b border-black/6 last:border-b-0 hover:bg-black/[0.04] transition-colors">
@@ -85,20 +88,26 @@ export default function MessageUsersTable({
       </td>
       <td className="px-4 py-2">
         <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => onWhatsapp(row.id)}
-            className="p-1.5 text-black/54 hover:text-green-600 hover:bg-green-600/8 rounded-full transition-colors"
-            title="WhatsApp"
-          >
-            <MessageCircle size={18} strokeWidth={1.5} />
-          </button>
-          <button
-            onClick={() => onSms(row.id)}
-            className="p-1.5 text-black/54 hover:text-blue-600 hover:bg-blue-600/8 rounded-full transition-colors"
-            title="SMS"
-          >
-            <Phone size={18} strokeWidth={1.5} />
-          </button>
+          {getCleanPhone(row) && (
+            <>
+              <a
+                href={`https://wa.me/90${getCleanPhone(row)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 text-black/54 hover:text-green-600 hover:bg-green-600/8 rounded-full transition-colors"
+                title="WhatsApp"
+              >
+                <MessageCircle size={18} strokeWidth={1.5} />
+              </a>
+              <a
+                href={`tel:+90${getCleanPhone(row)}`}
+                className="p-1.5 text-black/54 hover:text-blue-600 hover:bg-blue-600/8 rounded-full transition-colors"
+                title="Ara"
+              >
+                <Phone size={18} strokeWidth={1.5} />
+              </a>
+            </>
+          )}
         </div>
       </td>
     </tr>

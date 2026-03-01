@@ -22,7 +22,8 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import UserFilterModal from "@/components/modals/UserFilterModals";
 import CreateGroupModal from "@/components/modals/CreateGruopModal";
 import EditGroupModal from "@/components/modals/EditGroupModal";
-import SendMessage from "@/components/modals/SendMessages";
+import SendMessage from "@/features/admin/message/ui/components/SendMessageModal";
+import AreYouSure from "@/components/ui/AreYouSure";
 
 // Local components
 import MessageGroupCard from "./components/MessageGroupCard";
@@ -98,6 +99,7 @@ export default function MessagePage() {
                   group={group}
                   onEdit={c.handleEditGroup}
                   onDelete={c.handleDeleteGroup}
+                  onWhatsapp={c.handleWhatsappGroup}
                 />
               ))}
             </div>
@@ -365,6 +367,15 @@ export default function MessagePage() {
             type={c.sendMessage.type}
             users={c.sendMessage.users}
             allUsers={c.users}
+          />
+          <AreYouSure
+            open={c.deleteConfirm.open}
+            onClose={c.cancelDeleteGroup}
+            onConfirm={c.confirmDeleteGroup}
+            title="Grubu Sil"
+            message={`"${c.deleteConfirm.group?.name ?? ""}" grubunu silmek istediğinize emin misiniz?`}
+            confirmText="Evet, Sil"
+            type="delete"
           />
         </div>
       </div>
