@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import AdminLayout from "@/components/layout/AdminLayout";
 
 import CombinedCategoryTab from "@/components/tabs/CategoriesTab";
-import IlanDetaylariTab from "@/components/tabs/AdDetailsTab";
+import IlanDetaylariTab from "@/features/admin/listing-create/ui/AdDetailsTab";
 
 import type { StepState } from "@/types/property";
 

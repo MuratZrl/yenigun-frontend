@@ -8,7 +8,7 @@ import { ArrowLeft, Edit } from "lucide-react";
 
 import AdminLayout from "@/components/layout/AdminLayout";
 import CombinedCategoryTab from "@/components/tabs/CategoriesTab";
-import EditAdDetailsTab from "@/components/tabs/EditAdDetailsTab";
+import EditAdDetailsTab from "@/features/admin/listing-edit/ui/EditAdDetailsTab";
 
 import {
   contractTimes, currencyOptions, deedStatusOptions,
