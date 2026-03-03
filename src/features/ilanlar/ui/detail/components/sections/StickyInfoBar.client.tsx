@@ -84,7 +84,7 @@ export default function StickyInfoBar({ data }: Props) {
 
   return (
     <div
-      className={`fixed left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm transition-transform duration-300 top-[90px] ${visible ? "translate-y-0" : "-translate-y-[200%]"}`}
+      className={`fixed left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm transition-transform duration-300 top-[104px] ${visible ? "translate-y-0" : "-translate-y-[200%]"}`}
     >
       <div className="max-w-6xl mx-auto px-3 lg:px-4 py-1 lg:py-0.5 flex items-center justify-between gap-3 lg:gap-6">
         {/* Left — listing info */}

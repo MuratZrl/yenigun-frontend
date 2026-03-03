@@ -1,7 +1,7 @@
 // src/features/admin/admin-detail/ui/AdminDetailPage.client.tsx
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -12,6 +12,9 @@ import {
   Shield,
   CalendarPlus,
   Hash,
+  Camera,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import AdminLayout from "@/components/layout/AdminLayout";
 
@@ -27,6 +30,7 @@ import {
 
 export default function AdminDetailPage() {
   const c = useAdminDetailController();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Loading state ── */
   if (c.loading) {
@@ -76,6 +80,12 @@ export default function AdminDetailPage() {
   const initials =
     (admin.name?.charAt(0) || "") + (admin.surname?.charAt(0) || "");
 
+  const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) c.handleUploadImage(file);
+    e.target.value = "";
+  };
+
   return (
     <AdminLayout>
       <div className="p-6 max-w-4xl mx-auto">
@@ -100,19 +110,62 @@ export default function AdminDetailPage() {
           <div className="px-6 pb-6">
             {/* Avatar + Name */}
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10 mb-6">
-              {admin.profilePicture ? (
-                <Image
-                  width={96}
-                  height={96}
-                  className="w-20 h-20 rounded-2xl border-4 border-white shadow-lg object-cover shrink-0 ring-1 ring-gray-100"
-                  alt={`${admin.name} ${admin.surname}`}
-                  src={admin.profilePicture}
+              {/* Avatar with upload/remove controls */}
+              <div className="relative shrink-0">
+                {admin.profilePicture ? (
+                  <Image
+                    width={96}
+                    height={96}
+                    className="w-20 h-20 rounded-2xl border-4 border-white shadow-lg object-cover ring-1 ring-gray-100"
+                    alt={`${admin.name} ${admin.surname}`}
+                    src={admin.profilePicture}
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-lg bg-gradient-to-br from-[#000066] to-[#035DBA] flex items-center justify-center text-white text-xl font-bold ring-1 ring-gray-100">
+                    {initials}
+                  </div>
+                )}
+
+                {/* Upload spinner overlay */}
+                {c.uploading && (
+                  <div className="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center border-4 border-transparent">
+                    <Loader2 size={24} className="text-white animate-spin" />
+                  </div>
+                )}
+
+                {/* Camera button (upload) */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={c.uploading}
+                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#035DBA] text-white flex items-center justify-center shadow-md hover:bg-[#000066] transition-colors disabled:opacity-50"
+                  title="Fotoğraf yükle"
+                >
+                  <Camera size={14} />
+                </button>
+
+                {/* Remove button (only when image exists) */}
+                {admin.profilePicture && (
+                  <button
+                    type="button"
+                    onClick={c.handleRemoveImage}
+                    disabled={c.uploading}
+                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md hover:bg-red-600 transition-colors disabled:opacity-50"
+                    title="Fotoğrafı kaldır"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
+
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onFileSelect}
                 />
-              ) : (
-                <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-lg bg-gradient-to-br from-[#000066] to-[#035DBA] flex items-center justify-center text-white text-xl font-bold shrink-0 ring-1 ring-gray-100">
-                  {initials}
-                </div>
-              )}
+              </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pb-1">
                 <h2 className="text-xl font-bold text-gray-900">

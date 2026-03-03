@@ -173,7 +173,7 @@ const Navbar: React.FC = () => {
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
                     isActive(link.href)
                       ? "bg-[#E9EEF7] text-[#000066]"
-                      : "text-gray-600 hover:text-[#000066] hover:bg-gray-50"
+                      : "text-gray-900 hover:text-[#000066] hover:bg-gray-50"
                   }`}
                 >
                   {link.label}
@@ -299,7 +299,7 @@ const Navbar: React.FC = () => {
                 className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors duration-150 ${
                   isActive(link.href)
                     ? "bg-[#E9EEF7] text-[#000066]"
-                    : "text-gray-700 hover:text-[#000066] hover:bg-gray-50"
+                    : "text-gray-900 hover:text-[#000066] hover:bg-gray-50"
                 }`}
               >
                 {link.label}

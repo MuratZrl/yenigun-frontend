@@ -14,11 +14,13 @@ import {
   Phone,
   MapPin,
   FileText,
+  Printer,
 } from "lucide-react";
 
 import type { Advert } from "../types";
 import { renderLocationSafely, renderAddressSafely } from "../../listing-archived/utils/addressFormat";
 import { hasValidPhotos, getFirstValidPhoto } from "../../listing-archived/utils/photoHelpers";
+import { printAdvert } from "../utils/printAdvert";
 
 type Props = {
   ad: Advert;
@@ -201,13 +203,22 @@ export default function AdvertListAdCard({
             </button>
           </div>
 
-          <button
-            onClick={() => onUserNotes(ad)}
-            className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-sm font-medium"
-          >
-            <Users size={14} />
-            Kullanıcı Notları
-          </button>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => onUserNotes(ad)}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-sm font-medium"
+            >
+              <Users size={14} />
+              Kullanıcı Notları
+            </button>
+            <button
+              onClick={() => printAdvert(ad)}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg flex items-center justify-center transition-colors"
+              title="Yazdır"
+            >
+              <Printer size={14} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

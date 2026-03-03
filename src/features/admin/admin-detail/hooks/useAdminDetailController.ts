@@ -3,7 +3,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import api from "@/lib/api";
+import { adminUsersApi } from "@/features/admin/admins/api/adminUsersApi";
 import type { AdminDetailUser } from "../lib/types";
 
 function normalizeArray<T>(maybe: unknown): T[] {
@@ -22,6 +24,7 @@ export function useAdminDetailController() {
   const [admin, setAdmin] = useState<AdminDetailUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const fetchAdmin = async () => {
@@ -79,12 +82,46 @@ export function useAdminDetailController() {
     }
   }, [admin]);
 
+  const handleUploadImage = useCallback(async (file: File) => {
+    if (!admin) return;
+    try {
+      setUploading(true);
+      const res = await adminUsersApi.uploadProfileImage(admin.uid, file);
+      const newUrl = res?.profilePicture ?? URL.createObjectURL(file);
+      setAdmin((prev) => prev ? { ...prev, profilePicture: newUrl } : prev);
+      toast.success("Profil fotoğrafı güncellendi");
+    } catch (err) {
+      console.error("Profile image upload error:", err);
+      toast.error("Fotoğraf yüklenirken bir hata oluştu");
+    } finally {
+      setUploading(false);
+    }
+  }, [admin]);
+
+  const handleRemoveImage = useCallback(async () => {
+    if (!admin) return;
+    try {
+      setUploading(true);
+      await adminUsersApi.removeProfileImage(admin.uid);
+      setAdmin((prev) => prev ? { ...prev, profilePicture: null } : prev);
+      toast.success("Profil fotoğrafı kaldırıldı");
+    } catch (err) {
+      console.error("Profile image remove error:", err);
+      toast.error("Fotoğraf kaldırılırken bir hata oluştu");
+    } finally {
+      setUploading(false);
+    }
+  }, [admin]);
+
   return {
     loading,
     error,
     admin,
+    uploading,
     goBack,
     handleEmail,
     handleCall,
+    handleUploadImage,
+    handleRemoveImage,
   };
 }

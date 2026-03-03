@@ -68,7 +68,7 @@ export function collectChainToNode(nodes: CategoryTreeNode[], targetId: string |
 export function buildFeaturesFromChain(chain: CategoryTreeNode[]): DynamicFeature[] {
   const attrMap = new Map<string, CategoryAttribute>();
   for (const node of chain) for (const a of safeArr(node?.attributes)) {
-    const key = String(a?.id ?? a?._id ?? ""); if (key) attrMap.set(key, a);
+    const key = normalizeName(String(a?.name ?? "")); if (key) attrMap.set(key, a);
   }
   const facMap = new Map<string, Set<string>>();
   for (const node of chain) for (const g of safeArr(node?.facilities)) {

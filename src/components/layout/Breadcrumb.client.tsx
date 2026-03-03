@@ -101,41 +101,36 @@ export default function BreadcrumbBar({
 
   return (
     <div
-      className={`w-full bg-slate-50 border-b border-gray-200 shadow-sm relative z-30 ${className}`}
+      className={`w-full bg-white border-b border-gray-200 relative z-30 ${className}`}
     >
       <div className="mx-auto max-w-6xl px-4">
-        <div className="py-1 flex items-center justify-between gap-4">
-          <nav aria-label="breadcrumb" className="min-w-0">
-            <ol className="flex flex-wrap items-center gap-1 text-[12px]">
+        <div className="py-2.5">
+          <nav aria-label="breadcrumb">
+            <ol className="flex flex-wrap items-center gap-1.5 text-[13px]">
               {finalList.map((item, idx) => {
                 const isLast = idx === finalList.length - 1;
-
-                const content =
-                  item.href && !isLast ? (
-                    <Link
-                      href={item.href}
-                      className="text-gray-600 hover:text-gray-900 hover:underline underline-offset-4"
-                    >
-                      {item.label}
-                    </Link>
-                  ) : (
-                    <span
-                      className={
-                        isLast ? "text-gray-900 font-medium" : "text-gray-600"
-                      }
-                    >
-                      {item.label}
-                    </span>
-                  );
 
                 return (
                   <li
                     key={`${item.label}-${idx}`}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1.5"
                   >
-                    {content}
+                    {item.href && !isLast ? (
+                      <Link
+                        href={item.href}
+                        className="text-gray-500 hover:text-[#035DBA] transition-colors"
+                      >
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <span className={isLast ? "text-gray-900 font-semibold" : "text-gray-500"}>
+                        {item.label}
+                      </span>
+                    )}
                     {!isLast && (
-                      <span className="text-gray-400 px-1">{">"}</span>
+                      <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
                     )}
                   </li>
                 );

@@ -106,4 +106,30 @@ export const adminUsersApi = {
     const res = await api.post("/admin/update-admin", payload);
     return res.data;
   },
+
+  /**
+   * Profil fotoğrafı yükler.
+   * Backend endpoint: POST /admin/upload-user-image (multipart/form-data)
+   * Response: { success, status, message, data: { profilePicture, ... } }
+   */
+  async uploadProfileImage(uid: number, file: File): Promise<{ profilePicture?: string }> {
+    const formData = new FormData();
+    formData.append("uid", String(uid));
+    formData.append("image", file);
+    const res = await api.post("/admin/upload-user-image", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    // Backend returns { data: { profilePicture, ... } }
+    return res.data?.data ?? res.data;
+  },
+
+  /**
+   * Profil fotoğrafını kaldırır.
+   * Backend'de henüz dedicated endpoint yok,
+   * ileride eklenirse burası güncellenecek.
+   */
+  async removeProfileImage(uid: number): Promise<{ message?: string }> {
+    const res = await api.post("/admin/remove-user-image", { uid });
+    return res.data;
+  },
 };

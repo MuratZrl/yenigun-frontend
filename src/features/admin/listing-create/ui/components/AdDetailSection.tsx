@@ -65,8 +65,8 @@ export default function AdDetailSection({
   return (
     <Section title="İlan Detayları" defaultOpen={true}>
       <FieldRow label="İlan Başlığı" required>
-        <input type="text" value={fourthStep.title} onChange={onTitleChange} maxLength={120} placeholder="Örn: Deniz Manzaralı Modern Daire" className={inputCls} />
-        <p className="text-[11px] text-gray-400 mt-1 text-right">{fourthStep.title.length}/120</p>
+        <input type="text" value={fourthStep.title} onChange={onTitleChange} maxLength={64} placeholder="Örn: Deniz Manzaralı Modern Daire" className={inputCls} />
+        <p className="text-[11px] text-gray-400 mt-1 text-right">{fourthStep.title.length}/64</p>
       </FieldRow>
 
       <FieldRow label="Açıklama" required>
