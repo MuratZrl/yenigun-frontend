@@ -1,22 +1,71 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import Select from "react-select";
-import { X, Plus, ArrowLeft, Trash2 } from "lucide-react";
+import Select, { SingleValue } from "react-select";
+import { X, Plus, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 
-const AdUserNotes = ({ data, setOpen, cookies }: any) => {
-  const [customers, setCustomers] = useState<any>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+interface Phone {
+  number: string;
+}
+
+interface Customer {
+  uid: string;
+  name?: string;
+  surname?: string;
+  mail?: { mail: string };
+  phones?: Phone[];
+  fullAddress?: string;
+}
+
+interface UserNote {
+  user: {
+    name: string;
+    surname: string;
+    email: string;
+    address: string;
+    phone: string;
+    phones: Phone[];
+  };
+  note: string;
+}
+
+interface CustomerOption {
+  value: string;
+  label: string;
+}
+
+interface AdUserNotesProps {
+  data: {
+    isOpen: boolean;
+    ad?: {
+      uid: string;
+      userNotes?: UserNote[];
+    };
+  };
+  setOpen: (open: boolean) => void;
+  cookies?: unknown;
+}
+
+const AdUserNotes = ({ data, setOpen }: AdUserNotesProps) => {
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  const [noteList, setNoteList] = useState<any>([]);
+  const [noteList, setNoteList] = useState<UserNote[]>([]);
+  const [prevUserNotes, setPrevUserNotes] = useState(data.ad?.userNotes);
   const [mode, setMode] = useState(0);
+
+  // Sync noteList when prop changes (React recommended pattern)
+  if (data.ad?.userNotes !== prevUserNotes) {
+    setPrevUserNotes(data.ad?.userNotes);
+    setNoteList(data.ad?.userNotes || []);
+  }
 
   const handleClose = () => {
     setOpen(false);
   };
 
   const fetchAllCustomers = async () => {
-    const all: any[] = [];
+    const all: Customer[] = [];
     let page = 1;
     const limit = 100;
     let hasMore = true;
@@ -51,8 +100,6 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
   useEffect(() => {
     if (!data.isOpen) return;
 
-    setNoteList(data.ad?.userNotes || []);
-
     let cancelled = false;
 
     (async () => {
@@ -65,7 +112,7 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
         }
 
         toast.dismiss(t);
-      } catch (err) {
+      } catch {
         toast.error("Müşteriler yüklenemedi.");
       }
     })();
@@ -75,9 +122,10 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
     };
   }, [data.isOpen, data.ad?.userNotes]);
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const user = customers.find((item: any) => item.uid === selectedCustomer);
+    if (!data.ad) return;
+    const user = customers.find((item) => item.uid === selectedCustomer);
     const adUid = data.ad.uid;
 
     if (!user) {
@@ -104,7 +152,7 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
         uid: adUid.toString(),
         userNotes: updatedNotes,
       })
-      .then((res) => {
+      .then(() => {
         toast.success("Not Başarıyla eklendi.");
         setMode(0);
         setSelectedCustomer(null);
@@ -120,26 +168,26 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
       });
   };
 
-  const handleDelete = (item: any, index: number) => () => {
-    const adUid = data.ad.uid;
-    const userNotes = noteList.filter((note: any, i: number) => i !== index);
+  const handleDelete = (_item: UserNote, index: number) => () => {
+    const adUid = data.ad!.uid;
+    const userNotes = noteList.filter((_note, i) => i !== index);
 
     api
       .post("/admin/update-user-notes", {
         uid: adUid.toString(),
         userNotes: userNotes,
       })
-      .then((res) => {
+      .then(() => {
         toast.success("Not Başarıyla Silindi.");
         setNoteList(userNotes);
       })
-      .catch((err) => {
+      .catch(() => {
         toast.error("Bir hata oluştu.");
       });
   };
 
   const customerOptions = useMemo(() => {
-    return customers.map((item: any) => ({
+    return customers.map((item) => ({
       value: item.uid,
       label: `${item.name || ""} ${item.surname || ""} (${
         item.phones?.[0]?.number || "Telefon yok"
@@ -149,7 +197,7 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
 
   const selectedOption = useMemo(() => {
     if (!selectedCustomer) return null;
-    const c = customers.find((x: any) => x.uid === selectedCustomer);
+    const c = customers.find((x) => x.uid === selectedCustomer);
     if (!c) return null;
 
     return {
@@ -212,7 +260,7 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
                   <Select
                     options={customerOptions}
                     value={selectedOption}
-                    onChange={(e: any) => setSelectedCustomer(e?.value || null)}
+                    onChange={(e: SingleValue<CustomerOption>) => setSelectedCustomer(e?.value || null)}
                     placeholder="Bir kullanıcı seçin..."
                     isClearable
                     isSearchable
@@ -254,7 +302,7 @@ const AdUserNotes = ({ data, setOpen, cookies }: any) => {
             {mode === 0 && (
               <div className="flex flex-col gap-4">
                 {noteList.length > 0 ? (
-                  noteList.map((item: any, index: number) => (
+                  noteList.map((item, index) => (
                     <div
                       key={index}
                       className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"

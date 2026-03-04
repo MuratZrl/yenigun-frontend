@@ -26,6 +26,15 @@ export interface AdvertCustomer {
 export interface AdvertAdvisor {
   name: string;
   surname: string;
+  profilePicture?: string;
+}
+
+export interface FeatureValue {
+  featureId: string;
+  value: string | number;
+  name?: string;
+  title?: string;
+  description?: string;
 }
 
 export interface Advert {
@@ -48,8 +57,10 @@ export interface Advert {
   details?: {
     netArea?: number | string | null;
     grossArea?: number | string | null;
-    [key: string]: any;
+    [key: string]: unknown;
   };
+  featureValues?: FeatureValue[];
+  thoughts?: string;
 }
 
 /* ------------------------------------------------------------------ */

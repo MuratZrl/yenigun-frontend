@@ -20,7 +20,7 @@ import AdminLayout from "@/components/layout/AdminLayout";
 
 // Shared modals
 import UserFilterModal from "@/components/modals/UserFilterModals";
-import CreateGroupModal from "@/components/modals/CreateGruopModal";
+import CreateGroupModal from "@/components/modals/CreateGroupModal";
 import EditGroupModal from "@/components/modals/EditGroupModal";
 import SendMessage from "@/features/admin/message/ui/components/SendMessageModal";
 import AreYouSure from "@/components/ui/AreYouSure";

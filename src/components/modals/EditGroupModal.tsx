@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { Poppins } from "next/font/google";
 import {
   X,
@@ -7,6 +8,58 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+
+interface Phone {
+  number: string;
+  isAbleToSendSMS: boolean;
+}
+
+interface User {
+  uid: string;
+  name: string;
+  surname: string;
+  image?: string;
+  mail: { mail: string };
+  gender: string;
+  status: string;
+  phones: Phone[];
+  city?: string;
+  county?: string;
+  neighbourhood?: string;
+}
+
+interface Group {
+  uid: number;
+  name: string;
+  description: string;
+  users: string[];
+}
+
+interface EditGroupFormData {
+  name: string;
+  description: string;
+  users: string[];
+}
+
+interface RowProps {
+  row: User;
+  formData: EditGroupFormData;
+  setFormData: React.Dispatch<React.SetStateAction<EditGroupFormData>>;
+}
+
+interface ModalState {
+  open: boolean;
+  [key: string]: unknown;
+}
+
+interface EditGroupModalProps {
+  open: ModalState | null;
+  setOpen: (state: ModalState) => void;
+  users: User[];
+  groups: Group[];
+  setGroups: React.Dispatch<React.SetStateAction<Group[]>>;
+  group: Group | null;
+}
 
 const PoppinsFont = Poppins({
   subsets: ["latin"],
@@ -21,14 +74,14 @@ const labelClass =
   "block text-xs font-medium text-black/50 uppercase tracking-wider mb-1.5";
 
 /* ── Row component ── */
-const Row = ({ row, formData, setFormData }: any) => {
+const Row = ({ row, formData, setFormData }: RowProps) => {
   const isChecked = formData.users.includes(row.uid);
 
   const handleChange = () => {
     if (isChecked) {
       setFormData({
         ...formData,
-        users: formData.users.filter((item: any) => item !== row.uid),
+        users: formData.users.filter((item) => item !== row.uid),
       });
     } else {
       setFormData({ ...formData, users: [...formData.users, row.uid] });
@@ -56,9 +109,11 @@ const Row = ({ row, formData, setFormData }: any) => {
       <td className="px-4 py-3">
         <div className="flex items-center gap-2.5">
           {row.image ? (
-            <img
+            <Image
               src={row.image}
               alt={`${row.name} ${row.surname}`}
+              width={28}
+              height={28}
               className="w-7 h-7 rounded-full object-cover"
             />
           ) : (
@@ -87,7 +142,7 @@ const Row = ({ row, formData, setFormData }: any) => {
         </span>
       </td>
       <td className="px-4 py-3">
-        {row.phones.map((phone: any, index: number) => (
+        {row.phones.map((phone, index) => (
           <div key={index} className="flex items-center gap-1.5">
             <span className="text-sm text-black/60">
               {phone.number
@@ -119,7 +174,7 @@ const EditGroupModal = ({
   groups,
   setGroups,
   group,
-}: any) => {
+}: EditGroupModalProps) => {
   const handleClose = () => {
     setOpen({ ...open, open: false });
   };
@@ -127,7 +182,7 @@ const EditGroupModal = ({
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    users: [] as any[],
+    users: [] as string[],
   });
 
   useEffect(() => {
@@ -144,11 +199,13 @@ const EditGroupModal = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const currentGroup = groups.find((item: any) => item.uid === group.uid);
+    if (!group) return;
+    const currentGroup = groups.find((item) => item.uid === group.uid);
+    if (!currentGroup) return;
     const filteredGroups = groups.filter(
-      (item: any) => item.uid !== group.uid
+      (item) => item.uid !== group.uid
     );
-    const updatedGroup = {
+    const updatedGroup: Group = {
       ...currentGroup,
       name: formData.name,
       description: formData.description,
@@ -165,7 +222,7 @@ const EditGroupModal = ({
 
   const handleChangePage = (newPage: number) => setPage(newPage);
 
-  const handleChangeRowsPerPage = (e: any) => {
+  const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setRowsPerPage(parseInt(e.target.value, 10));
     setPage(0);
   };
@@ -185,7 +242,7 @@ const EditGroupModal = ({
     }
     setFilteredUsers(
       users.filter(
-        (user: any) =>
+        (user) =>
           user.name?.toLowerCase().includes(q) ||
           user.surname?.toLowerCase().includes(q) ||
           user.mail?.mail?.toLowerCase().includes(q) ||
@@ -348,7 +405,7 @@ const EditGroupModal = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedUsers.map((row: any) => (
+                  {paginatedUsers.map((row: User) => (
                     <Row
                       key={row.uid}
                       row={row}

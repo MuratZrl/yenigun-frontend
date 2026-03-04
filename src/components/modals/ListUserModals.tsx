@@ -1,6 +1,7 @@
 // src/components/modals/ListUserModals.tsx
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Poppins } from "next/font/google";
 import {
@@ -219,7 +220,8 @@ const ListUserModal = ({ open, setOpen, user }: ListUserModalProps) => {
 
 /* ── Advert Card ── */
 function AdvertCard({ advert }: { advert: AdvertData }) {
-  const photo = advert.photos?.find((p) => typeof p === "string") || "/logo.png";
+  const defaultPhoto = advert.photos?.find((p) => typeof p === "string") || "/logo.png";
+  const [photo, setPhoto] = useState(defaultPhoto);
   const location = [
     advert.address?.province,
     advert.address?.district,
@@ -243,13 +245,12 @@ function AdvertCard({ advert }: { advert: AdvertData }) {
     >
       {/* Image */}
       <div className="relative h-[160px] overflow-hidden bg-gray-100">
-        <img
+        <Image
           src={photo}
           alt={advert.title || "İlan"}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = "/logo.png";
-          }}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
+          onError={() => setPhoto("/logo.png")}
         />
 
         {/* Gradient Overlay */}

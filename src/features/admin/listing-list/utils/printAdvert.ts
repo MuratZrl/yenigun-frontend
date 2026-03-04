@@ -2,7 +2,6 @@
 
 import type { Advert } from "../types";
 import { renderAddressSafely } from "../../listing-archived/utils/addressFormat";
-import { getFirstValidPhoto } from "../../listing-archived/utils/photoHelpers";
 
 /** Turkish labels for known detail keys */
 const DETAIL_LABELS: Record<string, string> = {
@@ -24,21 +23,6 @@ const DETAIL_LABELS: Record<string, string> = {
   zoningStatus: "İmar Durumu",
 };
 
-/** Known fac_* slug → Turkish title mapping */
-const FAC_LABELS: Record<string, string> = {
-  "ic-ozellikler": "İç Özellikler",
-  "dis-ozellikler": "Dış Özellikler",
-  "muhit": "Muhit",
-  "ulasim": "Ulaşım",
-  "engelli-ozellikler": "Engelli Özellikleri",
-  "goruntu": "Manzara",
-  "konut-tipi": "Konut Tipi",
-  "altyapi": "Altyapı",
-  "cephe": "Cephe",
-  "cevre": "Çevre",
-  "peyzaj": "Peyzaj",
-  "site-ozellikleri": "Site Özellikleri",
-};
 
 /** Keys to skip when iterating details */
 const SKIP_KEYS = new Set(["__v", "_id", "id"]);
@@ -69,10 +53,11 @@ function buildDetailRows(ad: Advert): string {
   rows.push(["İlan No", ad.uid]);
   rows.push(["İlan Tarihi", formatDate(ad.created.createdTimestamp)]);
 
-  // Detail fields
+  // Detail fields (skip null/empty values)
   if (ad.details) {
     for (const [key, val] of Object.entries(ad.details)) {
       if (SKIP_KEYS.has(key)) continue;
+      if (val == null || val === "") continue;
       const label = DETAIL_LABELS[key] || key;
       rows.push([label, formatValue(val)]);
     }
@@ -85,77 +70,27 @@ function buildDetailRows(ad: Advert): string {
   return rows
     .map(
       ([label, value]) =>
-        `<tr><td style="padding:5px 10px;font-weight:600;color:#333;white-space:nowrap;border-bottom:1px solid #eee;">${escapeHtml(label)}</td><td style="padding:5px 10px;color:#555;border-bottom:1px solid #eee;">${escapeHtml(value)}</td></tr>`
+        `<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(value)}</td></tr>`
     )
     .join("");
 }
 
-/** Extract feature values into grouped sections for printing */
-function buildFeaturesHtml(ad: Advert): string {
-  const featureValues = (ad as any)?.featureValues;
-  if (!Array.isArray(featureValues) || featureValues.length === 0) return "";
-
-  const sections: Array<{ title: string; values: string[] }> = [];
-
-  for (const fv of featureValues) {
-    const featureId = String(fv?.featureId ?? "").trim();
-    if (!featureId) continue;
-
-    // Extract values
-    let values: string[] = [];
-    if (Array.isArray(fv.value)) {
-      values = fv.value.map((v: unknown) => String(v).trim()).filter(Boolean);
-    } else if (typeof fv.value === "string" && fv.value.trim()) {
-      values = fv.value.split(",").map((v: string) => v.trim()).filter(Boolean);
-    }
-    if (values.length === 0) continue;
-    // Skip purely numeric single values (likely mismatched fields)
-    if (values.length === 1 && /^\d+$/.test(values[0])) continue;
-
-    // Determine section title
-    let title = "";
-    if (featureId.startsWith("fac_")) {
-      const slug = featureId.replace("fac_", "");
-      title = FAC_LABELS[slug] || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    } else {
-      title = fv.name || fv.title || featureId;
-    }
-
-    sections.push({ title, values });
-  }
-
-  if (sections.length === 0) return "";
-
-  let html = `
-  <div class="features-section">
-    <h3>Özellikler</h3>`;
-
-  for (const section of sections) {
-    html += `
-    <div class="feature-group">
-      <div class="feature-title">${escapeHtml(section.title)}</div>
-      <div class="feature-grid">`;
-    for (const val of section.values) {
-      html += `<span class="feature-item">✓ ${escapeHtml(val)}</span>`;
-    }
-    html += `</div>
-    </div>`;
-  }
-
-  html += `
-  </div>`;
-  return html;
+/** Opens a new window with A4-formatted advert details and triggers print */
+export interface PrintOptions {
+  showPrice?: boolean;
 }
 
-/** Opens a new window with A4-formatted advert details and triggers print */
-export function printAdvert(ad: Advert): void {
+export function printAdvert(ad: Advert, options?: PrintOptions): void {
+  const { showPrice = true } = options || {};
   const typeLabel = `${ad.steps.second} ${ad.steps.first}`.toUpperCase().trim();
-  const photo = getFirstValidPhoto(ad.photos);
+  const validPhotos = (ad.photos || []).filter((p) => typeof p === "string" && p.trim() !== "");
+  const gridPhotos = validPhotos.slice(0, 7);
+  const extraCount = validPhotos.length - 7;
   const detailRows = buildDetailRows(ad);
   const advisorName = `${ad.advisor.name || ""} ${ad.advisor.surname || ""}`.trim() || "Belirtilmemiş";
+  const advisorPhoto = ad.advisor.profilePicture || "";
   const customerPhones = ad.customer?.phones?.map((p) => (p.number?.startsWith("0") ? p.number : `0${p.number}`)).join(", ") || "";
-  const thoughts = ((ad as any)?.thoughts as string) || "";
-  const featuresHtml = buildFeaturesHtml(ad);
+
 
   const html = `<!DOCTYPE html>
 <html lang="tr">
@@ -163,56 +98,209 @@ export function printAdvert(ad: Advert): void {
 <meta charset="UTF-8">
 <title>${escapeHtml(ad.title)} - Yazdır</title>
 <style>
-  @page { size: A4; margin: 12mm; }
+  @page { size: A4; margin: 14mm; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 13px; color: #333; background: #fff; }
+  body {
+    font-family: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    font-size: 13px;
+    color: #2d3436;
+    background: #fff;
+    line-height: 1.5;
+  }
 
   .page { max-width: 210mm; margin: 0 auto; }
 
-  .header { background: #FFD700; padding: 16px 24px; text-align: center; }
-  .header h1 { font-size: 28px; font-weight: 900; color: #000; letter-spacing: 2px; }
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #035DBA, #0470d6);
+    padding: 14px 28px;
+    text-align: center;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
 
-  .title-bar { padding: 10px 24px; border-bottom: 1px solid #ddd; }
-  .title-bar h2 { font-size: 14px; font-weight: 600; color: #333; }
-  .title-bar .location { font-size: 11px; color: #888; margin-top: 2px; }
+  /* Title Section */
+  .title-section { padding: 20px 28px 16px; }
+  .type-badge {
+    display: inline-block;
+    background: #e8f0fe;
+    color: #035DBA;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .title-section h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .title-section .location {
+    font-size: 12px;
+    color: #636e72;
+  }
 
-  .content { display: flex; gap: 20px; padding: 16px 24px; }
-  .left { flex: 1; min-width: 0; }
-  .right { width: 220px; flex-shrink: 0; }
+  /* Content */
+  .content { display: flex; gap: 24px; padding: 0 28px 20px; }
+  .col-photo { width: 55%; flex-shrink: 0; }
+  .col-details { flex: 1; min-width: 0; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .photo-grid .photo-cell {
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 4/3;
+  }
+  .photo-grid .photo-cell.main {
+    grid-column: 1 / -1;
+    aspect-ratio: 16/9;
+  }
+  .photo-grid .photo-cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .photo-grid .photo-cell .more-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(3, 93, 186, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+  }
 
-  .price-row { padding: 10px 24px; border-top: 2px solid #000; }
-  .price-row span { font-size: 20px; font-weight: 800; color: #000; }
+  /* Details Table */
+  .details-card table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .details-card tr { border-bottom: 1px solid #e9ecef; }
+  .details-card tr:last-child { border-bottom: none; }
+  .details-card td { padding: 8px 0; }
+  .details-card td:first-child {
+    font-weight: 600;
+    color: #2d3436;
+    white-space: nowrap;
+    width: 45%;
+    padding-right: 12px;
+  }
+  .details-card td:last-child { color: #636e72; }
 
-  .photo-box { width: 100%; border-radius: 6px; overflow: hidden; border: 1px solid #ddd; margin-bottom: 12px; }
-  .photo-box img { width: 100%; height: auto; display: block; }
+  /* Price */
+  .price-section {
+    margin: 0 28px;
+    padding: 16px 0;
+    border-top: 2px solid #035DBA;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .price-section .price-label {
+    font-size: 13px;
+    color: #035DBA;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .price-section .price-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #035DBA;
+  }
+  .price-section .price-currency {
+    font-size: 16px;
+    font-weight: 600;
+    color: #035DBA;
+  }
 
-  .advisor-card { border: 1px solid #ddd; border-radius: 6px; padding: 10px; font-size: 12px; }
-  .advisor-card .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .advisor-card .name { font-weight: 700; color: #333; }
-  .advisor-card .phone { color: #035DBA; margin-top: 4px; }
+  /* Advisor */
+  .advisor-section {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 14px 18px;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+  }
+  .advisor-section img {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #035DBA;
+  }
+  .avatar-placeholder {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #e8f0fe;
+    border: 2px solid #035DBA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .avatar-placeholder svg { width: 28px; height: 28px; }
+  .advisor-info .label {
+    font-size: 10px;
+    color: #b2bec3;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .advisor-info .name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2d3436;
+  }
+  .advisor-info .phone {
+    font-size: 12px;
+    color: #0984e3;
+    margin-top: 2px;
+  }
 
-  .description { padding: 16px 24px; border-top: 1px solid #ddd; }
-  .description h3 { font-size: 14px; font-weight: 700; color: #c00; margin-bottom: 8px; text-transform: uppercase; }
-  .description p { font-size: 12px; line-height: 1.6; color: #444; white-space: pre-wrap; }
+  /* Logo */
+  .logo-section {
+    margin-top: 12px;
+    text-align: center;
+  }
+  .logo-section img {
+    max-width: 140px;
+    height: auto;
+  }
 
-  .thoughts-section { padding: 16px 24px; border-top: 1px solid #ddd; }
-  .thoughts-section h3 { font-size: 14px; font-weight: 700; color: #005299; margin-bottom: 8px; text-transform: uppercase; }
-  .thoughts-section p { font-size: 12px; line-height: 1.6; color: #444; white-space: pre-wrap; }
-
-  .features-section { padding: 16px 24px; border-top: 1px solid #ddd; }
-  .features-section h3 { font-size: 14px; font-weight: 700; color: #005299; margin-bottom: 12px; text-transform: uppercase; }
-  .feature-group { margin-bottom: 10px; }
-  .feature-title { font-size: 12px; font-weight: 700; color: #005299; margin-bottom: 6px; border-bottom: 1px solid #e0e0e0; padding-bottom: 3px; }
-  .feature-grid { display: flex; flex-wrap: wrap; gap: 2px 16px; }
-  .feature-item { font-size: 11px; color: #333; padding: 2px 0; white-space: nowrap; }
-
-  .footer { padding: 12px 24px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; font-size: 10px; color: #999; margin-top: 16px; }
+  /* Footer */
+  .footer {
+    margin-top: 20px;
+    padding: 12px 28px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: #b2bec3;
+  }
 
   @media print {
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .page { max-width: none; }
+    .photo-grid .photo-cell { break-inside: avoid; }
   }
 </style>
 </head>
@@ -220,52 +308,54 @@ export function printAdvert(ad: Advert): void {
 <div class="page">
   <!-- Header -->
   <div class="header">
-    <h1>${escapeHtml(typeLabel)}</h1>
+    <h1>Yenigün Emlak</h1>
   </div>
 
-  <!-- Title -->
-  <div class="title-bar">
+  <!-- Title Section -->
+  <div class="title-section">
+    <div class="type-badge">${escapeHtml(typeLabel)}</div>
     <h2>${escapeHtml(ad.title)}</h2>
     <div class="location">${escapeHtml(renderAddressSafely(ad.address))}</div>
   </div>
 
-  <!-- Content: Details + Photo -->
+  <!-- Content: Photo + Details -->
   <div class="content">
-    <div class="left">
-      <table>${detailRows}</table>
+    <div class="col-details">
+      <div class="details-card">
+        <table>${detailRows}</table>
+      </div>
     </div>
-    <div class="right">
-      ${photo ? `<div class="photo-box"><img src="${escapeHtml(photo)}" alt="Fotoğraf" /></div>` : ""}
-      <div class="advisor-card">
-        <div class="label">Danışman Bilgisi</div>
-        <div class="name">${escapeHtml(advisorName)}</div>
-        ${customerPhones ? `<div class="phone">Tel: ${escapeHtml(customerPhones)}</div>` : ""}
+    <div class="col-photo">
+      ${gridPhotos.length > 0 ? `<div class="photo-grid">
+        ${gridPhotos.map((p, i) => {
+          const isMain = i === 0;
+          const isLast = i === gridPhotos.length - 1 && extraCount > 0;
+          return `<div class="photo-cell${isMain ? " main" : ""}">
+            <img src="${escapeHtml(p)}" alt="Fotoğraf ${i + 1}" />
+            ${isLast ? `<div class="more-overlay">+${extraCount} Fotoğraf Daha</div>` : ""}
+          </div>`;
+        }).join("")}
+      </div>` : ""}
+      <div class="logo-section">
+        <img src="/logo.png" alt="Yenigün Emlak" />
+      </div>
+      <div class="advisor-section">
+        ${advisorPhoto ? `<img src="${escapeHtml(advisorPhoto)}" alt="Danışman" />` : `<div class="avatar-placeholder"><svg viewBox="0 0 24 24" fill="#035DBA" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg></div>`}
+        <div class="advisor-info">
+          <div class="label">Emlak Danışmanı</div>
+          <div class="name">${escapeHtml(advisorName)}</div>
+          ${customerPhones ? `<div class="phone">Tel: ${escapeHtml(customerPhones)}</div>` : ""}
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Price -->
-  <div class="price-row">
-    <span>Fiyat: ${escapeHtml(String(ad.fee))}</span>
-  </div>
-
-  ${ad.adminNote ? `
-  <!-- Admin Note -->
-  <div class="description">
-    <h3>Admin Notu</h3>
-    <p>${escapeHtml(ad.adminNote)}</p>
-  </div>
-  ` : ""}
-
-  ${thoughts.trim() ? `
-  <!-- Açıklama / Thoughts -->
-  <div class="thoughts-section">
-    <h3>Açıklama</h3>
-    <p>${escapeHtml(thoughts)}</p>
-  </div>
-  ` : ""}
-
-  ${featuresHtml}
+  ${showPrice ? `<!-- Price -->
+  <div class="price-section">
+    <div class="price-label">Fiyat:</div>
+    <div class="price-value">${escapeHtml(String(ad.fee))}</div>
+    <div class="price-currency">TL</div>
+  </div>` : ""}
 
   <!-- Footer -->
   <div class="footer">

@@ -29,7 +29,7 @@ export default function AdsBreadcrumbSetter({
       { label: "Emlak", href: "/ilanlar" },
     ];
 
-    const rawType = (filters as any)?.type;
+    const rawType = (filters)?.type;
     if (typeof rawType === "string") {
       const t = rawType.trim();
       if (t && t !== rootTypeValue) {
@@ -52,7 +52,6 @@ export default function AdsBreadcrumbSetter({
 
   // Flicker olmasın diye: değiştikçe set et, ama dependency cleanup’ta clear etme.
   useEffect(() => {
-    console.log("ADS BREADCRUMB filters.type =", (filters as any)?.type);
     setBreadcrumb(items);
   }, [items, setBreadcrumb]);
 

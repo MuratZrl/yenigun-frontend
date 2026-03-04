@@ -1,8 +1,8 @@
 // src/features/admin/emlak-list/ui/AdvertListAdCard.tsx
-
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Eye,
@@ -15,6 +15,7 @@ import {
   MapPin,
   FileText,
   Printer,
+  X,
 } from "lucide-react";
 
 import type { Advert } from "../types";
@@ -39,30 +40,33 @@ export default function AdvertListAdCard({
 }: Props) {
   const hasPhotos = hasValidPhotos(ad.photos);
   const firstPhoto = getFirstValidPhoto(ad.photos);
+  const [photoError, setPhotoError] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [showPrice, setShowPrice] = useState(true);
   const location = renderLocationSafely(ad.address);
   const address = renderAddressSafely(ad.address);
 
   return (
+    <>
     <div className="flex flex-col h-full bg-white rounded-xl border border-gray-200 hover:border-[#035DBA]/40 hover:shadow-md transition-all duration-300 overflow-hidden group">
       {/* Image */}
       <div className="relative h-48 bg-gray-100 overflow-hidden shrink-0">
-        {hasPhotos ? (
-          <img
+        {hasPhotos && !photoError ? (
+          <Image
             src={firstPhoto || ""}
             alt={ad.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = "/logo.png";
-              e.currentTarget.className =
-                "w-full h-full object-contain p-8 bg-gray-100";
-            }}
+            fill
+            className="object-cover"
+            onError={() => setPhotoError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <img
+            <Image
               src="/logo.png"
               alt="Logo"
-              className="h-16 object-contain opacity-50"
+              width={64}
+              height={64}
+              className="object-contain opacity-50"
             />
           </div>
         )}
@@ -212,7 +216,7 @@ export default function AdvertListAdCard({
               Kullanıcı Notları
             </button>
             <button
-              onClick={() => printAdvert(ad)}
+              onClick={() => { setShowPrice(true); setShowPrintModal(true); }}
               className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg flex items-center justify-center transition-colors"
               title="Yazdır"
             >
@@ -222,5 +226,68 @@ export default function AdvertListAdCard({
         </div>
       </div>
     </div>
+      {/* Print Settings Modal */}
+      {showPrintModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setShowPrintModal(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h3 className="text-base font-semibold text-gray-900">Yazdırma Ayarları</h3>
+              <button
+                onClick={() => setShowPrintModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-700 font-medium">Fiyat Göster</span>
+                <button
+                  onClick={() => setShowPrice(!showPrice)}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
+                    showPrice ? "bg-[#035DBA]" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                      showPrice ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => setShowPrintModal(false)}
+                className="flex-1 py-2 px-4 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                onClick={() => {
+                  setShowPrintModal(false);
+                  printAdvert(ad, { showPrice });
+                }}
+                className="flex-1 py-2 px-4 rounded-lg bg-[#035DBA] hover:bg-[#000066] text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+              >
+                <Printer size={14} />
+                Yazdır
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
