@@ -3,7 +3,7 @@
 
 import React from "react";
 import { Home, ChevronRight, Loader2 } from "lucide-react";
-import DynamicSearch from "@/components/ui/DynamicSearch";
+import DynamicSearch from "./components/DynamicSearch";
 import useCategoryDetail from "../hooks/useCategoryDetail";
 import LoadingState from "./components/LoadingState.client";
 import ErrorState from "./components/ErrorState.client";
@@ -127,7 +127,7 @@ export default function CategoryDetailPage() {
                     <AdvertListDesktop adverts={adverts} />
 
                     {/* Mobile cards */}
-                    {adverts.map((advert: any, index: number) => (
+                    {adverts.map((advert, index) => (
                       <AdvertCardMobile
                         key={advert.uid || index}
                         advert={advert}

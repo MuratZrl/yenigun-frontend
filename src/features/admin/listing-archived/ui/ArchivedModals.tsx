@@ -1,5 +1,4 @@
 // src/features/admin/emlak-archived/ui/ArchivedModals.tsx
-
 "use client";
 
 import React from "react";
@@ -114,9 +113,9 @@ export default function ArchivedModals({
       {/* Filter modal */}
       <FilterAdminAds
         open={isFilterOpen}
-        setOpen={onCloseFilter as any}
-        setFilters={setFilters as any}
-        filters={filters as any}
+        setOpen={onCloseFilter}
+        setFilters={setFilters as unknown as Parameters<typeof FilterAdminAds>[0]["setFilters"]}
+        filters={filters as unknown as Parameters<typeof FilterAdminAds>[0]["filters"]}
         handleFilter={() => {
           onApplyFilters();
           onCloseFilter();

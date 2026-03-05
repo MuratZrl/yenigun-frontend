@@ -2,6 +2,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
 import { Calendar, User } from "lucide-react";
 import { Advert } from "@/types/search";
 import { getM2Text, formatDate, hasValidImage, LOGO_URL } from "../../utils";
@@ -11,11 +13,12 @@ interface AdvertCardMobileProps {
 }
 
 export default function AdvertCardMobile({ advert }: AdvertCardMobileProps) {
-  const ad = advert as any;
+  const ad = advert;
+  const [imgError, setImgError] = useState(false);
   const m2Text = getM2Text(ad);
   const room =
     ad?.details?.roomCount ||
-    ad?.featureValues?.find((f: any) =>
+    ad?.featureValues?.find((f: { name?: string; value?: string | number }) =>
       f?.name?.toLowerCase().includes("oda"),
     )?.value ||
     "";
@@ -28,23 +31,22 @@ export default function AdvertCardMobile({ advert }: AdvertCardMobileProps) {
     <Link href={`/ads/${ad.uid}`} className="group block md:hidden">
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:bg-gray-50 transition-colors">
         <div className="flex gap-3 p-3">
-          <div className="w-24 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-            {hasValidImage(advert) ? (
-              <img
-                src={ad.photos[0]}
+          <div className="relative w-24 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+            {hasValidImage(advert) && !imgError ? (
+              <Image
+                src={imgError ? LOGO_URL : ad.photos[0]}
                 alt={ad.title || "İlan görseli"}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = LOGO_URL;
-                  e.currentTarget.className =
-                    "w-full h-full object-contain p-2";
-                }}
+                fill
+                className={imgError ? "object-contain p-2" : "object-cover"}
+                onError={() => setImgError(true)}
+                unoptimized
               />
             ) : (
-              <img
+              <Image
                 src={LOGO_URL}
                 alt="Logo"
-                className="w-full h-full object-contain p-2 opacity-70"
+                fill
+                className="object-contain p-2 opacity-70"
               />
             )}
           </div>

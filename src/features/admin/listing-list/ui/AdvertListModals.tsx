@@ -1,5 +1,4 @@
 // src/features/admin/emlak-list/ui/AdvertListModals.tsx
-
 "use client";
 
 import React from "react";
@@ -39,7 +38,7 @@ type Props = {
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   onApplyFilters: () => void;
   onResetFilters: () => void;
-  onSearchResult?: (data: any) => void;
+  onSearchResult?: (data: Record<string, unknown>) => void;
 };
 
 export default function AdvertListModals({
@@ -116,9 +115,9 @@ export default function AdvertListModals({
       {/* Filter modal */}
       <FilterAdminAds
         open={isFilterOpen}
-        setOpen={onCloseFilter as any}
-        setFilters={setFilters as any}
-        filters={filters as any}
+        setOpen={onCloseFilter as unknown as (v: boolean) => void}
+        setFilters={setFilters as unknown as Parameters<typeof FilterAdminAds>[0]["setFilters"]}
+        filters={filters as unknown as Parameters<typeof FilterAdminAds>[0]["filters"]}
         handleFilter={() => {
           onApplyFilters();
           onCloseFilter();

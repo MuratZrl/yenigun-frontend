@@ -58,7 +58,7 @@ function getClientToken(): string | null {
 /**
  * URL + params debug string (log için)
  */
-function buildUrlWithParams(baseURL: string, url: string, params: any): string {
+function buildUrlWithParams(baseURL: string, url: string, params: unknown): string {
   const full = `${baseURL || ""}${url || ""}`;
   if (!params || typeof params !== "object") return full;
 
@@ -119,7 +119,7 @@ api.interceptors.request.use(
     // Content-Type: Axios zaten çoğu şeyde doğru set eder.
     // FormData’da asla set etme (boundary bozulur).
     const method = (config.method || "get").toLowerCase();
-    const data = (config as any).data;
+    const data = (config).data;
 
     const hasBody = method !== "get" && method !== "delete" && data !== undefined && data !== null;
     const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
@@ -143,7 +143,7 @@ api.interceptors.response.use(
       const method = (ax.config?.method || "").toUpperCase();
       const baseURL = ax.config?.baseURL || "";
       const url = ax.config?.url || "";
-      const params = (ax.config as any)?.params;
+      const params = (ax.config)?.params;
       const fullUrl = buildUrlWithParams(baseURL, url, params);
 
       if (DEBUG) {

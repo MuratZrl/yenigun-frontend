@@ -224,6 +224,11 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
     onRemoveMedia(item.id);
   };
 
+  /* ── Category-based field visibility ── */
+  const isKonutOrBina = stepFirst === "Konut" || stepFirst === "Bina";
+  const isArsaOrArazi = stepFirst === "Arsa" || stepFirst === "Arazi";
+  const isSatilik = stepSecond === "Satılık" || stepSecond === "Devren Satılık";
+
   /* ── Render ── */
   return (
     <div className="space-y-0">
@@ -255,6 +260,9 @@ export default function EditAdDetailsTab(props: EditAdDetailsTabProps) {
         hiddenFields={hiddenFields}
         hideField={hideField}
         restoreAllFields={restoreAllFields}
+        isKonutOrBina={isKonutOrBina}
+        isArsaOrArazi={isArsaOrArazi}
+        isSatilik={isSatilik}
       />
 
       <EditAddressSection

@@ -1,12 +1,41 @@
 // src/features/category-detail/ui/components/AdvertListDesktop.client.tsx
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Advert } from "@/types/search";
 import { getM2Compact, formatShortDate, hasValidImage, LOGO_URL } from "../../utils";
 
 interface AdvertListDesktopProps {
   adverts: Advert[];
+}
+
+function AdvertRowImage({ advert }: { advert: Advert }) {
+  const [imgError, setImgError] = useState(false);
+  const showPhoto = hasValidImage(advert) && !imgError;
+
+  return (
+    <div className="w-[92px] h-16 bg-gray-100 rounded-md overflow-hidden relative">
+      {showPhoto ? (
+        <Image
+          src={advert.photos[0]}
+          alt={advert.title || "İlan görseli"}
+          fill
+          className="object-cover"
+          onError={() => setImgError(true)}
+          unoptimized
+        />
+      ) : (
+        <Image
+          src={LOGO_URL}
+          alt="Logo"
+          fill
+          className="object-contain p-2 opacity-70"
+        />
+      )}
+    </div>
+  );
 }
 
 export default function AdvertListDesktop({ adverts }: AdvertListDesktopProps) {
@@ -36,7 +65,7 @@ export default function AdvertListDesktop({ adverts }: AdvertListDesktopProps) {
 
       {/* Rows */}
       <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-        {adverts.map((advert: any, index: number) => {
+        {adverts.map((advert, index) => {
           const m2Compact = getM2Compact(advert);
           const province = advert?.address?.province || "-";
           const district = advert?.address?.district || "-";
@@ -55,26 +84,7 @@ export default function AdvertListDesktop({ adverts }: AdvertListDesktopProps) {
               <div className="grid grid-cols-[120px_1fr_120px_160px_140px_160px] items-stretch hover:bg-gray-50 transition-colors border-b border-gray-200 last:border-b-0">
                 {/* Image */}
                 <div className="px-4 py-4 border-r border-gray-200">
-                  <div className="w-[92px] h-16 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
-                    {hasValidImage(advert) ? (
-                      <img
-                        src={advert.photos[0]}
-                        alt={advert.title || "İlan görseli"}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = LOGO_URL;
-                          e.currentTarget.className =
-                            "w-full h-full object-contain p-2";
-                        }}
-                      />
-                    ) : (
-                      <img
-                        src={LOGO_URL}
-                        alt="Logo"
-                        className="w-full h-full object-contain p-2 opacity-70"
-                      />
-                    )}
-                  </div>
+                  <AdvertRowImage advert={advert} />
                 </div>
 
                 {/* Title */}

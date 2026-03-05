@@ -5,6 +5,7 @@ import React, { useMemo, useState } from "react";
 import { Check, Copy, Phone, MessageCircle } from "lucide-react";
 import formatPhoneNumber from "@/utils/formatPhoneNumber";
 import type { AdvertData } from "@/types/advert";
+import Image from "next/image";
 
 type Props = {
   data: AdvertData;
@@ -207,7 +208,7 @@ export default function AdvisorSection({
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-16 h-14 bg-white flex items-center justify-center rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <img
+              <Image
                 src={logoSrc}
                 alt={brandName}
                 className="w-full h-full select-none object-contain p-2"

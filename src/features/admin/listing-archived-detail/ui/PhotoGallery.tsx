@@ -1,11 +1,11 @@
 // src/features/admin/emlak-archived-detail/ui/PhotoGallery.tsx
-
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, ZoomIn, Play, Share2 } from "lucide-react";
 import PhotoThumbnails from "./PhotoThumbnails";
-import { isLowQualityImage, handleImageError } from "../utils/helpers";
+import { isLowQualityImage } from "../utils/helpers";
 
 type Props = {
   photos: string[];
@@ -36,6 +36,11 @@ export default function PhotoGallery({
   onOpenVideo,
   onShare,
 }: Props) {
+  const [erroredSrc, setErroredSrc] = useState<string | null>(null);
+
+  const showFallback = erroredSrc === currentPhoto;
+  const displaySrc = showFallback ? "/logo.png" : currentPhoto;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Main photo */}
@@ -45,18 +50,26 @@ export default function PhotoGallery({
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
           </div>
         )}
-        <img
-          src={currentPhoto}
-          onClick={() => hasPhotos && onClickPhoto(currentPhoto)}
-          onLoad={onImageLoad}
-          onError={handleImageError}
-          className={`w-full h-96 select-none transition-all duration-300 ${
-            shouldShowLoading ? "opacity-0" : "opacity-100"
-          } ${hasPhotos ? "cursor-zoom-in hover:scale-105" : "cursor-default"} object-contain`}
-          alt={hasPhotos ? `İlan Fotoğrafı ${selectedPhoto + 1}` : "Yenigün Emlak"}
-          loading={hasPhotos ? "lazy" : "eager"}
-          decoding="async"
-        />
+        <div className="relative w-full h-96">
+          <Image
+            src={displaySrc}
+            onClick={() => hasPhotos && onClickPhoto(currentPhoto)}
+            onLoad={() => {
+              setErroredSrc(null);
+              onImageLoad();
+            }}
+            onError={() => setErroredSrc(currentPhoto)}
+            fill
+            className={`select-none transition-all duration-300 ${
+              shouldShowLoading ? "opacity-0" : "opacity-100"
+            } ${hasPhotos ? "cursor-zoom-in hover:scale-105" : "cursor-default"} ${
+              showFallback ? "object-contain p-8" : "object-contain"
+            }`}
+            alt={hasPhotos ? `İlan Fotoğrafı ${selectedPhoto + 1}` : "Yenigün Emlak"}
+            priority={!hasPhotos}
+            unoptimized
+          />
+        </div>
 
         {/* Arrows */}
         {hasPhotos && photos.length > 1 && (

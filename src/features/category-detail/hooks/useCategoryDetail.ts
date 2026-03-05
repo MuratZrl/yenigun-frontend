@@ -4,9 +4,9 @@ import { useParams, useRouter } from "next/navigation";
 import { Advert } from "@/types/search";
 import api from "@/lib/api";
 import { useCategoryContext } from "@/context/CategoryContext";
-import { Category, Subcategory } from "../types";
+import { Category, Feature, Subcategory } from "../types";
 
-const findFeaturesInSubcategory = (subcat: Subcategory): any[] => {
+const findFeaturesInSubcategory = (subcat: Subcategory): Feature[] => {
   if (subcat.features && subcat.features.length > 0) return subcat.features;
 
   if (subcat.subcategories && subcat.subcategories.length > 0) {
@@ -63,7 +63,7 @@ export default function useCategoryDetail() {
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
-  const [searchFilters, setSearchFilters] = useState<any>({});
+  const [searchFilters, setSearchFilters] = useState<Record<string, unknown>>({});
   const [isMobile, setIsMobile] = useState(false);
 
   const [sortBy, setSortBy] = useState<string>("date");
@@ -93,7 +93,7 @@ export default function useCategoryDetail() {
         } else {
           throw new Error("API yanıtı beklenen formatta değil");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Kategori detayları yüklenirken hata:", err);
         setError("Kategori yüklenemedi. Lütfen tekrar deneyin.");
       } finally {
@@ -105,11 +105,11 @@ export default function useCategoryDetail() {
   }, [categoryId]);
 
   const fetchAdverts = useCallback(
-    async (filters: any = {}) => {
+    async (filters: Record<string, unknown> = {}) => {
       try {
         setLoadingAds(true);
 
-        const reqParams: any = {
+        const reqParams: Record<string, unknown> = {
           page: currentPage,
           limit: itemsPerPage,
           sortBy,
@@ -125,10 +125,10 @@ export default function useCategoryDetail() {
         const response = await api.get("/advert/search", {
           params: reqParams,
         });
-        const filteredData = response.data.data || [];
+        const filteredData = (response.data.data || []) as Partial<Advert>[];
 
-        const formattedAdverts = filteredData.map((ad: any) => ({
-          uid: ad.uid,
+        const formattedAdverts = filteredData.map((ad) => ({
+          uid: ad.uid ?? 0,
           title: ad.title || "İsimsiz İlan",
           fee: ad.fee || "Fiyat Belirtilmemiş",
           address: {
@@ -148,7 +148,7 @@ export default function useCategoryDetail() {
           thoughts: ad.thoughts || "",
           created: ad.created || { createdTimestamp: Date.now() },
           advisor: ad.advisor,
-          details: ad.details,
+          details: ad.details ?? {},
           isNew: ad.isNew || false,
           steps: ad.steps,
 
@@ -160,7 +160,7 @@ export default function useCategoryDetail() {
         setTotalItems(
           response.data.pagination?.totalItems || formattedAdverts.length,
         );
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("❌ İlanlar yüklenirken hata:", error);
         setAdverts([]);
         setTotalItems(0);
@@ -196,7 +196,7 @@ export default function useCategoryDetail() {
     fetchAdverts,
   ]);
 
-  const handleSearch = (filters: any) => {
+  const handleSearch = (filters: Record<string, unknown>) => {
     setSearchFilters(filters);
     setCurrentPage(1);
   };

@@ -111,5 +111,5 @@ export interface DeleteConfirmModal {
 
 export interface AdUserNotesModal {
   isOpen: boolean;
-  ad: Advert | Record<string, never>;
+  ad?: Advert;
 }

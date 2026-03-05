@@ -22,7 +22,7 @@ export function isLowQualityImage(url: string | undefined): boolean {
 export function getSafePhotos(photos: unknown): string[] {
   if (!Array.isArray(photos)) return [];
   return photos.filter(
-    (photo: any) => typeof photo === "string" && photo.trim() !== ""
+    (photo): photo is string => typeof photo === "string" && photo.trim() !== ""
   );
 }
 

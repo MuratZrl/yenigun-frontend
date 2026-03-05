@@ -2,8 +2,9 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Eye,
   EyeOff,
@@ -34,6 +35,7 @@ export default function ArchivedAdCard({
   onAdminNote,
   onUserNotes,
 }: Props) {
+  const [imgError, setImgError] = useState(false);
   const hasPhotos = hasValidPhotos(ad.photos);
   const firstPhoto = getFirstValidPhoto(ad.photos);
   const location = renderLocationSafely(ad.address);
@@ -43,23 +45,23 @@ export default function ArchivedAdCard({
     <div className="bg-white rounded-xl border border-gray-200 hover:border-custom-orange transition-colors overflow-hidden group">
       {/* Image */}
       <div className="relative h-48 bg-gray-100 overflow-hidden">
-        {hasPhotos ? (
-          <img
-            src={firstPhoto || ""}
+        {hasPhotos && !imgError ? (
+          <Image
+            src={firstPhoto || "/logo.png"}
             alt={ad.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              e.currentTarget.src = "/logo.png";
-              e.currentTarget.className =
-                "w-full h-full object-contain p-8 bg-gray-100";
-            }}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={() => setImgError(true)}
+            unoptimized
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <img
+            <Image
               src="/logo.png"
               alt="Logo"
-              className="h-16 object-contain opacity-50"
+              width={80}
+              height={64}
+              className="h-16 w-auto object-contain opacity-50"
             />
           </div>
         )}

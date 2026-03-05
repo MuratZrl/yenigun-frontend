@@ -15,10 +15,6 @@ import {
 } from "@/utils/districtBoundary";
 import {
   Navigation,
-  MapPin,
-  Car,
-  Train,
-  Bus,
   X,
   Filter,
   School,
@@ -26,10 +22,6 @@ import {
   Trees,
   Coffee,
   ShoppingBag,
-  Plus,
-  Minus,
-  Layers,
-  ExternalLink,
 } from "lucide-react";
 
 const libraries: ("places" | "drawing" | "geometry")[] = [
@@ -192,7 +184,7 @@ export default function PublicGoogleMap({
         const primaryType = types[0];
 
         service.nearbySearch(
-          { ...request, type: primaryType as any },
+          { ...request, type: primaryType },
           (results, status) => {
             if (
               status === google.maps.places.PlacesServiceStatus.OK &&

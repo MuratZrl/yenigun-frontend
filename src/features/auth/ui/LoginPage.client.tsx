@@ -47,10 +47,12 @@ export default function LoginPage() {
   return (
     <div className="relative h-dvh w-full flex items-center justify-center bg-[#1a2332]">
       {/* Background image */}
-      <img
+      <Image
         src="/home_1.jpg"
         alt=""
-        className="absolute inset-0 object-cover h-full w-full opacity-60 select-none pointer-events-none"
+        fill
+        className="object-cover opacity-60 select-none pointer-events-none"
+        priority
       />
 
       {/* Gradient overlay */}

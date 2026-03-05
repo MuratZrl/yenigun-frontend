@@ -1,6 +1,7 @@
+// src/features/category-detail/ui/components/DynamicSearch/DynamicSearch.tsx
 "use client";
-import { Advert } from "@/types/search";
-import React, { useState } from "react";
+
+import React from "react";
 import {
   Search,
   ChevronDown,
@@ -10,349 +11,42 @@ import {
   Building,
   FolderTree,
 } from "lucide-react";
-import JSONDATA from "../../app/data.json";
 
-interface TurkeyCity {
-  province: string;
-  districts: {
-    district: string;
-    quarters: string[];
-  }[];
-}
+import type { DynamicSearchProps, Subcategory, TurkeyCity } from "./types";
+import { useDynamicSearch } from "./useDynamicSearch";
+import FeatureFilters from "./FeatureFilters";
 
-interface Subcategory {
-  _id: string;
-  name: string;
-  features: any[];
-  subcategories?: Subcategory[];
-}
-
-interface DynamicSearchProps {
-  categoryId: string;
-  categoryName: string;
-  categoryData?: any;
-  onSearch: (filters: any) => void;
-  initialFilters?: any;
-  adverts?: Advert[];
-}
-
-interface FilterValues {
-  minPrice: string;
-  maxPrice: string;
-  province: string;
-  district: string;
-  neighborhood: string;
-  search: string;
-  subcategory: string;
-  [key: string]: any;
-}
-
-const turkeyCities: TurkeyCity[] = JSONDATA.map((city: any) => {
-  return {
-    province: city.name,
-    districts: city.towns.map((district: any) => {
-      return {
-        district: district.name,
-        quarters: district.districts.reduce((acc: any, districtItem: any) => {
-          const quarterNames = districtItem.quarters.map(
-            (quarter: any) => quarter.name
-          );
-          return acc.concat(quarterNames);
-        }, []),
-      };
-    }),
-  };
-});
-
-const cleanAddressData = (address: any): any => {
-  if (!address || typeof address !== "object") return address;
-
-  const cleaned = { ...address };
-
-  if (cleaned.full_address && typeof cleaned.full_address === "object") {
-    cleaned.full_address =
-      cleaned.full_address.full_address ||
-      `${cleaned.province || ""}, ${cleaned.district || ""}, ${
-        cleaned.quarter || ""
-      }`;
-  }
-
-  return cleaned;
-};
-
-const cleanAdvertData = (advert: Advert): Advert => {
-  if (!advert.address) return advert;
-
-  return {
-    ...advert,
-    address: cleanAddressData(advert.address),
-  };
-};
-
-const DynamicSearch = ({
+export default function DynamicSearch({
   categoryName,
   categoryData,
   onSearch,
   initialFilters = {},
   adverts = [],
-}: DynamicSearchProps) => {
-  const [showMoreFilters, setShowMoreFilters] = useState(false);
-  const [features, setFeatures] = useState<any[]>([]);
-  const [filterValues, setFilterValues] = useState<FilterValues>({
-    minPrice: "",
-    maxPrice: "",
-    province: "",
-    district: "",
-    neighborhood: "",
-    search: "",
-    subcategory: "",
-    ...initialFilters,
-  });
-
-  const handleShowOnMap = (): void => {
-    if (adverts.length === 0) {
-      alert("Haritada gösterilecek ilan bulunamadı.");
-      return;
-    }
-
-    const cleanedAdverts = adverts.map(cleanAdvertData);
-
-    const validAdverts = cleanedAdverts.filter(
-      (advert) =>
-        advert.address?.mapCoordinates?.lat &&
-        advert.address?.mapCoordinates?.lng
-    );
-
-    if (validAdverts.length === 0) {
-      alert("Koordinat bilgisi olan ilan bulunamadı.");
-      return;
-    }
-
-    localStorage.setItem("haritaAdverts", JSON.stringify(validAdverts));
-
-    const firstAdvert = validAdverts[0];
-    const province = firstAdvert.address?.province || "";
-    const district = firstAdvert.address?.district || "";
-
-    const params = new URLSearchParams();
-    if (province) params.append("province", province);
-    if (district) params.append("district", district);
-
-    const url = `/Harita${params.toString() ? `?${params.toString()}` : ""}`;
-    window.open(url, "_blank");
-  };
-
-  const getAllSubcategories = (): Subcategory[] => {
-    if (!categoryData?.subcategories) return [];
-
-    const allSubcategories: Subcategory[] = [];
-
-    const collectSubcategories = (subcats: Subcategory[]): void => {
-      subcats.forEach((subcat) => {
-        allSubcategories.push(subcat);
-        if (subcat.subcategories && subcat.subcategories.length > 0) {
-          collectSubcategories(subcat.subcategories);
-        }
-      });
-    };
-
-    collectSubcategories(categoryData.subcategories);
-    return allSubcategories;
-  };
-
-  const subcategories = getAllSubcategories();
-
-  const handleProvinceChange = (value: string): void => {
-    setFilterValues((prev: FilterValues) => ({
-      ...prev,
-      province: value,
-      district: "",
-      neighborhood: "",
-    }));
-  };
-
-  const handleDistrictChange = (value: string): void => {
-    setFilterValues((prev: FilterValues) => ({
-      ...prev,
-      district: value,
-      neighborhood: "",
-    }));
-  };
-
-  const handleSubcategoryChange = (value: string): void => {
-    setFilterValues((prev: FilterValues) => ({
-      ...prev,
-      subcategory: value,
-    }));
-  };
-
-  const isProvinceSelected = filterValues.province !== "";
-  const isDistrictSelected = filterValues.district !== "";
-
-  const currentDistricts = filterValues.province
-    ? turkeyCities.find(
-        (city: TurkeyCity) => city.province === filterValues.province
-      )?.districts || []
-    : [];
-
-  const currentNeighborhoods =
-    filterValues.district && filterValues.province
-      ? currentDistricts.find(
-          (dist: { district: string; quarters: string[] }) =>
-            dist.district === filterValues.district
-        )?.quarters || []
-      : [];
-
-  const handleInputChange = (key: string, value: any): void => {
-    setFilterValues((prev: FilterValues) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
-  const handleFeatureChange = (featureName: string, value: any): void => {
-    setFilterValues((prev: FilterValues) => ({
-      ...prev,
-      [`features.${featureName}`]: value,
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
-
-    const cleanFilters: any = {};
-    Object.entries(filterValues).forEach(([key, value]) => {
-      if (value !== "" && value !== null && value !== undefined) {
-        if (typeof value === "object") {
-          const hasValue = Object.values(value).some(
-            (v) => v !== "" && v !== null && v !== undefined
-          );
-          if (hasValue) {
-            cleanFilters[key] = value;
-          }
-        } else {
-          cleanFilters[key] = value;
-        }
-      }
-    });
-
-    if (cleanFilters.subcategory) {
-      const selectedSubcat = subcategories.find(
-        (subcat) => subcat.name === cleanFilters.subcategory
-      );
-      if (selectedSubcat) {
-        cleanFilters.subcategoryId = selectedSubcat._id;
-        cleanFilters.subcategoryName = selectedSubcat.name;
-      }
-    }
-
-    onSearch(cleanFilters);
-  };
-
-  const handleReset = (): void => {
-    setFilterValues({
-      minPrice: "",
-      maxPrice: "",
-      province: "",
-      district: "",
-      neighborhood: "",
-      search: "",
-      subcategory: "",
-    });
-    onSearch({});
-  };
-
-  const renderApiFeatures = () => {
-    if (features.length === 0) return null;
-
-    return (
-      <div className="space-y-2">
-        <h4 className="text-xs font-medium text-gray-700">Diğer Özellikler</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {features.slice(0, 4).map((feature: any) => (
-            <div key={feature._id} className="space-y-1">
-              <label className="block text-xs font-medium text-gray-700 truncate">
-                {feature.name}
-              </label>
-              {feature.type === "single_select" ? (
-                <select
-                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
-                  onChange={(e) =>
-                    handleFeatureChange(feature.name, e.target.value)
-                  }
-                >
-                  <option value="">Seçiniz</option>
-                  {feature.options
-                    ?.slice(0, 5)
-                    .map((option: string, idx: number) => (
-                      <option key={idx} value={option}>
-                        {option.length > 20
-                          ? `${option.substring(0, 20)}...`
-                          : option}
-                      </option>
-                    ))}
-                </select>
-              ) : feature.type === "multi_select" ? (
-                <select
-                  multiple
-                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none h-16 bg-white"
-                  onChange={(e) => {
-                    const selected = Array.from(
-                      e.target.selectedOptions,
-                      (option) => option.value
-                    );
-                    handleFeatureChange(feature.name, selected);
-                  }}
-                >
-                  {feature.options
-                    ?.slice(0, 4)
-                    .map((option: string, idx: number) => (
-                      <option key={idx} value={option}>
-                        {option.length > 20
-                          ? `${option.substring(0, 20)}...`
-                          : option}
-                      </option>
-                    ))}
-                </select>
-              ) : feature.type === "number" ? (
-                <input
-                  type="number"
-                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
-                  onChange={(e) =>
-                    handleFeatureChange(feature.name, e.target.value)
-                  }
-                />
-              ) : feature.type === "text" ? (
-                <input
-                  type="text"
-                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
-                  onChange={(e) =>
-                    handleFeatureChange(feature.name, e.target.value)
-                  }
-                />
-              ) : feature.type === "boolean" ? (
-                <select
-                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
-                  onChange={(e) =>
-                    handleFeatureChange(feature.name, e.target.value === "true")
-                  }
-                >
-                  <option value="">Seçiniz</option>
-                  <option value="true">Var</option>
-                  <option value="false">Yok</option>
-                </select>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const provinces = turkeyCities.map((city: TurkeyCity) => city.province);
+}: DynamicSearchProps) {
+  const {
+    showMoreFilters,
+    setShowMoreFilters,
+    features,
+    filterValues,
+    subcategories,
+    provinces,
+    currentDistricts,
+    currentNeighborhoods,
+    isProvinceSelected,
+    isDistrictSelected,
+    handleProvinceChange,
+    handleDistrictChange,
+    handleSubcategoryChange,
+    handleInputChange,
+    handleFeatureChange,
+    handleSubmit,
+    handleReset,
+    handleShowOnMap,
+  } = useDynamicSearch({ categoryData, onSearch, initialFilters, adverts });
 
   return (
     <div className="relative overflow-hidden rounded-lg shadow-sm border border-gray-200 w-full max-w-full">
+      {/* Background */}
       <div
         className="absolute inset-0 bg-cover bg-center z-0"
         style={{
@@ -360,10 +54,11 @@ const DynamicSearch = ({
             "url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=50')",
         }}
       >
-        <div className="absolute inset-0 bg-linear-to-r from-blue-900/70 to-purple-900/70"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-blue-900/70 to-purple-900/70" />
       </div>
 
       <div className="relative z-10 p-3 sm:p-4">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
           <div className="text-white flex-1">
             <div className="flex items-center gap-1 mb-1">
@@ -382,10 +77,10 @@ const DynamicSearch = ({
               type="button"
               onClick={handleShowOnMap}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm whitespace-nowrap shrink-0"
-              title="Tüm ilanları haritada görüntüle"
+              title="T\u00fcm ilanlar\u0131 haritada g\u00f6r\u00fcnt\u00fcle"
             >
               <MapPin size={16} />
-              <span className="hidden sm:inline">Haritada Göster</span>
+              <span className="hidden sm:inline">Haritada G\u00f6ster</span>
               <span className="inline sm:hidden">Harita</span>
               <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-xs">
                 {adverts.length}
@@ -394,9 +89,12 @@ const DynamicSearch = ({
           )}
         </div>
 
+        {/* Filter form */}
         <form onSubmit={handleSubmit}>
           <div className="bg-white/95 backdrop-blur-sm rounded-lg p-2 sm:p-3 shadow-sm">
+            {/* Main filter row */}
             <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-12 gap-2 mb-3">
+              {/* Price */}
               <div className="xs:col-span-2 sm:col-span-2">
                 <label className="block text-xs font-medium text-gray-700 mb-0.5">
                   Fiyat
@@ -423,6 +121,7 @@ const DynamicSearch = ({
                 </div>
               </div>
 
+              {/* Subcategory */}
               {subcategories.length > 0 && (
                 <div className="xs:col-span-1 sm:col-span-2">
                   <label className="text-xs font-medium text-gray-700 mb-0.5 flex items-center gap-1">
@@ -434,7 +133,7 @@ const DynamicSearch = ({
                     onChange={(e) => handleSubcategoryChange(e.target.value)}
                     className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   >
-                    <option value="">Tümü</option>
+                    <option value="">T\u00fcm\u00fc</option>
                     {subcategories.map((subcat: Subcategory) => (
                       <option key={subcat._id} value={subcat.name}>
                         {subcat.name.length > 20
@@ -446,17 +145,18 @@ const DynamicSearch = ({
                 </div>
               )}
 
+              {/* Province */}
               <div className="xs:col-span-1 sm:col-span-2">
                 <label className="text-xs font-medium text-gray-700 mb-0.5 flex items-center gap-1">
                   <Building size={10} />
-                  <span className="truncate">İl</span>
+                  <span className="truncate">\u0130l</span>
                 </label>
                 <select
                   value={filterValues.province}
                   onChange={(e) => handleProvinceChange(e.target.value)}
                   className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 >
-                  <option value="">İl seçin</option>
+                  <option value="">\u0130l se\u00e7in</option>
                   {provinces.map((province: string, index: number) => (
                     <option key={index} value={province}>
                       {province}
@@ -465,10 +165,11 @@ const DynamicSearch = ({
                 </select>
               </div>
 
+              {/* District */}
               <div className="xs:col-span-1 sm:col-span-2">
                 <label className="text-xs font-medium text-gray-700 mb-0.5 flex items-center gap-1">
                   <MapPin size={10} />
-                  <span className="truncate">İlçe</span>
+                  <span className="truncate">\u0130l\u00e7e</span>
                 </label>
                 <select
                   value={filterValues.district}
@@ -476,20 +177,21 @@ const DynamicSearch = ({
                   className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   disabled={!isProvinceSelected}
                 >
-                  <option value="">İlçe seçin</option>
+                  <option value="">\u0130l\u00e7e se\u00e7in</option>
                   {currentDistricts.map(
                     (
                       district: { district: string; quarters: string[] },
-                      index: number
+                      index: number,
                     ) => (
                       <option key={index} value={district.district}>
                         {district.district}
                       </option>
-                    )
+                    ),
                   )}
                 </select>
               </div>
 
+              {/* Neighborhood */}
               <div className="xs:col-span-1 sm:col-span-2">
                 <label className="text-xs font-medium text-gray-700 mb-0.5 flex items-center gap-1">
                   <MapPin size={10} />
@@ -503,7 +205,7 @@ const DynamicSearch = ({
                   className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   disabled={!isDistrictSelected}
                 >
-                  <option value="">Mahalle seçin</option>
+                  <option value="">Mahalle se\u00e7in</option>
                   {currentNeighborhoods.map(
                     (neighborhood: string, index: number) => (
                       <option key={index} value={neighborhood}>
@@ -511,11 +213,12 @@ const DynamicSearch = ({
                           ? `${neighborhood.substring(0, 15)}...`
                           : neighborhood}
                       </option>
-                    )
+                    ),
                   )}
                 </select>
               </div>
 
+              {/* Search button */}
               <div className="xs:col-span-1 sm:col-span-1 flex items-end">
                 <button
                   type="submit"
@@ -528,6 +231,7 @@ const DynamicSearch = ({
               </div>
             </div>
 
+            {/* Expandable filters */}
             <div className="pt-2 border-t border-gray-200/30">
               <button
                 type="button"
@@ -548,16 +252,19 @@ const DynamicSearch = ({
 
               {showMoreFilters && (
                 <div className="mt-2 p-2 border border-gray-200 rounded bg-white/80">
-                  {renderApiFeatures()}
+                  <FeatureFilters
+                    features={features}
+                    onFeatureChange={handleFeatureChange}
+                  />
 
                   <div className="mt-2 space-y-2">
                     <h4 className="text-xs font-medium text-gray-700">
-                      Diğer Filtreler
+                      Di\u011fer Filtreler
                     </h4>
                     <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2">
                       <div>
                         <label className="block text-xs font-medium text-gray-700 truncate">
-                          m²
+                          m\u00b2
                         </label>
                         <div className="flex gap-1">
                           <input
@@ -587,14 +294,14 @@ const DynamicSearch = ({
                           Tarih
                         </label>
                         <select className="w-full px-2 py-1 text-xs border border-gray-300 rounded">
-                          <option value="">Tümü</option>
-                          <option value="today">Bugün</option>
+                          <option value="">T\u00fcm\u00fc</option>
+                          <option value="today">Bug\u00fcn</option>
                           <option value="week">Bu Hafta</option>
                         </select>
                       </div>
                       <div className="xs:col-span-2 sm:col-span-1">
                         <label className="block text-xs font-medium text-gray-700 truncate">
-                          Oda Sayısı
+                          Oda Say\u0131s\u0131
                         </label>
                         <select
                           className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
@@ -602,7 +309,7 @@ const DynamicSearch = ({
                             handleFeatureChange("roomCount", e.target.value)
                           }
                         >
-                          <option value="">Seç</option>
+                          <option value="">Se\u00e7</option>
                           <option value="1">1+1</option>
                           <option value="2">2+1</option>
                           <option value="3">3+1</option>
@@ -615,6 +322,7 @@ const DynamicSearch = ({
               )}
             </div>
 
+            {/* Reset */}
             <div className="mt-2 flex justify-between items-center">
               <button
                 type="button"
@@ -630,6 +338,4 @@ const DynamicSearch = ({
       </div>
     </div>
   );
-};
-
-export default DynamicSearch;
+}

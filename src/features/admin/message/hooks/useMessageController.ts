@@ -9,6 +9,7 @@ import api from "@/lib/api";
 
 import type {
   MessageGroup,
+  MessageUser,
   FilterValues,
   SendMessageState,
   EditModalState,
@@ -22,9 +23,9 @@ export function useMessageController() {
   /* ── Core state ── */
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [users, setUsers] = useState<any[]>([]);
-  const [listUsers, setListUsers] = useState<any[]>([]);
-  const [checkedItems, setCheckedItems] = useState<any[]>([]);
+  const [users, setUsers] = useState<MessageUser[]>([]);
+  const [listUsers, setListUsers] = useState<MessageUser[]>([]);
+  const [checkedItems, setCheckedItems] = useState<MessageUser[]>([]);
   const [groups, setGroups] = useState<MessageGroup[]>(DEFAULT_GROUPS);
 
   /* ── Pagination ── */
@@ -107,7 +108,7 @@ export function useMessageController() {
   const handleFilterUsers = useCallback(() => {
     setOpenFilter(false);
 
-    const filterFullname = users.filter((user: any) => {
+    const filterFullname = users.filter((user: MessageUser) => {
       if (!filteredValues.fullname) return true;
       const lower = filteredValues.fullname.toLowerCase();
       const fullname = `${user.name.toLowerCase()} ${user.surname.toLowerCase()}`;
@@ -117,41 +118,41 @@ export function useMessageController() {
         fullname.includes(lower)
       );
     });
-    const filterEmail = users.filter((user: any) => {
+    const filterEmail = users.filter((user: MessageUser) => {
       if (!filteredValues.email) return true;
       return user.mail.mail.startsWith(filteredValues.email);
     });
-    const filterPhone = users.filter((user: any) => {
+    const filterPhone = users.filter((user: MessageUser) => {
       if (!filteredValues.phone) return true;
-      return user.phones.map((p: any) => p.number).includes(filteredValues.phone);
+      return user.phones.map((p) => p.number).includes(filteredValues.phone);
     });
-    const filterGender = users.filter((user: any) => {
+    const filterGender = users.filter((user: MessageUser) => {
       if (!filteredValues.gender) return true;
       return user.gender === (filteredValues.gender === "Erkek" ? "male" : "female");
     });
-    const filterStatus = users.filter((user: any) => {
+    const filterStatus = users.filter((user: MessageUser) => {
       if (!filteredValues.status.selected) return true;
       return user.status.includes(filteredValues.status.selected);
     });
-    const filterTurkishId = users.filter((user: any) => {
+    const filterTurkishId = users.filter((user: MessageUser) => {
       if (!filteredValues.turkish_id) return true;
-      return user.tcNumber.includes(filteredValues.turkish_id);
+      return (user.tcNumber ?? "").includes(filteredValues.turkish_id);
     });
-    const filterMernisNo = users.filter((user: any) => {
+    const filterMernisNo = users.filter((user: MessageUser) => {
       if (!filteredValues.mernis_no) return true;
-      return user.mernisNo.includes(filteredValues.mernis_no);
+      return (user.mernisNo ?? "").includes(filteredValues.mernis_no);
     });
-    const filterProvince = users.filter((user: any) => {
+    const filterProvince = users.filter((user: MessageUser) => {
       if (!filteredValues.province) return true;
-      return user.city.includes(filteredValues.province);
+      return (user.city ?? "").includes(filteredValues.province);
     });
-    const filterDistrict = users.filter((user: any) => {
+    const filterDistrict = users.filter((user: MessageUser) => {
       if (!filteredValues.district) return true;
-      return user.county.includes(filteredValues.district);
+      return (user.county ?? "").includes(filteredValues.district);
     });
-    const filterQuarter = users.filter((user: any) => {
+    const filterQuarter = users.filter((user: MessageUser) => {
       if (!filteredValues.quarter) return true;
-      return user.neighbourhood.includes(filteredValues.quarter);
+      return (user.neighbourhood ?? "").includes(filteredValues.quarter);
     });
 
     const allFilters = [
@@ -160,7 +161,7 @@ export function useMessageController() {
       filterProvince, filterDistrict, filterQuarter,
     ];
     const filtered = allFilters.reduce((acc, val) =>
-      acc.filter((user: any) => val.includes(user)),
+      acc.filter((user: MessageUser) => val.includes(user)),
     );
     setListUsers(filtered);
   }, [users, filteredValues]);
@@ -169,11 +170,11 @@ export function useMessageController() {
 
   /* ── Row checkbox ── */
   const handleCheckItem = useCallback(
-    (checked: boolean, row: any) => {
+    (checked: boolean, row: MessageUser) => {
       if (checked) {
         setCheckedItems((prev) => [...prev, row]);
       } else {
-        setCheckedItems((prev) => prev.filter((item: any) => item.uid !== row.uid));
+        setCheckedItems((prev) => prev.filter((item) => item.uid !== row.uid));
       }
     },
     [],
@@ -182,11 +183,11 @@ export function useMessageController() {
   const clearChecked = useCallback(() => setCheckedItems([]), []);
 
   /* ── Row actions ── */
-  const handleSendWhatsapp = useCallback((id: any) => {
+  const handleSendWhatsapp = useCallback((id: string | number) => {
     setSendMessage({ open: true, type: ["whatsapp"], users: [id] });
   }, []);
 
-  const handleSendSms = useCallback((id: any) => {
+  const handleSendSms = useCallback((id: string | number) => {
     setSendMessage({ open: true, type: ["sms"], users: [id] });
   }, []);
 
@@ -194,15 +195,15 @@ export function useMessageController() {
     setSendMessage({
       open: true,
       type: ["whatsapp", "sms"],
-      users: checkedItems.map((item: any) => item.id),
+      users: checkedItems.map((item) => item.id ?? item.uid),
     });
   }, [checkedItems]);
 
-  const handleWhatsappGroup = useCallback((group: any) => {
+  const handleWhatsappGroup = useCallback((group: MessageGroup) => {
     const groupUserIds = group.users ?? [];
     const phones: string[] = users
-      .filter((u: any) => groupUserIds.includes(u.id) || groupUserIds.includes(u.uid))
-      .map((u: any) => u.phones?.[0]?.number?.replace(/\D/g, "") || "")
+      .filter((u) => groupUserIds.includes(u.id ?? -1) || groupUserIds.includes(Number(u.uid)))
+      .map((u) => u.phones?.[0]?.number?.replace(/\D/g, "") || "")
       .filter(Boolean);
 
     if (phones.length === 0) return;
@@ -214,23 +215,23 @@ export function useMessageController() {
   }, [users]);
 
   /* ── Group actions ── */
-  const handleEditGroup = useCallback((group: any) => {
+  const handleEditGroup = useCallback((group: MessageGroup) => {
     setEditModal({ open: true, group });
   }, []);
 
   /* ── Delete confirmation ── */
-  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; group: any }>({
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; group: MessageGroup | null }>({
     open: false,
     group: null,
   });
 
-  const handleDeleteGroup = useCallback((group: any) => {
+  const handleDeleteGroup = useCallback((group: MessageGroup) => {
     setDeleteConfirm({ open: true, group });
   }, []);
 
   const confirmDeleteGroup = useCallback(() => {
     if (deleteConfirm.group) {
-      setGroups((prev) => prev.filter((g) => g.name !== deleteConfirm.group.name));
+      setGroups((prev) => prev.filter((g) => g.name !== deleteConfirm.group!.name));
     }
     setDeleteConfirm({ open: false, group: null });
   }, [deleteConfirm.group]);

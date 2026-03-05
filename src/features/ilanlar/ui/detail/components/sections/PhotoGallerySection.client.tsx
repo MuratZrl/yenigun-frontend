@@ -1,7 +1,7 @@
 // src/features/ads/ui/detail/components/sections/PhotoGallerySection.client.tsx
 "use client";
 
-import Link from "next/link";
+import Image from "next/image";
 import React, { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, ZoomIn, Play, X } from "lucide-react";
 import type { AdvertData } from "@/types/advert";
@@ -30,6 +30,21 @@ function safeUrl(input: unknown): string | null {
   return s ? s : null;
 }
 
+function ThumbImage({ src, alt, fallbackPhoto }: { src: string; alt: string; fallbackPhoto: string }) {
+  const [error, setError] = useState(false);
+  return (
+    <Image
+      src={error ? fallbackPhoto : src}
+      alt={alt}
+      fill
+      className="object-cover"
+      onError={() => setError(true)}
+      unoptimized
+      draggable={false}
+    />
+  );
+}
+
 export default function PhotoGallerySection({
   data,
   photos,
@@ -40,27 +55,16 @@ export default function PhotoGallerySection({
   onIndexChange,
 }: Props) {
   const resolvedPhotos = useMemo(() => {
-    const raw = photos !== undefined ? photos : (data as any)?.photos;
+    const raw = photos !== undefined ? photos : (data)?.photos;
     return safeStringArray(raw);
   }, [photos, data]);
 
   const resolvedVideoUrl = useMemo(() => {
-    const raw = videoUrl !== undefined ? videoUrl : (data as any)?.video;
+    const raw = videoUrl !== undefined ? videoUrl : data?.video;
     return safeUrl(raw);
   }, [videoUrl, data]);
 
-  const ilanNo =
-  (data as any)?.uid ??
-  (data as any)?.advertNo ??
-  (data as any)?.ilanNo ??
-  (data as any)?.no ??
-  "";
-
-  const quickLinks = [
-    { label: "Emlak Endeksi", href: "/emlak-endeksi" },
-    { label: "Gayrimenkul Ekspertizi", href: "/gayrimenkul-ekspertizi" },
-    { label: "Emlak Alım Rehberi", href: "/emlak-alim-rehberi" },
-  ];
+  const ilanNo = data?.uid ?? "";
 
   const hasPhotos = resolvedPhotos.length > 0;
 
@@ -152,18 +156,6 @@ export default function PhotoGallerySection({
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-  const handleTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
-  const handleTouchEnd = () => {
-    if (touchStart === null || touchEnd === null || !hasPhotos) return;
-    const distance = touchStart - touchEnd;
-    if (distance > minSwipeDistance) goNext();
-    if (distance < -minSwipeDistance) goPrev();
-  };
-
   const handleTouchStartZoom = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
@@ -212,22 +204,22 @@ export default function PhotoGallerySection({
       <div className="bg-white border border-gray-300">
         {/* Büyük foto (ok yok, tık = next) */}
         <div className="relative">
-          <img
-            ref={(el) => {
-              if (el?.complete && el.naturalWidth > 0) setImageLoading(false);
-            }}
-            src={currentPhoto}
-            onClick={() => {
-              if (resolvedPhotos.length > 1) goNext();
-            }}
-            onLoad={() => setImageLoading(false)}
-            onError={handleImageError}
-            className={`w-full h-[260px] sm:h-[360px] select-none ${hasPhotos ? "object-cover cursor-pointer" : "object-contain p-8 bg-gray-50"}`}
-            alt={hasPhotos ? `İlan Fotoğrafı ${selectedIndex + 1}` : "İlan"}
-            loading={hasPhotos ? "lazy" : "eager"}
-            decoding="async"
-            draggable={false}
-          />
+          <div className="relative w-full h-[260px] sm:h-[360px]">
+            <Image
+              src={currentPhoto}
+              onClick={() => {
+                if (resolvedPhotos.length > 1) goNext();
+              }}
+              onLoad={() => setImageLoading(false)}
+              onError={handleImageError}
+              fill
+              className={`select-none ${hasPhotos ? "object-cover cursor-pointer" : "object-contain p-8 bg-gray-50"}`}
+              alt={hasPhotos ? `İlan Fotoğrafı ${selectedIndex + 1}` : "İlan"}
+              priority={!hasPhotos}
+              unoptimized
+              draggable={false}
+            />
+          </div>
 
           {imageLoading && hasPhotos && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
@@ -292,18 +284,12 @@ export default function PhotoGallerySection({
                     type="button"
                     onClick={() => setIndex(realIndex)}
                     className={[
-                      "h-[54px] border overflow-hidden bg-white",
+                      "h-[54px] border overflow-hidden bg-white relative",
                       active ? "border-blue-600" : "border-gray-300 hover:border-gray-400",
                     ].join(" ")}
                     title={`${realIndex + 1}. Fotoğraf`}
                   >
-                    <img
-                      src={p}
-                      alt={`thumb-${realIndex}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => ((e.target as HTMLImageElement).src = fallbackPhoto)}
-                      draggable={false}
-                    />
+                    <ThumbImage src={p} alt={`thumb-${realIndex}`} fallbackPhoto={fallbackPhoto} />
                   </button>
                 );
               })}
@@ -459,19 +445,22 @@ export default function PhotoGallerySection({
             )}
 
             <div className="relative max-w-7xl max-h-[80vh] flex items-center justify-center mb-4">
-              <img
+              <Image
                 src={currentPhoto}
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleZoomLevel();
                 }}
+                width={1200}
+                height={800}
                 className={[
-                  "max-h-[70vh] max-w-full select-none object-contain transition-transform duration-300 cursor-zoom-out",
+                  "max-h-[70vh] max-w-full w-auto h-auto select-none object-contain transition-transform duration-300 cursor-zoom-out",
                   zoomLevel === 2 ? "scale-150" : "scale-100",
                 ].join(" ")}
                 onError={handleImageError}
                 draggable={false}
                 alt="Zoom"
+                unoptimized
               />
             </div>
 

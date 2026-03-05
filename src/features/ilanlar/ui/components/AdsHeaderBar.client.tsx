@@ -8,7 +8,7 @@ import type { FilterState } from "@/types/advert";
 type Props = {
   filters: FilterState;
   totalItems: number;
-  featureFilters: Record<string, any>;
+  featureFilters: Record<string, unknown>;
   onClear: () => void;
 
   // selectbox kalktığı için artık şart değil:

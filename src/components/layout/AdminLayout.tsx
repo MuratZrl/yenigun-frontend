@@ -1,5 +1,6 @@
 // src/components/layout/AdminLayout.tsx
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import AdminSidebar from "@/features/admin/sidebar";
 import { useCookies } from "react-cookie";
 
@@ -58,7 +59,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 )}
               </svg>
             </button>
-            <img src="/logo.png" alt="logo" className="h-8" />
+            <Image src="/logo.png" alt="logo" width={120} height={32} className="h-8 w-auto" />
             <div className="w-6"></div>
           </div>
         )}

@@ -514,6 +514,8 @@ if (categories?.length) {
           furniture: fourthStep.isFurnished?.value === "Evet",
           heating: fourthStep.heating?.value || "",
           deed: fourthStep.deedStatus?.value || "",
+          bathroomCount: fourthStep.bathroomCount || null,
+          parking: fourthStep.parking || null,
         },
         featureValues: fvArr,
       };

@@ -1,7 +1,8 @@
 // src/features/admin/advisor-detail/ui/components/AdvertCard.tsx
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Image from "next/image";
 import { Home } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Advert } from "../../lib/types";
@@ -11,13 +12,13 @@ type Props = {
   onClick: () => void;
 };
 
-const DEFAULT_IMAGE =
-  "https://as1.ftcdn.net/v2/jpg/04/34/72/82/1000_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg";
+const DEFAULT_IMAGE = "/logo.png";
 
 export default function AdvertCard({ advert, onClick }: Props) {
-  const imageUrl =
-    advert.photos?.find((photo: any) => typeof photo === "string") ||
-    DEFAULT_IMAGE;
+  const firstPhoto = advert.photos?.find((photo) => photo.trim() !== "");
+  const [imgError, setImgError] = useState(false);
+
+  const showFallback = !firstPhoto || imgError;
 
   return (
     <motion.div
@@ -31,13 +32,16 @@ export default function AdvertCard({ advert, onClick }: Props) {
         }`}
       >
         <div className="relative h-40">
-          <img
-            src={imageUrl}
+          <Image
+            src={showFallback ? DEFAULT_IMAGE : firstPhoto}
             alt={advert.title}
-            className="w-full h-full object-cover"
+            fill
+            className={showFallback ? "object-contain p-4" : "object-cover"}
             style={{
               filter: advert.active ? "none" : "blur(1.5px)",
             }}
+            onError={() => setImgError(true)}
+            unoptimized
           />
           <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-sm font-medium">
             {advert.fee.toLocaleString()}

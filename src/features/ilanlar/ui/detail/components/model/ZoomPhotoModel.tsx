@@ -1,7 +1,8 @@
 // src/features/ads/ui/detail/components/modals/ZoomPhotoModal.tsx
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock";
 import { useSwipe } from "../../hooks/useSwipe";
@@ -32,6 +33,21 @@ function clamp(i: number, len: number) {
   return i;
 }
 
+function ThumbImage({ src, alt, fallbackPhoto }: { src: string; alt: string; fallbackPhoto: string }) {
+  const [error, setError] = useState(false);
+  return (
+    <Image
+      src={error ? fallbackPhoto : src}
+      alt={alt}
+      fill
+      className="select-none object-cover transition-all duration-300 group-hover:scale-110"
+      onError={() => setError(true)}
+      unoptimized
+      draggable={false}
+    />
+  );
+}
+
 export default function ZoomPhotoModal({
   open,
   photos,
@@ -46,6 +62,7 @@ export default function ZoomPhotoModal({
   title = "Fotoğraf",
 }: Props) {
   useBodyScrollLock(open);
+  const [mainImgError, setMainImgError] = useState(false);
 
   const safePhotos = useMemo(() => {
     return Array.isArray(photos)
@@ -56,6 +73,10 @@ export default function ZoomPhotoModal({
   const hasPhotos = safePhotos.length > 0;
   const idx = clamp(selectedIndex, safePhotos.length);
   const currentPhoto = hasPhotos ? safePhotos[idx] : fallbackPhoto;
+
+  useEffect(() => {
+    setMainImgError(false);
+  }, [idx]);
 
   const thumbsRef = useRef<HTMLDivElement>(null);
 
@@ -145,21 +166,22 @@ export default function ZoomPhotoModal({
         )}
 
         <div className="relative max-w-7xl max-h-[80vh] flex items-center justify-center mb-4">
-          <img
-            src={currentPhoto}
+          <Image
+            src={mainImgError ? fallbackPhoto : currentPhoto}
             alt={hasPhotos ? `Fotoğraf ${idx + 1}` : "Fotoğraf"}
             onClick={(e) => {
               e.stopPropagation();
               onToggleZoom();
             }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = fallbackPhoto;
-            }}
+            onError={() => setMainImgError(true)}
+            width={1200}
+            height={800}
             className={[
-              "max-h-[70vh] max-w-full select-none object-contain transition-transform duration-300 cursor-zoom-out",
+              "max-h-[70vh] max-w-full w-auto h-auto select-none object-contain transition-transform duration-300 cursor-zoom-out",
               zoomLevel === 2 ? "scale-150" : "scale-100",
             ].join(" ")}
             draggable={false}
+            unoptimized
           />
         </div>
 
@@ -185,17 +207,7 @@ export default function ZoomPhotoModal({
                       onClick={() => onSelectIndex(i)}
                       title={`${i + 1}. Fotoğraf`}
                     >
-                      <img
-                        src={p}
-                        alt={`thumb-${i + 1}`}
-                        className="w-full h-full select-none object-cover transition-all duration-300 group-hover:scale-110"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = fallbackPhoto;
-                        }}
-                        loading="lazy"
-                        decoding="async"
-                        draggable={false}
-                      />
+                      <ThumbImage src={p} alt={`thumb-${i + 1}`} fallbackPhoto={fallbackPhoto} />
                       <div
                         className={[
                           "absolute inset-0 border-2 transition-all",

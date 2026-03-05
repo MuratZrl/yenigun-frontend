@@ -349,17 +349,17 @@ export default function MessagePage() {
           <CreateGroupModal
             open={c.createGroupOpen}
             setOpen={c.setCreateGroupOpen}
-            users={c.users}
-            groups={c.groups}
-            setGroups={c.setGroups}
+            users={c.users as unknown as Parameters<typeof CreateGroupModal>[0]["users"]}
+            groups={c.groups as unknown as Parameters<typeof CreateGroupModal>[0]["groups"]}
+            setGroups={c.setGroups as unknown as Parameters<typeof CreateGroupModal>[0]["setGroups"]}
           />
           <EditGroupModal
-            open={c.editModal.open}
-            setOpen={c.setEditModal}
-            users={c.users}
-            groups={c.groups}
-            setGroups={c.setGroups}
-            group={c.editModal.group}
+            open={c.editModal as unknown as Parameters<typeof EditGroupModal>[0]["open"]}
+            setOpen={c.setEditModal as unknown as Parameters<typeof EditGroupModal>[0]["setOpen"]}
+            users={c.users as unknown as Parameters<typeof EditGroupModal>[0]["users"]}
+            groups={c.groups as unknown as Parameters<typeof EditGroupModal>[0]["groups"]}
+            setGroups={c.setGroups as unknown as Parameters<typeof EditGroupModal>[0]["setGroups"]}
+            group={c.editModal.group as unknown as Parameters<typeof EditGroupModal>[0]["group"]}
           />
           <SendMessage
             open={c.sendMessage.open}

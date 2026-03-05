@@ -116,6 +116,8 @@ export function buildCreateAdvertPayload(args: BuildPayloadArgs) {
     furniture: fourthStep.isFurnished?.value === "Evet",
     heating: fourthStep.heating?.value || "",
     deed: isSatilik ? (fourthStep.deedStatus?.value || "") : "",
+    bathroomCount: fourthStep.bathroomCount || "",
+    parking: fourthStep.parking || "",
   };
 
   return {

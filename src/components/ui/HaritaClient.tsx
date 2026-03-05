@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import Image from "next/image";
 import {
   GoogleMap,
   useLoadScript,
@@ -106,11 +107,14 @@ export default function PropertyMap({
 
   const [markers, setMarkers] = useState<MarkerInfo[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<MarkerInfo | null>(null);
+  const [infoImgError, setInfoImgError] = useState(false);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const [activeBoundaryCoords, setActiveBoundaryCoords] = useState<
     BoundaryCoord[]
   >([]);
   const mapRef = React.useRef<google.maps.Map | null>(null);
+
+  useEffect(() => { setInfoImgError(false); }, [selectedMarker]);
 
   const boundaryLineOptions = useMemo(() => {
     return {
@@ -323,14 +327,14 @@ export default function PropertyMap({
               <div className="p-3 max-w-xs">
                 <div className="mb-2">
                   {selectedMarker.photo && (
-                    <img
-                      src={selectedMarker.photo}
+                    <Image
+                      src={infoImgError ? "https://via.placeholder.com/300x200?text=Resim+Yok" : selectedMarker.photo}
                       alt={selectedMarker.title}
+                      width={300}
+                      height={160}
                       className="w-full h-40 object-cover rounded-lg mb-2"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://via.placeholder.com/300x200?text=Resim+Yok";
-                      }}
+                      onError={() => setInfoImgError(true)}
+                      unoptimized
                     />
                   )}
                 </div>

@@ -31,7 +31,6 @@ export function useAdvertActions({ updateAdvert, removeAdvert }: Deps) {
 
   const [adUserNotes, setAdUserNotes] = useState<AdUserNotesModal>({
     isOpen: false,
-    ad: {},
   });
 
   /* ---- Admin note ---- */
@@ -93,7 +92,7 @@ export function useAdvertActions({ updateAdvert, removeAdvert }: Deps) {
   }, []);
 
   const closeAdUserNotes = useCallback(() => {
-    setAdUserNotes({ isOpen: false, ad: {} });
+    setAdUserNotes({ isOpen: false });
   }, []);
 
   /* ================================================================ */

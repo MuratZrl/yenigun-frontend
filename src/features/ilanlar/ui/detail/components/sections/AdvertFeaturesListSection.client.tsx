@@ -8,7 +8,7 @@ type Row = {
   value: string;
 };
 
-function toText(v: any): string {
+function toText(v: unknown): string {
   if (v === null || v === undefined) return "";
   if (Array.isArray(v)) return v.map(toText).filter(Boolean).join(", ");
   if (typeof v === "boolean") return v ? "Evet" : "Hayır";

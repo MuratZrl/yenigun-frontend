@@ -1,7 +1,9 @@
 // src/features/ads/ui/components/AdsRow.client.tsx
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Advert } from "@/types/advert";
 import { formatTRY, getCityDistrict, hasValidImage, getGrossM2Text, getNetM2Text } from "../../model/utils";
 
@@ -110,6 +112,8 @@ export function AdsRowDesktop({
   const imgSrc = firstPhoto || "/logo.png";
   const isFallback = !firstPhoto;
 
+  const [imgError, setImgError] = useState(false);
+
   const grossM2Text = getGrossM2Text(ad) || "-";
   const netM2Text = getNetM2Text(ad) || "-";
   const roomText = getRoomText(ad);
@@ -123,15 +127,14 @@ export function AdsRowDesktop({
       <div className={["hidden md:grid w-full", GRID_COLS, "items-stretch"].join(" ")}>
         {/* Resim */}
         <div className="px-3 py-2 flex items-center justify-center">
-          <div className="w-full max-w-[120px] h-16 bg-gray-100 overflow-hidden flex items-center justify-center">
-            <img
-              src={imgSrc}
+          <div className="relative w-full max-w-[120px] h-16 bg-gray-100 overflow-hidden flex items-center justify-center">
+            <Image
+              src={imgError ? "/logo.png" : imgSrc}
               alt={ad.title || "İlan görseli"}
-              className={isFallback ? "w-full h-full object-contain p-2" : "w-full h-full object-cover"}
-              onError={(e) => {
-                e.currentTarget.src = "/logo.png";
-                e.currentTarget.className = "w-full h-full object-contain p-2";
-              }}
+              fill
+              className={imgError || isFallback ? "object-contain p-2" : "object-cover"}
+              onError={() => setImgError(true)}
+              unoptimized
             />
           </div>
         </div>
@@ -198,6 +201,7 @@ export function AdsRowMobile({
   const firstPhotoMobile = hasValidImage(ad) ? getFirstPhoto(ad) : null;
   const imgSrc = firstPhotoMobile || "/logo.png";
   const isFallback = !firstPhotoMobile;
+  const [imgError, setImgError] = useState(false);
 
   const ts = ad.created?.createdTimestamp;
   const { dm, y } = formatTrDayMonth(ts);
@@ -213,15 +217,14 @@ export function AdsRowMobile({
       className={["block transition-colors hover:bg-gray-100/60", zebraClass(rowIndex)].join(" ")}
     >
       <div className="md:hidden flex gap-3 p-3">
-        <div className="w-24 h-20 bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
-          <img
-            src={imgSrc}
+        <div className="relative w-24 h-20 bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
+          <Image
+            src={imgError ? "/logo.png" : imgSrc}
             alt={ad.title || "İlan görseli"}
-            className={isFallback ? "w-full h-full object-contain p-2" : "w-full h-full object-cover"}
-            onError={(e) => {
-              e.currentTarget.src = "/logo.png";
-              e.currentTarget.className = "w-full h-full object-contain p-2";
-            }}
+            fill
+            className={imgError || isFallback ? "object-contain p-2" : "object-cover"}
+            onError={() => setImgError(true)}
+            unoptimized
           />
         </div>
 
@@ -271,6 +274,7 @@ export function AdsGridCard({
   const firstPhotoGrid = hasValidImage(ad) ? getFirstPhoto(ad) : null;
   const imgSrc = firstPhotoGrid || "/logo.png";
   const isFallback = !firstPhotoGrid;
+  const [imgError, setImgError] = useState(false);
 
   const grossM2Text = getGrossM2Text(ad) || "-";
   const netM2Text = getNetM2Text(ad) || "-";
@@ -291,15 +295,14 @@ export function AdsGridCard({
     >
       <div className="flex gap-3 p-3">
         {/* SOL: Resim */}
-        <div className="w-32 h-24 bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
-          <img
-            src={imgSrc}
+        <div className="relative w-32 h-24 bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
+          <Image
+            src={imgError ? "/logo.png" : imgSrc}
             alt={title}
-            className={isFallback ? "w-full h-full object-contain p-3" : "w-full h-full object-cover"}
-            onError={(e) => {
-              e.currentTarget.src = "/logo.png";
-              e.currentTarget.className = "w-full h-full object-contain p-3";
-            }}
+            fill
+            className={imgError || isFallback ? "object-contain p-2" : "object-cover"}
+            onError={() => setImgError(true)}
+            unoptimized
           />
         </div>
 

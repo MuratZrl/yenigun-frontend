@@ -131,6 +131,13 @@ export default function IlanDetaylariTab(props: IlanDetaylariTabProps) {
     })();
   }, [fourthStep.province, fourthStep.district, fourthStep.quarter, setMarker]);
 
+  /* ── Category-based field visibility ── */
+  const firstStepValue = getSelected(firstStep)?.value;
+  const secondStepValue = getSelected(secondStep)?.value;
+  const isKonutOrBina = firstStepValue === "Konut" || firstStepValue === "Bina";
+  const isArsaOrArazi = firstStepValue === "Arsa" || firstStepValue === "Arazi";
+  const isSatilik = secondStepValue === "Satılık" || secondStepValue === "Devren Satılık";
+
   /* ── Render ── */
   return (
     <div className="space-y-0">
@@ -162,6 +169,9 @@ export default function IlanDetaylariTab(props: IlanDetaylariTabProps) {
         hiddenFields={hiddenFields}
         hideField={hideField}
         restoreAllFields={restoreAllFields}
+        isKonutOrBina={isKonutOrBina}
+        isArsaOrArazi={isArsaOrArazi}
+        isSatilik={isSatilik}
       />
 
       <AddressSection

@@ -1,5 +1,27 @@
 // src/features/admin/message/lib/types.ts
 
+export type MessagePhone = {
+  number: string;
+  isAbleToSendSMS?: boolean;
+};
+
+export type MessageUser = {
+  uid: string;
+  id?: number;
+  name: string;
+  surname: string;
+  image?: string;
+  mail: { mail: string };
+  gender: string;
+  status: string;
+  phones: MessagePhone[];
+  city?: string;
+  county?: string;
+  neighbourhood?: string;
+  tcNumber?: string;
+  mernisNo?: string;
+};
+
 export type MessageGroup = {
   uid: number;
   name: string;
@@ -26,12 +48,12 @@ export type FilterValues = {
 export type SendMessageState = {
   open: boolean;
   type: string[];
-  users: any[];
+  users: (string | number)[];
 };
 
 export type EditModalState = {
   open: boolean;
-  group: any;
+  group: MessageGroup | Record<string, never>;
 };
 
 export const DEFAULT_FILTER_VALUES: FilterValues = {

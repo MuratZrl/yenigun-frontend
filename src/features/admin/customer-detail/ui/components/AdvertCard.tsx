@@ -1,7 +1,8 @@
 // src/features/admin/customer-detail/ui/components/AdvertCard.tsx
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Image from "next/image";
 import { Home, MapPin, Maximize, Eye, EyeOff } from "lucide-react";
 import type { Advert } from "../../lib/types";
 
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export default function AdvertCard({ advert, onClick }: Props) {
+  const [imgError, setImgError] = useState(false);
   const imageUrl =
     advert.photos?.find((photo: string) => typeof photo === "string" && photo.trim()) ||
     "/logo.png";
@@ -25,24 +27,24 @@ export default function AdvertCard({ advert, onClick }: Props) {
     >
       {/* Image */}
       <div className="relative h-44 bg-gray-100 overflow-hidden">
-        {hasRealPhoto ? (
-          <img
-            src={imageUrl}
+        {hasRealPhoto && !imgError ? (
+          <Image
+            src={imgError ? "/logo.png" : imageUrl}
             alt={advert.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            fill
+            className={imgError ? "object-contain p-8 bg-gray-100" : "object-cover group-hover:scale-105 transition-transform duration-500"}
             style={{ filter: advert.active ? "none" : "blur(1.5px)" }}
-            onError={(e) => {
-              e.currentTarget.src = "/logo.png";
-              e.currentTarget.className =
-                "w-full h-full object-contain p-8 bg-gray-100";
-            }}
+            onError={() => setImgError(true)}
+            unoptimized
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <img
+            <Image
               src="/logo.png"
               alt="Logo"
-              className="h-14 object-contain opacity-40"
+              width={70}
+              height={56}
+              className="h-14 w-auto object-contain opacity-40"
             />
           </div>
         )}

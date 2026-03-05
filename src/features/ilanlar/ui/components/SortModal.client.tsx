@@ -15,7 +15,7 @@ export default function SortModal({
   open: boolean;
   filters: FilterState;
   currentPage: number;
-  featureFilters: Record<string, any>;
+  featureFilters: Record<string, unknown>;
   onClose: () => void;
   onApply: (next: { sortBy: "date" | "price"; sortOrder: "asc" | "desc" }) => void;
 }) {

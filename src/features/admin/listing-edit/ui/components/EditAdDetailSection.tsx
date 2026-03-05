@@ -41,6 +41,13 @@ interface EditAdDetailSectionProps {
   hiddenFields: Set<string>;
   hideField: (key: string) => void;
   restoreAllFields: () => void;
+
+  /** true when the first-step category is "Konut" or "Bina" */
+  isKonutOrBina: boolean;
+  /** true when the first-step category is "Arsa" or "Arazi" */
+  isArsaOrArazi: boolean;
+  /** true when the second-step is "Satılık" or "Devren Satılık" */
+  isSatilik: boolean;
 }
 
 export default function EditAdDetailSection({
@@ -53,6 +60,7 @@ export default function EditAdDetailSection({
   heatingOptions, deedStatusOptions, directionOptions, zoningStatusOptions,
   allFeatures, featureValues, handleFeatureChange,
   hiddenFields, hideField, restoreAllFields,
+  isKonutOrBina, isArsaOrArazi, isSatilik,
 }: EditAdDetailSectionProps) {
   const formattedPrice = formatNumber(fourthStep.price.value);
 
@@ -78,19 +86,19 @@ export default function EditAdDetailSection({
         </div>
       </FieldRow>
 
-      {!hiddenFields.has("grossArea") && (
+      {isKonutOrBina && !hiddenFields.has("grossArea") && (
       <FieldRow label="m² (Brüt)" fieldKey="grossArea" onHide={hideField}>
         <input type="number" value={fourthStep.grossArea || ""} onChange={e => updateFourthStep("grossArea", Number(e.target.value))} placeholder="m² brüt alan" className={inputCls} />
       </FieldRow>
       )}
 
-      {!hiddenFields.has("netArea") && (
+      {isKonutOrBina && !hiddenFields.has("netArea") && (
       <FieldRow label="m² (Net)" fieldKey="netArea" onHide={hideField}>
         <input type="number" value={fourthStep.netArea || ""} onChange={e => updateFourthStep("netArea", Number(e.target.value))} placeholder="m² net alan" className={inputCls} />
       </FieldRow>
       )}
 
-      {!hiddenFields.has("roomCount") && (
+      {isKonutOrBina && !hiddenFields.has("roomCount") && (
       <FieldRow label="Oda Sayısı" fieldKey="roomCount" onHide={hideField}>
         <select value={selVal(fourthStep.roomCount)} onChange={e => updateFourthStep("roomCount", e.target.value)} className={selectCls}>
           <option value="">Seçiniz</option>
@@ -99,7 +107,7 @@ export default function EditAdDetailSection({
       </FieldRow>
       )}
 
-      {!hiddenFields.has("buildingAge") && (
+      {isKonutOrBina && !hiddenFields.has("buildingAge") && (
       <FieldRow label="Bina Yaşı" fieldKey="buildingAge" onHide={hideField}>
         <select value={selVal(fourthStep.buildingAge)} onChange={e => updateFourthStep("buildingAge", Number(e.target.value))} className={selectCls}>
           <option value="">Seçiniz</option>
@@ -168,7 +176,7 @@ export default function EditAdDetailSection({
       </FieldRow>
       )}
 
-      {!hiddenFields.has("deedStatus") && (
+      {isSatilik && !hiddenFields.has("deedStatus") && (
       <FieldRow label="Tapu Durumu" fieldKey="deedStatus" onHide={hideField}>
         <select value={selVal(fourthStep.deedStatus)} onChange={onDeedStatusChange} className={selectCls}><option value="">Seçiniz</option>{deedStatusOptions.map((o, i) => <option key={`deed-${i}`} value={o}>{o}</option>)}</select>
       </FieldRow>
@@ -180,7 +188,7 @@ export default function EditAdDetailSection({
       </FieldRow>
       )}
 
-      {!hiddenFields.has("zoningStatus") && (
+      {isArsaOrArazi && !hiddenFields.has("zoningStatus") && (
       <FieldRow label="İmar Durumu" fieldKey="zoningStatus" onHide={hideField}>
         <select value={selVal(fourthStep.zoningStatus)} onChange={onZoningStatusChange} className={selectCls}><option value="">Seçiniz</option>{zoningStatusOptions.map((o, i) => <option key={`zone-${i}`} value={o}>{o}</option>)}</select>
       </FieldRow>
