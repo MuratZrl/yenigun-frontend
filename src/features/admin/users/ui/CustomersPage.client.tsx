@@ -211,7 +211,6 @@ export default function CustomersPageClient() {
         <CreateUserModal
           open={openCreate}
           setOpen={setOpenCreate}
-          cookies={cookies}
           onSuccess={refetch}
         />
 

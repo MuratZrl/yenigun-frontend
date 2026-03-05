@@ -129,7 +129,7 @@ export const adminUsersApi = {
    * ileride eklenirse burası güncellenecek.
    */
   async removeProfileImage(uid: number): Promise<{ message?: string }> {
-    const res = await api.post("/admin/remove-user-image", { uid });
+    const res = await api.post("/admin/remove/user-image", { uid });
     return res.data;
   },
 };

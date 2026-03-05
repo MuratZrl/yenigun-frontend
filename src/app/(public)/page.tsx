@@ -45,6 +45,21 @@ async function getHomeAdverts(): Promise<Listing[]> {
   }
 }
 
+async function getFeaturedAdverts(): Promise<Listing[]> {
+  const base = process.env.BACKEND_API || "https://api.yenigunemlak.com";
+  const url = `${base}/advert/featured`;
+  try {
+    const res = await fetch(url, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const root = json?.data;
+    const items: Listing[] = Array.isArray(root) ? root : Array.isArray(root?.data) ? root.data : [];
+    return items;
+  } catch {
+    return [];
+  }
+}
+
 /** Fetch ALL adverts (paginated) so we can count cities properly. */
 async function getAllAdvertsForLocations(): Promise<Listing[]> {
   const base = process.env.BACKEND_API || "https://api.yenigunemlak.com";
@@ -77,26 +92,20 @@ async function getAllAdvertsForLocations(): Promise<Listing[]> {
   return allItems.filter((item) => item.active !== false);
 }
 
-function splitAdverts(data: Listing[]) {
-  const withPhoto = data.filter((item) => item.photos?.length && item.photos.length > 0);
-  const highlighted = withPhoto.filter((item) => item.isHighlight);
-  const topAdverts = highlighted.length > 0 ? highlighted : withPhoto.slice(0, 6);
-  const topUids = new Set(topAdverts.map((item) => item.uid));
-  const latestAdverts = data.filter((item) => !topUids.has(item.uid));
-  return { topAdverts, latestAdverts };
-}
-
 export default async function Home() {
-  const [data, allAdverts] = await Promise.all([
+  const [data, featuredAdverts, allAdverts] = await Promise.all([
     getHomeAdverts(),
+    getFeaturedAdverts(),
     getAllAdvertsForLocations(),
   ]);
-  const { topAdverts, latestAdverts } = splitAdverts(data);
+
+  const featuredUids = new Set(featuredAdverts.map((item) => item.uid));
+  const latestAdverts = data.filter((item) => !featuredUids.has(item.uid));
 
   return (
     <div>
       <HeroSection />
-      <TopAdvertsSection data={topAdverts} />
+      <TopAdvertsSection data={featuredAdverts} />
       <hr className="border-t border-gray-200" />
       <LatestAdverts data={latestAdverts} />
       <hr className="border-t border-gray-200" />

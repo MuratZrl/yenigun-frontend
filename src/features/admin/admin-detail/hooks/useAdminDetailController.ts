@@ -5,8 +5,20 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import api from "@/lib/api";
+import { getClientToken } from "@/lib/auth";
 import { adminUsersApi } from "@/features/admin/admins/api/adminUsersApi";
 import type { AdminDetailUser } from "../lib/types";
+
+function getUidFromToken(): string | null {
+  try {
+    const token = getClientToken();
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload?.uid != null ? String(payload.uid) : null;
+  } catch {
+    return null;
+  }
+}
 
 function normalizeArray<T>(maybe: unknown): T[] {
   if (Array.isArray(maybe)) return maybe as T[];
@@ -113,11 +125,15 @@ export function useAdminDetailController() {
     }
   }, [admin]);
 
+  const tokenUid = getUidFromToken();
+  const isOwnProfile = Boolean(tokenUid && admin && tokenUid === String(admin.uid));
+
   return {
     loading,
     error,
     admin,
     uploading,
+    isOwnProfile,
     goBack,
     handleEmail,
     handleCall,

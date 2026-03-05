@@ -133,38 +133,43 @@ export default function AdminDetailPage() {
                   </div>
                 )}
 
-                {/* Camera button (upload) */}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={c.uploading}
-                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#035DBA] text-white flex items-center justify-center shadow-md hover:bg-[#000066] transition-colors disabled:opacity-50"
-                  title="Fotoğraf yükle"
-                >
-                  <Camera size={14} />
-                </button>
+                {/* Photo controls (only for own profile) */}
+                {c.isOwnProfile && (
+                  <>
+                    {/* Camera button (upload) */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={c.uploading}
+                      className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#035DBA] text-white flex items-center justify-center shadow-md hover:bg-[#000066] transition-colors disabled:opacity-50"
+                      title="Fotoğraf yükle"
+                    >
+                      <Camera size={14} />
+                    </button>
 
-                {/* Remove button (only when image exists) */}
-                {admin.profilePicture && (
-                  <button
-                    type="button"
-                    onClick={c.handleRemoveImage}
-                    disabled={c.uploading}
-                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md hover:bg-red-600 transition-colors disabled:opacity-50"
-                    title="Fotoğrafı kaldır"
-                  >
-                    <Trash2 size={12} />
-                  </button>
+                    {/* Remove button (only when image exists) */}
+                    {admin.profilePicture && (
+                      <button
+                        type="button"
+                        onClick={c.handleRemoveImage}
+                        disabled={c.uploading}
+                        className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md hover:bg-red-600 transition-colors disabled:opacity-50"
+                        title="Fotoğrafı kaldır"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={onFileSelect}
+                    />
+                  </>
                 )}
-
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={onFileSelect}
-                />
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pb-1">

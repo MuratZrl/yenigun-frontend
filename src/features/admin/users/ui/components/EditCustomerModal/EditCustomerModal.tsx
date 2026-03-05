@@ -176,7 +176,7 @@ export default function EditCustomerModal({
                 <label className={labelClass}>
                   Müşteri Türü <span className="text-red-400">*</span>
                 </label>
-                <div className="relative">
+                <div className="relative">mi
                   <Users
                     size={14}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-black/25 pointer-events-none z-10"

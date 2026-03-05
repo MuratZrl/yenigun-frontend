@@ -81,6 +81,9 @@ export default function AdsPageClient({
     void handleFilter();
   }, [filterType, handleFilter]);
 
+  const ROOM_CATEGORIES = new Set(["Konut", "Bina"]);
+  const showRoomCount = !c.selectedCategory || ROOM_CATEGORIES.has(c.selectedCategory.name);
+
   const totalPagesLabel = (c.totalPages || 1).toLocaleString("tr-TR");
   const currentPageLabel = (c.currentPage || 1).toLocaleString("tr-TR");
 
@@ -270,7 +273,7 @@ export default function AdsPageClient({
                 </div>
               ) : viewMode === "list" ? (
                 <div className="divide-y divide-gray-200">
-                  <AdsTableHeader />
+                  <AdsTableHeader showRoomCount={showRoomCount} />
 
                   {c.data.map((ad: Advert, index: number) => (
                     <div key={ad.uid || index}>
@@ -278,11 +281,13 @@ export default function AdsPageClient({
                         ad={ad}
                         fallbackKey={index}
                         rowIndex={index}
+                        showRoomCount={showRoomCount}
                       />
                       <AdsRowMobile
                         ad={ad}
                         fallbackKey={index}
                         rowIndex={index}
+                        showRoomCount={showRoomCount}
                       />
                     </div>
                   ))}
@@ -294,6 +299,7 @@ export default function AdsPageClient({
                       key={ad.uid || i}
                       ad={ad}
                       fallbackKey={i}
+                      showRoomCount={showRoomCount}
                     />
                   ))}
                 </div>
