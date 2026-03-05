@@ -5,6 +5,8 @@ import React, { useMemo, useState, useCallback, useEffect, useRef } from "react"
 import type { Category, Subcategory, Feature, FilterState } from "@/types/advert";
 import api from "@/lib/api";
 
+/* ── Types ── */
+
 type Props = {
   filters: FilterState;
 
@@ -23,11 +25,24 @@ type Props = {
   withBorder?: boolean;
 };
 
-/* ── Helpers ── */
+interface NavigateChild {
+  uid: number;
+  name: string;
+  advertCount: number;
+}
+
+interface NavigateResponse {
+  success: boolean;
+  data: {
+    path: { uid: number; name: string }[];
+    children: NavigateChild[];
+    totalAdverts: number;
+  };
+}
 
 /** A loose shape that covers both Category & Subcategory (and nested variants). */
 type RawCategoryNode = {
-  uid?: string;
+  uid?: string | number;
   _id?: string;
   id?: string;
   name?: string;
@@ -43,6 +58,8 @@ type RawCategoryNode = {
   __v?: number;
 };
 
+/* ── Helpers ── */
+
 function toStr(v: string | number | undefined | null): string {
   return String(v ?? "").trim();
 }
@@ -55,7 +72,7 @@ function nodeName(n: RawCategoryNode | null | undefined): string {
   return toStr(n?.name) || toStr(n?.title) || "";
 }
 
-/* ── Tree builder ── */
+/* ── Tree builder (for category prop) ── */
 
 type TreeNode = {
   uid: string;
@@ -117,124 +134,80 @@ function convertNestedNode(n: RawCategoryNode): TreeNode {
   };
 }
 
-/* ── Count fetcher ── */
+/* ── Navigate hook — single request per visible level ── */
 
-const ACTION_KEYWORDS = new Set([
-  "Satılık", "Kiralık", "Günlük Kiralık", "Devren Satılık",
-  "Devren Kiralık", "Kat Karşılığı Satılık", "Turistik Günlük Kiralık",
-]);
-
-const GROUPING_NODES = new Set([
-  "Konut", "İş Yeri", "İşyeri", "Arazi", "Emlak",
-]);
-
-function buildCountParams(pathNames: string[]): Record<string, string> {
-  const params: Record<string, string> = {
-    page: "1",
-    limit: "1",
-    sortBy: "date",
-    sortOrder: "desc",
-  };
-
-  let action: string | null = null;
-  let subType: string | null = null;
-  let groupNode: string | null = null;
-
-  for (const part of pathNames) {
-    if (GROUPING_NODES.has(part)) {
-      groupNode = part;
-      continue;
-    }
-    if (ACTION_KEYWORDS.has(part)) {
-      action = part;
-    } else if (!subType) {
-      subType = part;
-    }
-  }
-
-  if (subType) {
-    params.category = subType;
-  } else if (groupNode) {
-    params.category = groupNode;
-  }
-
-  if (action) {
-    params.type = action;
-  }
-
-  return params;
-}
-
-function getPathForNode(node: TreeNode, parents: TreeNode[]): string[] {
-  return [...parents.map((p) => p.name), node.name];
-}
-
-interface SearchResponse {
-  pagination?: { totalItems?: number };
-}
-
-async function fetchCountForParams(params: Record<string, string>): Promise<number> {
-  try {
-    const qs = new URLSearchParams(params).toString();
-    const res = await api.get<SearchResponse>(`/advert/search?${qs}`);
-    const data: SearchResponse = res?.data ?? res;
-    return data?.pagination?.totalItems ?? 0;
-  } catch {
-    return 0;
-  }
-}
-
-function useCategoryCounts(nodes: TreeNode[], parents: TreeNode[]): Map<string, number | null> {
-  const [fetchedCounts, setFetchedCounts] = useState<Map<string, number | null>>(new Map());
+function useNavigateCounts(nodes: TreeNode[]): Map<string, number | null> {
+  const [counts, setCounts] = useState<Map<string, number | null>>(new Map());
   const abortRef = useRef<AbortController | null>(null);
 
-  const nodesKey = nodes.map((n) => n.uid).join(",");
+  const uidsKey = nodes.map((n) => n.uid).join(",");
 
   useEffect(() => {
-    if (!nodes.length) return;
+    if (!nodes.length) {
+      setCounts(new Map());
+      return;
+    }
 
     if (abortRef.current) abortRef.current.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
-    const fetchAll = async () => {
-      const results = await Promise.allSettled(
-        nodes.map(async (node) => {
-          const path = getPathForNode(node, parents);
-          const params = buildCountParams(path);
-          const count = await fetchCountForParams(params);
-          return { uid: node.uid, count };
-        }),
-      );
+    // Init as loading
+    setCounts(new Map(nodes.map((n) => [n.uid, null])));
 
-      if (ctrl.signal.aborted) return;
+    const fetchCounts = async () => {
+      try {
+        // Find common parent: if all nodes share the same parent uid, use it
+        // Otherwise fetch individually
+        const parentUid = nodes[0]?.raw?.parentUid || nodes[0]?.raw?.parentId;
+        const allSameParent =
+          parentUid && nodes.every((n) => (n.raw?.parentUid || n.raw?.parentId) === parentUid);
 
-      const next = new Map<string, number | null>();
-      for (const r of results) {
-        if (r.status === "fulfilled") {
-          next.set(r.value.uid, r.value.count);
+        if (allSameParent && parentUid) {
+          // Single request for the parent — gets all children with counts
+          const res = await api.get<NavigateResponse>(
+            `/categories/navigate?uid=${parentUid}`,
+            { signal: ctrl.signal },
+          );
+          const data = res?.data?.data ?? res?.data;
+          const apiChildren: NavigateChild[] = Array.isArray(data?.children) ? data.children : [];
+
+          const next = new Map<string, number | null>();
+          for (const node of nodes) {
+            const match = apiChildren.find(
+              (c) => String(c.uid) === node.uid || c.name.toLowerCase() === node.name.toLowerCase(),
+            );
+            next.set(node.uid, match?.advertCount ?? 0);
+          }
+          if (!ctrl.signal.aborted) setCounts(next);
+        } else {
+          // Top-level nodes — fetch without uid (root level)
+          const res = await api.get<NavigateResponse>("/categories/navigate", {
+            signal: ctrl.signal,
+          });
+          const data = res?.data?.data ?? res?.data;
+          const apiChildren: NavigateChild[] = Array.isArray(data?.children) ? data.children : [];
+
+          const next = new Map<string, number | null>();
+          for (const node of nodes) {
+            const match = apiChildren.find(
+              (c) => String(c.uid) === node.uid || c.name.toLowerCase() === node.name.toLowerCase(),
+            );
+            next.set(node.uid, match?.advertCount ?? 0);
+          }
+          if (!ctrl.signal.aborted) setCounts(next);
+        }
+      } catch {
+        if (!ctrl.signal.aborted) {
+          setCounts(new Map(nodes.map((n) => [n.uid, 0])));
         }
       }
-      setFetchedCounts(next);
     };
 
-    fetchAll();
+    fetchCounts();
 
-    return () => {
-      ctrl.abort();
-    };
-  }, [nodesKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* Derive the final counts: if nodes are empty return empty map,
-     otherwise show loading (null) for nodes not yet fetched. */
-  const counts = useMemo<Map<string, number | null>>(() => {
-    if (!nodes.length) return new Map();
-    const merged = new Map<string, number | null>();
-    for (const n of nodes) {
-      merged.set(n.uid, fetchedCounts.get(n.uid) ?? null);
-    }
-    return merged;
-  }, [nodes, fetchedCounts]);
+    return () => ctrl.abort();
+  }, [uidsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return counts;
 }
@@ -296,13 +269,8 @@ export default function CategoryOptionsBox({
     return selectedL1.children;
   }, [selectedL0, selectedL1, topLevel]);
 
-  const parentPath = useMemo((): TreeNode[] => {
-    if (!selectedL0) return [];
-    if (!selectedL1) return [selectedL0];
-    return [selectedL0, selectedL1];
-  }, [selectedL0, selectedL1]);
-
-  const counts = useCategoryCounts(visibleNodes, parentPath);
+  // Single /categories/navigate request per visible level
+  const counts = useNavigateCounts(visibleNodes);
 
   const handleRootClick = useCallback(() => {
     onCategorySelect(null);

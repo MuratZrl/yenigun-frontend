@@ -22,13 +22,13 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section id="hero" className="relative h-[70vh] overflow-hidden bg-black -mt-16">
+    <section id="hero" className="relative h-[85vh] md:h-[60vh] xl:h-[70vh] overflow-hidden bg-black -mt-16">
       <Swiper
         slidesPerView={1}
         spaceBetween={0}
         speed={1200}
         effect="fade"
-        style={{ height: "70vh" }}
+        style={{ height: "100%" }}
         modules={[Autoplay, EffectFade]}
         autoplay={{ delay: AUTOPLAY_DELAY, disableOnInteraction: false }}
         loop
@@ -60,10 +60,10 @@ export default function HeroSection() {
       </Swiper>
 
       {/* Centered content: heading + search bar */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4">
-        <div className="text-center mb-10">
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-start pt-20 md:pt-32 xl:justify-center xl:pt-0 px-4">
+        <div className="text-center mb-2 md:hidden xl:block xl:mb-10">
           <h1
-            className="text-white font-medium text-3xl md:text-5xl lg:text-6xl tracking-tight leading-[1.05]"
+            className="text-white font-medium text-2xl md:text-5xl lg:text-6xl tracking-tight leading-[1.05]"
             style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", textShadow: "0 4px 20px rgba(0,0,0,0.4)" }}
           >
             Hayalinizdeki Eve{" "}

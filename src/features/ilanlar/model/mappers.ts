@@ -154,7 +154,17 @@ export function buildApiFilters(
   }
 
   // ═══════════════════════════════════════════════
-  // Category ID / Subcategory ID (new system)
+  // Category UID (preferred — faster & more accurate)
+  // ═══════════════════════════════════════════════
+  if (typeof f.categoryUid === "number" && f.categoryUid > 0) {
+    apiFilters.categoryUid = f.categoryUid;
+  }
+  if (typeof f.subcategoryUid === "number" && f.subcategoryUid > 0) {
+    apiFilters.categoryUid = f.subcategoryUid;
+  }
+
+  // ═══════════════════════════════════════════════
+  // Category ID / Subcategory ID (legacy fallback)
   // ═══════════════════════════════════════════════
   if (nonEmpty(f.categoryId)) {
     apiFilters.categoryId = f.categoryId;

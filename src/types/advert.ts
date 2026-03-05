@@ -135,13 +135,16 @@ export interface FilterState {
   type: string;
   minPrice: number | null;
   maxPrice: number | null;
-  categoryId?: string;  
-  subcategoryId?: string;  
-  subSubcategoryId?: string;  
+  categoryId?: string;
+  categoryUid?: number;
+  subcategoryId?: string;
+  subcategoryUid?: number;
+  subSubcategoryId?: string;
 }
 
 export interface Category {
   _id: string;
+  uid?: number;
   name: string;
   features?: Feature[];
   subcategories: Subcategory[];
@@ -152,6 +155,7 @@ export interface Category {
 
 export interface Subcategory {
   name: string;
+  uid?: number;
   features: Feature[];
   subcategories: Subcategory[];
   _id: string;
